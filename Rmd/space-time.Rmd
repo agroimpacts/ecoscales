@@ -1,0 +1,185 @@
+---
+title: "Space-time plots"
+author: "Lyndon Estes"
+date: "December 3, 2015"
+output: 
+  html_document:
+    toc: yes
+---
+
+# Space versus time analysis
+```{r, eval = FALSE}
+library(data.table)
+library(raster)
+library(sp)
+require(splancs)
+library(lmisc)
+p_root <- set_base_path("ecoscales")
+p_dat <- full_path(p_root, "external/data")
+dat <- fread(full_path(p_dat, "merged-data.csv"), stringsAsFactors = FALSE)
+setnames(dat, "DOI/title", "DOI")
+dat <- dat[, names(dat)[1:20], with = FALSE]
+unique(dat$DOI)  # 139
+```
+
+## Spatal and temporal data 
+
+### Scaling in log10 space
+```{r}
+i <- 0.000001
+j <- rep(0, 15)
+for(k in 1:length(j)) {
+  i <- i * 10
+  j[k] <- i
+}
+tdt <- data.table("scaleval" = j, "time" = j)
+tdt[, tlog := log10(time)]
+
+# label axis for time
+taxis <- cbind.data.frame(
+  c("Sec", "Min", "Hour", "Day", "Month", "Year", "Decade", "Century", 
+    "Millenium", "10000"),  
+  c(1 / (24 * 60 * 60), 1 / (24 * 60), 1 / 24, 1, 30, 365, 365 * 10, 
+    365 * 100, 365 * 1000, 365 * 10000))
+taxis <- data.table(taxis)
+setnames(taxis, names(taxis), c("label", "days"))
+taxis[, logdays := log10(days)]
+
+rdt <- data.table("scaleval" = j, "area" = j^2)
+rdt[, slog := log10(scaleval)]
+rdt[, rlog := log10(area)]
+
+adt <- data.table("area" = j)
+adt[, alog := log10(area)]
+
+```
+
+### Resolution versus extent, gridded
+```{r,eval = FALSE}
+rres <- 0.25
+# # raster for resolution (x dimension) versus area (y dimension)
+# # arst <- raster(xmn = -6, xmx = 9, ymn = -5, ymx = 10)
+# rst <- raster(xmn = -5, xmx = 10, ymn = -5, ymx = 10)
+# res(rst) <- rres
+# # rst@crs <- CRS("")
+# rst[] <- 1
+# rst2 <- raster(xmn = 0, xmx = 10, ymn = 0, ymx = 10)
+# # res(rst2) <- c(0.25, 0.25)
+# res(rst2) <- rres
+# # rst@crs <- CRS("")
+# rst2[] <- 1
+# plot(rst2)
+
+resdat <- data.table(x = log10(dat$t_btwn_samp + 0.00001), 
+                     y = log10(dat$plot_res))
+# resdat[x < -5, x := -4.5]
+# resdat[y < -5, y := -4.5]
+resdat$n <- rep(1, nrow(resdat))
+coordinates(resdat) <- ~x + y
+# plot(resdat$x, resdat$y)
+rx <- range(resdat$x)
+# rx <- c(floor(rx[1]), c(ceiling(rx[2])))
+rx <- round(rx / 0.5) * 0.5  # round to nearest 0.5
+rxd <- length(seq(rx[1], rx[2], rres))  # 0.25))
+ry <- range(resdat$y)
+# ry <- c(floor(ry[1]), c(ceiling(ry[2])))
+ry <- round(ry / 0.5) * 0.5  # round to nearest 0.5
+ryd <- length(seq(ry[1], ry[2], rres))#0.25))
+
+# length(seq(-5, 4, 0.25))
+
+extdat <- data.table("x" = log10(dat$study_duration + 0.00001), 
+                     "y" = log10(dat$sampled_area + 0.00001)) 
+# extdat <- data.table("x" = log10(dat$study_span), 
+#                      "y" = log10(dat$sampled_area)) 
+# extdat[x < 0, x := 0]
+# extdat[y < 0, y := 0]  # setting minima to 1 day and 1 ha
+extdat$n <- rep(1, nrow(extdat))
+coordinates(extdat) <- ~x + y
+# plot(extdat$x, extdat$y)
+ex <- range(extdat$x)
+# ex <- c(floor(ex[1]), c(ceiling(ex[2])))
+ex <- round(ex / 0.5) * 0.5  # round to nearest 0.5
+ex[1] <- -5
+exd <- length(seq(ex[1], ex[2], rres))#0.25))
+ey <- range(extdat$y)
+# ey <- c(floor(ey[1]), c(ceiling(ey[2])))
+ey <- round(ey / 0.5) * 0.5  # round to nearest 0.5
+eyd <- length(seq(ey[1], ey[2], rres))#0.25))
+
+# set-up grid topologies
+rgrd <- GridTopology(cellcentre.offset = c(rx[1], ry[1]) + 0.125, 
+                     #cellsize = c(0.25, 0.25), cells.dim = c(rxd, ryd))
+                     cellsize = c(rres, rres), cells.dim = c(rxd, ryd))
+egrd <- GridTopology(cellcentre.offset = c(ex[1], ey[1]) + 0.125, 
+                     #cellsize = c(0.25, 0.25), cells.dim = c(exd, eyd))
+                     cellsize = c(rres, rres), cells.dim = c(exd, eyd))
+# seq(0, 10, 10 / 59)
+
+rst <- raster(xmn = rx[1], xmx = rx[2], ymn = ry[1], ymx = ry[2])
+# rst <- raster(xmn = min(resdat$x), xmx = ceiling(max(resdat$x)), 
+#               ymn = min(resdat$y), ymx = ceiling(max(resdat$y)))
+res(rst) <- rres
+# rst@crs <- CRS("")
+rst[] <- 1
+# plot(rst)
+rst2 <- raster(xmn = ex[1], xmx = ex[2], ymn = ey[1], ymx = ey[2])
+# rst2 <- raster(xmn = min(extdat$x), xmx = ceiling(max(extdat$x)), 
+#               ymn = min(extdat$y), ymx = ceiling(max(extdat$y)))
+res(rst2) <- rres
+# rst@crs <- CRS("")
+rst2[] <- 1
+# plot(rst2)
+
+# kernel densities
+# resolution
+ppoly <- as(extent(rst), "SpatialPolygons")
+crds <- slot(slot(slot(ppoly, "polygons")[[1]], "Polygons")[[1]], "coords") 
+kern1 <- spkernel2d(resdat, crds, h0 = 1, rgrd)
+kgrid1 <- as(SpatialGridDataFrame(rgrd, data = data.frame(kern1)),
+             "SpatialPixelsDataFrame")
+
+# extent
+ppoly <- as(extent(rst2), "SpatialPolygons")
+crds <- slot(slot(slot(ppoly, "polygons")[[1]], "Polygons")[[1]], "coords") 
+kern2 <- spkernel2d(extdat, crds, h0 = 1, egrd)
+kgrid2 <- SpatialGridDataFrame(egrd, data = data.frame(kern2))
+
+# rasterize
+# space
+rr <- raster(kgrid1)
+rr[is.na(rr)] <- 0
+# time
+er <- raster(kgrid2)
+er[is.na(er)] <- 0
+
+# have a look
+par(mfrow = c(2, 1))
+plot(er, axes = FALSE, add = FALSE)
+arg <- list(at = taxis$logdays, labels = taxis$label)
+image(er, col = rev(terrain.colors(100)), axes = FALSE, xlab = "", ylab = "", 
+      xlim = c(-5, 6))
+axis(1, at = taxis$logdays, labels = taxis$label, las = 2)
+axis(2, at = -5:10, las = 2)
+
+
+# points(extdat$x, extdat$y)
+plot(rr)
+# points(resdat$x, resdat$y)
+
+ers <- er
+rrs <- rr
+```
+
+### Convert to rgb space and plot
+```{r, eval = FALSE}
+# As separate plots
+png("paper/figures/res&extent2.png", width = 900, height = 450)
+par(mfrow = c(1, 2), oma = c(0, 0, 0, 0), mar = c(4, 4, 4, 4))
+plot(rrs, xlim = c(-5, 15), ylim = c(-5, 15), 
+     xlab = "Sample interval - log10(days)", 
+     ylab = "Plot resolution - log10(m^2)")
+plot(ers, box = FALSE, xlim = c(-5, 15), ylim = c(-5, 15), 
+     xlab = "Study duration - log10(days)", ylab = "Sampled area - log10(ha)")
+dev.off()
+```
