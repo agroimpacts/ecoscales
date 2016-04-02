@@ -1,0 +1,21 @@
+Package: ecoscales
+Type: Package
+Title: Tools for analyzing scales of ecological observation
+Description: Part of the ecological literature meta-analysis project
+Version: 0.1
+Date: 19/12/2015
+Author: Lyndon Estes <lestes@princeton.edu>
+Maintainer: Lyndon Estes <lestes@princeton.edu>
+Depends:
+    R (>= 3.0.0),
+    raster,
+    splancs,
+    lmisc,
+    data.table,
+    RColorBrewer
+Imports:
+    raster,
+    splancs,
+    lmisc,
+    data.table
+License: GPL (>= 3)

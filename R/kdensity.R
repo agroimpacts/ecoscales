@@ -5,16 +5,17 @@
 #' @param ymn Minimum y coordinate for output grid
 #' @param ymx Maximum y coordinate for output grid
 #' @param dxdy Resolution for output grid
-#' @param pts SpatialPointsDataFrame showing distribution of observations 
+#' @param pts SpatialPointsDataFrame showing distribution of observations
+#' @param kwidth Kernel smoothing width 
 #' @return Raster of density values
 #' @export
-kdensity <- function(xmn, xmx, ymn, ymx, dxdy, pts) {
+kdensity <- function(xmn, xmx, ymn, ymx, dxdy, pts, kwidth) {
   
   if(length(dxdy) == 1) dxdy <- rep(dxdy, 2)
   adj <- dxdy / 2
   
-  d1 <- length(seq(xmn[1], xmx[2], dxdy[1]))
-  d2 <- length(seq(ymn[1], ymx[2], dxdy[2]))
+  d1 <- length(seq(xmn, xmx, dxdy[1]))
+  d2 <- length(seq(ymn, ymx, dxdy[2]))
   
   # grid topology
   grd <- GridTopology(cellcentre.offset = c(xmn + adj[1], ymn + adj[2]), 
@@ -28,7 +29,7 @@ kdensity <- function(xmn, xmx, ymn, ymx, dxdy, pts) {
   # kernel densities
   ppoly <- as(extent(rst), "SpatialPolygons")
   crds <- slot(slot(slot(ppoly, "polygons")[[1]], "Polygons")[[1]], "coords") 
-  kern <- spkernel2d(resdat, crds, h0 = 1, grd)
+  kern <- spkernel2d(pts, crds, h0 = kwidth, grd)
   kgrid <- as(SpatialGridDataFrame(grd, data = data.frame(kern)),
               "SpatialPixelsDataFrame")
 

@@ -1,0 +1,128 @@
+---
+title: "calibration"
+author: "Lyndon Estes"
+date: "January 8, 2016"
+output: 
+  html_document:
+    toc: yes
+    fig_caption: true
+---
+
+# Calibration data
+```{r, message=FALSE, warning = FALSE}
+library(ecoscales)
+library(readxl)
+library(Agreement)
+library(irr)
+
+p_root <- set_base_path("ecoscales")
+p_dat <- fp(p_root, "external/data/calibration")
+
+# Read in and clean-up calibration data
+# cal <- data.table(read_excel(fp(p_dat, "merged_calibration.xlsx")))
+cal <- data.table(read_excel(fp(p_dat, "merged_calibrationff.xlsx")))
+cal[, DOI := gsub("DOI:|doi:|DOI: |doi: |DOI ", "", DOI)]
+cal[, DOI := gsub("\\s", "", DOI)]  # remove DOI and whitespace
+dropnm <-  c("V30", "V31", "journal", "exclusion reason", "sensitivity")
+cal[, c(dropnm) := NULL]
+
+# check data types
+for(j in names(cal)[8:24]) set(cal, j = j, value = as.numeric(cal[[j]]))
+
+# use NA in n_sites as indicator that study was excluded
+cal[, inout := ifelse(is.na(n_sites), 0, 1)]  
+# write.csv(cal, file = fp(p_dat, "merged_calibrationf.csv"))
+
+# external fixes and recodes, bring back in
+cal <- data.table(read_excel(fp(p_dat, "merged_calibrationf.xlsx")))
+cal[, notes := NULL]
+for(j in names(cal)[c(4:5, 8:24)]) set(cal, j = j, value = as.numeric(cal[[j]]))
+# length(which(is.na(cal$feature)))
+
+```
+
+## Agreement on studies included/excluded
+```{r}
+# ndois <- cal[, unique(DOI)]  # check on number of journals
+
+# reduce within-observer DOI duplicates 
+dois <- cal[, unique(DOI), by = .(observer, inout)]
+
+# recast dataset to obsevers in columns, inout as value, DOI as case
+dois_c1 <- dcast(dois, V1 ~ observer, value.var = "inout")
+
+# Fleiss's Kappa
+kappam.fleiss(dois_c1[, 2:7, with = FALSE])
+```
+
+## Inter-rater reliability using number of records per paper
+```{r}
+doisum <- dcast(cal, DOI ~ observer, value.var = "inout", fun = sum)
+# kappam.fleiss(doisum[, 2:7, with = FALSE])
+icc(ratings = doisum[, 2:7, with = FALSE], model = "twoway")
+
+```
+
+```{r, warning = FALSE, fig.cap="Figure 1: Number of records extracted by each rater (observer) for each of the 20 papers in the calibration set."}
+doimat <- t(doisum[, -1, with = FALSE])
+cols <- RColorBrewer::brewer.pal(n = 6, "Paired")#[c(3:1, 4:6)]
+cxs <- seq(3, 0.8, length.out = 6)
+pchs <- c(rep(20, 5), 4)
+par(mar = c(4, 4, 0.1, 0.1))
+plot(c(1, 20), c(0, 10), pch = "", xlab = "Paper reviewed", 
+     ylab = "N extractable records", mgp = c(1.45, 0.7, -0.2))
+polygon(x = c(0, 21, 21, 0, 0), y = c(-1, -1, 11, 11, 0), col = "grey70")
+# plot(doimat[1, ], pch = 20, xlab = "Paper reviewed", 
+#      ylab = "N extractable records", cex = cxs[1], col = cols[1])
+for(i in 1:6) points(doimat[i, ], col = cols[i], pch = pchs[i], cex = cxs[i])
+legend(x = "topleft", pch = pchs, pt.cex = cxs, col = cols, 
+       legend = paste0("Rater", 1:6), bty = "n")
+
+```
+
+## Variance in extracted statistics
+```{r}
+varnms <- c("plot_res", "n_sites", "sampled_area", "t_btwn_samp", 
+            "study_duration")
+mus <- cal[inout == 1, lapply(.SD, mean, na.rm = TRUE), by = .(DOI, observer),             .SDcols = varnms]
+vars <- mus[, lapply(.SD, sd, na.rm = TRUE), by = DOI, .SDcols = varnms]
+musmu <- mus[, lapply(.SD, mean, na.rm = TRUE), by = DOI, .SDcols = varnms]
+
+
+par(mfrow = c(3, 2), mar = c(3, 3, 2, 2), mgp = c(1.5, 0.5, 0))
+for(i in varnms) {
+  mu <- musmu[, get(i)]
+  sdev <- vars[, get(i)]
+#   print(paste(i, ":", sdev))
+  print(paste(i, ":", round(mu, 2), ":", round(sdev, 2), ":", 
+              round(sdev / mu, 2)))
+  # plot(mu, sdev / mu, xlab = "mean", ylab = "CV", main = i)
+  plot(mu, sdev, xlab = "mean", ylab = "sd", main = i)
+}
+
+vars[, lapply(.SD, mean, na.rm = TRUE), .SDcols = varnms]
+colMeans(sapply(varnms, function(i) {
+  mu <- musmu[, get(i)]
+  sdev <- vars[, get(i)]
+  sdev / mu
+}), na.rm = TRUE)
+
+```
+
+```{r}
+par(mfcol = c(10, 4), mar = c(2, 2, 2, 2), mgp = c(1.5, 0.5, 0))
+
+mus[, plot(plot_res), by = DOI]
+
+```
+
+
+Tim needs to fix paleo studies in calibration (and main set) giving too much credit to effective area. 
+
+Others need to fix their study duration figures. Paul on paleo one in calibration, Choi, Chang, etc in main set.  
+
+For N-sites, count sites only once if there are repeated measures taken at them, e.g. Jonathan in 10.1111/j.1466-8238.2009.00454.x for bird counts
+
+
+
+
