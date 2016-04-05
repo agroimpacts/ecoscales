@@ -10,7 +10,7 @@ output:
 ---
 
 # Space versus time analysis
-```{r, eval = FALSE}
+```{r, message = FALSE, warning=FALSE, results='hold'}
 library(ecoscales)
 library(readxl)
 library(stringdist)
@@ -28,13 +28,13 @@ dat[, DOI := gsub("DOI:|doi:|DOI: |doi: |DOI ", "", DOI)]
 dat[, DOI := gsub("\\s", "", DOI)]  # remove DOI and whitespace
 
 dat <- dat[, names(dat)[1:20], with = FALSE]
-unique(dat$DOI)  # 138
 ```
 
-## Data prep
+`r length(unique(dat$DOI))` papers  main analysis
 
+## Data prep
 ### Merge full and calibration datasets
-```{r, eval = FALSE}
+```{r, message=FALSE, warning=FALSE, results='hide'}
 dat2 <- copy(dat[, .(plot_res, n_sites, sampled_area, samp_duration,
                      t_btwn_samp, study_duration)])
 
@@ -59,7 +59,7 @@ datf <- rbind(cbind("dsrc" = 1, dat2), cbind("dsrc" = 2, calr))
 1. if `samp_duration != study_duration` and `t_btwn_samp == 0`, set `study_duration == samp_duration` (actually, no, in many cases there is a good reason to have to `study_duration != samp_duration` (see below))
 2. Prior to scaling the data in log10 space, we need to make one adjustment. Time between samples has many 0 values because many observations are simply one-offs.  Set these to an arbitrarily large value which will represent clear separation on axis from high frequency studies. A function is defined here for this purpose, and will be applied after bootstrapping is done. 
 
-```{r, eval=FALSE}
+```{r, message=FALSE, warning=FALSE, results='hide'}
 # apply fixes (mostly to account for observer omissions)
 # 1. if samp_duration != study_duration and t_btwn_samp == 0, set 
 #    study_duration == samp_duration
@@ -72,14 +72,14 @@ to_infin_byond <- function(tbtwn) ifelse(tbtwn == 0, 365 * 10000, tbtwn)
 
 ```
 
-### Bootstraps
+## Analyses
 
-### With uncertainties
+### Resampling with uncertainties
 
 Defined by the per variable CV based on uncertainty between observers. Here we are just going to use apply the variability to each variable for every observation (previous incarnation used uncertainty on just the variables listed as uncertain, with recalculation of dependent variables (`study_duration`, `sampled_area`) made after pertubation [see commit prior to second or third commit on 4 April for code]).
 
 ```{r, eval=FALSE}
-p <- c(0.79, 0.99, 0.53, 1.22)
+p <- c(0.79, 0.99, 0.53, 1.22)  # from calibration.Rmd
 
 # Function for bootstrapping with uncertainties
 resamp_func <- function(dat, p, iter) {
@@ -106,41 +106,6 @@ resamp_func <- function(dat, p, iter) {
   return(bout)
 }
 
-# old function, retained here for easy recollection of first approach
-# full function for resampling
-# resamp_func <- function(dat, p, iter) {
-#   bout <- lapply(1:iter, function(x) {  # x <- 1
-#     if((x / 100) %in% 1:100) print(x)
-#     # amount to perturb
-#     a <- runif(1, min = 1 - p, max = 1 + p)  # plot_res perturb
-#     b <- runif(1, min = 1 - p, max = 1 + p)  # n_sites perturb
-#     d <- runif(1, min = 1 - p, max = 1 + p)  # samp_duration perturb
-#     e <- runif(1, min = 1 - p, max = 1 + p)  # t_btwn_samp perturb
-#     
-#     if(length(p) < 4) stop("p must be length of 4", call. = FALSE)
-# 
-#     
-#     # spatial variables
-#     dnew <- copy(dat[, .(plot_res, n_sites, sampled_area, samp_duration,
-#                          t_btwn_samp, study_duration)])
-#     dnew[which(senst$res == 1), plot_res := plot_res * a]
-#     dnew[which(senst$n == 1), n_sites := n_sites * b]
-#     dnew[, sampled_area := (plot_res * n_sites) / 10000]
-# 
-#     # temporal variables
-#     dnew[which(senst$sampd == 1), samp_duration := samp_duration * d]
-#     dnew[which(senst$tbtwn == 1), t_btwn_samp := t_btwn_samp * e]
-#     dnew[, study_duration := {
-#       recalc_duration(study_duration, samp_duration, t_btwn_samp)
-#     }]
-#     dnew[, t_btwn_samp := to_infin_byond(t_btwn_samp)]  # set high
-#   })
-#   return(bout)
-# }
-
-# perturbed samples
-# p10 <- resamp_func(dat, 0.1, 1000)  # 10% perturb
-
 set.seed(1)
 bootperturb <- resamp_func(datf, p = p, iter = 1000)  # 10% perturb
 # bootperturb2 <- resamp_func(datf, p = p, iter = 1000)  # 10% perturb
@@ -149,7 +114,7 @@ bootperturb <- resamp_func(datf, p = p, iter = 1000)  # 10% perturb
 
 ```
 
-### Without uncertainties
+### Bootstrapping
 
 Good old-fashioned bootstrapping with replacement, no perturbation of value
 ```{r, eval = FALSE}
@@ -239,7 +204,7 @@ aaxis2[, logarea := log10(area)]
 
 ```
 
-### Perturbed boot-strap
+### Perturbed set
 ```{r, eval = FALSE}
 bootp_dt <- rbindlist(bootperturb)
 resdat <- data.table(x = log10(bootp_dt$t_btwn_samp), 
@@ -272,7 +237,6 @@ ey <- range(aaxis2$logarea)
 extdat[y < ey[1], y := ey[1]]
 extdat[y > ey[2], y := ey[2]]
 coordinates(extdat) <- ~x + y
-
 
 # densities
 # resolution
@@ -328,7 +292,7 @@ dev.off()
 
 ```
 
-### Ordinary bootstrap
+### Bootstrap
 ```{r, eval = FALSE}
 bootdt <- rbindlist(bootsamp)
 resdat2 <- data.table(x = log10(bootdt$t_btwn_samp), y = log10(bootdt$plot_res))
@@ -410,7 +374,7 @@ dev.off()
 
 ```
 
-### On primary dataset only
+### Primary dataset (main figure)
 ```{r, eval = FALSE}
 resdat3 <- data.table(x = log10(to_infin_byond(datf$t_btwn_samp)), 
                       y = log10(datf$plot_res))
@@ -517,7 +481,7 @@ Just for the four main variables. Rules:
 + If `plot_res` and/or `n_sites` uncertain, then `sampled_area` must be. Recalculate using random draw within the uncertain variable 
 + If `t_btwn_samp` and/or `samp_duration` uncertain, do the same as above, but we have no variable for n repeats for calculating `study_duration`.
 
-```{r, eval = FALSE}
+```{r}
 svars <- c("plot_res", "n_sites", "sampled_area", "samp_duration",
            "t_btwn_samp", "study_duration")
 
@@ -525,7 +489,7 @@ sens <- gsub("\\\\", ";", dat$sensitivity)
 sens <- gsub(", ", ";", gsub("; ", ";", sens))
 sens <- tolower(sens)
 sensl <- strsplit(sens, ";")
-unique(unlist(sensl))
+# unique(unlist(sensl))
 
 sens2 <- gsub("plo_", "plot_", sens)  # fix this one
 sens2 <- gsub("[[:blank:]]", "_", sens2)  # replace spaces with _
@@ -550,7 +514,7 @@ for(i in 1:nrow(corrtab)) {
 sens2[is.na(sens2)] <- "none"
 sensl2 <- lapply(1:length(sens2), function(x) strsplit(sens2[x], ";")[[1]])
 # unique(unlist(sensl))
-unique(unlist(sensl2))
+# unique(unlist(sensl2))
 
 # create a sensitivity table
 senst <- do.call(cbind.data.frame, lapply(svars, function(x) {
@@ -584,11 +548,11 @@ id <- which((senst$res == 1 | senst$n == 1) & senst$sarea == 0)
 senst[id, "sarea"] <- 1
 
 # percentage of records that are uncertain
-colSums(senst) / nrow(senst) * 100
+round(colSums(senst) / nrow(senst) * 100, 1)
 
 ```
 
-### Varying kernel sizes on resolution versus extent
+### Varying kernel sizes
 ```{r,eval = FALSE}
 # resolution data
 # resdat <- data.table(x = log10(datf$t_btwn_samp), y = log10(datf$plot_res))
@@ -621,7 +585,9 @@ colSums(senst) / nrow(senst) * 100
 # vary the kernel size about them
 kernsl <- lapply(c(0.4, 0.6, 0.8, 1), function(x) {
   rr <- kdensity(rx[1], rx[2], ry[1], ry[2], 0.1, resdat3, x)
+  rr <- (rr / cellStats(rr, sum)) * 100
   er <- kdensity(ex[1], ex[2], ey[1], ey[2], 0.1, extdat3, x)
+  er <- (er / cellStats(er, sum)) * 100
   kerns <- list("res" = rr, "ext" = er)
 })
 
@@ -636,19 +602,23 @@ lapply(kernsl, function(x) {
        las = 2, tcl = -0.2, cex.axis = cxa)
   axis(2, at = aaxis1$logres[-1], labels = alab1[-1], las = 2, tcl = -0.2, 
        cex.axis = cxa)  
-  aargs <- list(mgp = c(3, 0.25, 0), at = brklabs, labels = brklabs, 
+  aargs <- list(mgp = c(3, 0.25, 0), #at = brklabs, labels = brklabs, 
                 cex.axis = cxa, tcl = -0.1)
   plot(x$res, legend.only = TRUE, axis.args = aargs, legend.width = 1.25,
-     legend.shrink = 0.9, breaks = brks, col = rev(terrain.colors(30)))
+     legend.shrink = 0.9, #breaks = brks, 
+     col = rev(terrain.colors(30)))
   
   image(x$ext, col = rev(terrain.colors(30)), axes = FALSE, xlab = "", 
         ylab = "")
-  axis(1, at = taxis2$logdays, labels = taxis2$label, las = 2)
-  axis(2, at = aaxis2$logarea, labels = alab2, las = 2)
-  aargs <- list(mgp = c(3, 0.25, 0), at = brklabs2, labels = brklabs2, 
+  axis(1, at = taxis2$logdays[-5], labels = taxis2$label[-5], las = 2,
+       cex.axis = cxa, tcl = -0.2)
+  axis(2, at = aaxis2$logarea, labels = alab2[-2], las = 2, cex.axis = cxa,
+       tcl = -0.2)
+  aargs <- list(mgp = c(3, 0.25, 0), #at = brklabs2, labels = brklabs2, 
                 cex.axis = cxa, tcl = -0.1)
   plot(x$ext, legend.only = TRUE, axis.args = aargs, legend.width = 1.25,
-       legend.shrink = 0.9, breaks = brks2, col = rev(terrain.colors(30)))
+       legend.shrink = 0.9, #breaks = brks2, 
+       col = rev(terrain.colors(30)))
 })
 par(xpd = NA)
 xx <- grconvertX(0.5, from = "ndc", to = "inches")
