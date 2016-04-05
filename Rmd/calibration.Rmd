@@ -36,7 +36,7 @@ cal[, inout := ifelse(is.na(n_sites), 0, 1)]
 # write.csv(cal, file = fp(p_dat, "merged_calibrationf.csv"))
 ```
 
-```{r}
+```{r, warning = FALSE}
 # external fixes and recodes, bring back in
 # cal <- data.table(read_excel(fp(p_dat, "merged_calibrationf.xlsx")))
 cal <- data.table(read_excel(fp(p_dat, "merged_calibrationff.xlsx")))
@@ -123,16 +123,16 @@ colMeans(sapply(varnms, function(i) {
 ### By feature (individual records) across DOIs
 ```{r, results='hold'}
 CV <- function(x) sd(x) / mean(x)
-rnms <- c("DOI", "feature", "observer", "plot_res", "n_sites", "t_btwn_samp",
-          "study_duration")
+rnms <- c("DOI", "feature", "observer", "plot_res", "n_sites", 
+          "sampled_area", "t_btwn_samp", "study_duration")
 calr <- cal[, rnms, with = FALSE]
 # calr[feature != 99, ]
 # calr[feature != 99, lapply(.SD, mean), by = .(DOI, feature), 
 #      .SDcols = rnms[4:7]]
 # calr[feature != 99, .N, by = .(DOI, feature)]
 calr[feature != 99, lapply(.SD, CV), by = .(DOI, feature), 
-     .SDcols = rnms[4:7]][, lapply(.SD, mean, na.rm = TRUE), 
-                          .SDcols = rnms[4:7]]
+     .SDcols = rnms[4:8]][, lapply(.SD, mean, na.rm = TRUE), 
+                          .SDcols = rnms[4:8]]
 
 # par(mfcol = c(10, 4), mar = c(2, 2, 2, 2), mgp = c(1.5, 0.5, 0))
 # mus[, plot(plot_res), by = DOI]

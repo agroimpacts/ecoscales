@@ -119,38 +119,8 @@ names(cal)</code></pre>
 <pre class="r"><code>cal[, c(&quot;notes&quot;, &quot;V29&quot;) := NULL]
 for(j in names(cal)[c(4:5, 10:24)]) {
   set(cal, j = j, value = as.numeric(cal[[j]]))
-}</code></pre>
-<pre><code>## Warning in set(cal, j = j, value = as.numeric(cal[[j]])): NAs introduced by
-## coercion</code></pre>
-<pre><code>## Warning in set(cal, j = j, value = as.numeric(cal[[j]])): NAs introduced by
-## coercion</code></pre>
-<pre><code>## Warning in set(cal, j = j, value = as.numeric(cal[[j]])): NAs introduced by
-## coercion</code></pre>
-<pre><code>## Warning in set(cal, j = j, value = as.numeric(cal[[j]])): NAs introduced by
-## coercion</code></pre>
-<pre><code>## Warning in set(cal, j = j, value = as.numeric(cal[[j]])): NAs introduced by
-## coercion</code></pre>
-<pre><code>## Warning in set(cal, j = j, value = as.numeric(cal[[j]])): NAs introduced by
-## coercion</code></pre>
-<pre><code>## Warning in set(cal, j = j, value = as.numeric(cal[[j]])): NAs introduced by
-## coercion</code></pre>
-<pre><code>## Warning in set(cal, j = j, value = as.numeric(cal[[j]])): NAs introduced by
-## coercion</code></pre>
-<pre><code>## Warning in set(cal, j = j, value = as.numeric(cal[[j]])): NAs introduced by
-## coercion</code></pre>
-<pre><code>## Warning in set(cal, j = j, value = as.numeric(cal[[j]])): NAs introduced by
-## coercion</code></pre>
-<pre><code>## Warning in set(cal, j = j, value = as.numeric(cal[[j]])): NAs introduced by
-## coercion</code></pre>
-<pre><code>## Warning in set(cal, j = j, value = as.numeric(cal[[j]])): NAs introduced by
-## coercion</code></pre>
-<pre><code>## Warning in set(cal, j = j, value = as.numeric(cal[[j]])): NAs introduced by
-## coercion</code></pre>
-<pre><code>## Warning in set(cal, j = j, value = as.numeric(cal[[j]])): NAs introduced by
-## coercion</code></pre>
-<pre><code>## Warning in set(cal, j = j, value = as.numeric(cal[[j]])): NAs introduced by
-## coercion</code></pre>
-<pre class="r"><code># length(which(is.na(cal$feature)))</code></pre>
+}
+# length(which(is.na(cal$feature)))</code></pre>
 <div id="agreement-on-studies-includedexcluded" class="section level2">
 <h2>Agreement on studies included/excluded</h2>
 <pre class="r"><code># ndois &lt;- cal[, unique(DOI)]  # check on number of journals
@@ -292,21 +262,21 @@ for(i in varnms) {
 <div id="by-feature-individual-records-across-dois" class="section level3">
 <h3>By feature (individual records) across DOIs</h3>
 <pre class="r"><code>CV &lt;- function(x) sd(x) / mean(x)
-rnms &lt;- c(&quot;DOI&quot;, &quot;feature&quot;, &quot;observer&quot;, &quot;plot_res&quot;, &quot;n_sites&quot;, &quot;t_btwn_samp&quot;,
-          &quot;study_duration&quot;)
+rnms &lt;- c(&quot;DOI&quot;, &quot;feature&quot;, &quot;observer&quot;, &quot;plot_res&quot;, &quot;n_sites&quot;, 
+          &quot;sampled_area&quot;, &quot;t_btwn_samp&quot;, &quot;study_duration&quot;)
 calr &lt;- cal[, rnms, with = FALSE]
 # calr[feature != 99, ]
 # calr[feature != 99, lapply(.SD, mean), by = .(DOI, feature), 
 #      .SDcols = rnms[4:7]]
 # calr[feature != 99, .N, by = .(DOI, feature)]
 calr[feature != 99, lapply(.SD, CV), by = .(DOI, feature), 
-     .SDcols = rnms[4:7]][, lapply(.SD, mean, na.rm = TRUE), 
-                          .SDcols = rnms[4:7]]
+     .SDcols = rnms[4:8]][, lapply(.SD, mean, na.rm = TRUE), 
+                          .SDcols = rnms[4:8]]
 
 # par(mfcol = c(10, 4), mar = c(2, 2, 2, 2), mgp = c(1.5, 0.5, 0))
 # mus[, plot(plot_res), by = DOI]</code></pre>
-<pre><code>##     plot_res   n_sites t_btwn_samp study_duration
-## 1: 0.6422684 0.4517166    1.033973       1.229892</code></pre>
+<pre><code>##     plot_res   n_sites sampled_area t_btwn_samp study_duration
+## 1: 0.6422684 0.4517166    0.7689253    1.033973       1.229892</code></pre>
 <p>Tim needs to fix paleo studies in calibration (and main set) giving too much credit to effective area. [DONE]</p>
 <p>Others need to fix their study duration figures. Paul on paleo one in calibration, Choi, Chang, etc in main set. [Ahmed remaining]</p>
 <p>For N-sites, count sites only once if there are repeated measures taken at them, e.g. Jonathan in 10.1111/j.1466-8238.2009.00454.x for bird counts [Chang, Ahmed remaining]</p>
