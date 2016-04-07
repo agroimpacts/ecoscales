@@ -478,6 +478,7 @@ aargs <- list(mgp = c(3, 0.25, 0), at = brklabs, labels = brklabs,
 plot(rres3, legend.only = TRUE, axis.args = aargs, legend.width = 1.25,
      #legend.shrink = 0.9, breaks = brks, col = rev(terrain.colors(30)))
      legend.shrink = 0.9, col = rev(terrain.colors(50)))
+mtext("A", side = 3, line = -1, cex = 0.8, adj = 0.05)
 
 # extents
 # image(rext3, col = rev(terrain.colors(30)), axes = FALSE, xlab = "", 
@@ -494,6 +495,7 @@ mtext("Spatial extent", 2, cex = cxa, line = ll)
 plot(rext3, legend.only = TRUE, axis.args = aargs, legend.width = 1.25,
      #legend.shrink = 0.9, breaks = brks2, col = rev(terrain.colors(30)))
      legend.shrink = 0.9, col = rev(terrain.colors(50)))
+mtext("B", side = 3, line = -1, cex = 0.8, adj = 0.05)
 
 # spatial
 image(sres, col = rev(terrain.colors(100)), axes = FALSE, xlab = "", ylab = "")
@@ -507,6 +509,7 @@ aargs <- list(mgp = c(3, 0.25, 0), at = seq(0, 0.12, 0.02),
               labels = seq(0, 0.12, 0.02), cex.axis = cxa, tcl = -0.1)
 plot(sres, legend.only = TRUE, axis.args = aargs, legend.width = 1.25,
      legend.shrink = 0.9, col = rev(terrain.colors(100)))
+mtext("C", side = 3, line = -1, cex = 0.8, adj = 0.05)
 
 # temporal
 image(tres, col = rev(terrain.colors(50)), axes = FALSE, xlab = "", ylab = "")
@@ -521,6 +524,7 @@ aargs <- list(mgp = c(3, 0.25, 0), at = brklabs, labels = brklabs,
               cex.axis = cxa, tcl = -0.1)
 plot(tres, legend.only = TRUE, axis.args = aargs, legend.width = 1.25,
      legend.shrink = 0.9, col = rev(terrain.colors(100)))
+mtext("D", side = 3, line = -1, cex = 0.8, adj = 0.05)
 dev.off()
 
 # datf[, plot(log10(study_duration), log10(sampled_area), xlim)]
@@ -559,6 +563,7 @@ plot(h, freq = FALSE, ylab = "", las = 2,  xaxt = "n",
 axis(1, at = aaxis1$logres, labels = alab1, las = 2, cex.axis = cxa, 
      tcl = -0.2, mgp = c(2, 0.25, -0.45))
 mtext("Percent of observations", side = 2, line = 3, cex = 0.8)
+mtext("A", side = 3, line = -1.5, cex = 0.8, adj = 0.05)
 
 # extent
 h <- hist(hdat$ext, breaks = c(-6, aaxis2$logarea), plot = FALSE)
@@ -569,6 +574,7 @@ axis(1, at = c(-6, aaxis2$logarea),
      labels = c(expression(paste(NULL<="0.01m"^2)), expression(paste(0.1, m^2)), 
                 alab2[-1]), las = 2, cex.axis = cxa, 
      tcl = -0.2, mgp = c(2, 0.25, -0.45))
+mtext("B", side = 3, line = -1.5, cex = 0.8, adj = 0.05)
 
 # interval
 tax <- c(taxis2$logdays[-c(10:11)], mean(taxis2$logdays[c(10:11)]))
@@ -578,6 +584,7 @@ plot(h, freq = FALSE, ylab = "", las = 2,  xaxt = "n",
      xlab = "Sampling interval", ylim = c(0, 30), main = "", col = "blue1")
 axis(1, at = tax, labels = tlab1[-10], las = 2, cex.axis = cxa, 
      tcl = -0.2, mgp = c(2, 0.25, -0.45))
+mtext("C", side = 3, line = -1.5, cex = 0.8, adj = 0.05)
 
 # duration
 # tax <- c(taxis2$logdays[-c(10:11)], mean(taxis2$logdays[c(10:11)]))
@@ -587,6 +594,8 @@ plot(h, freq = FALSE, ylab = "", las = 2,  xaxt = "n",
      xlab = "Temporal duration", ylim = c(0, 30), main = "", col = "blue4")
 axis(1, at = taxis2$logdays, labels = tlab2, las = 2, cex.axis = cxa, 
      tcl = -0.2, mgp = c(2, 0.25, -0.45))
+mtext("D", side = 3, line = -1.5, cex = 0.8, adj = 0.05)
+
 dev.off()
 
 # stats
