@@ -12,8 +12,8 @@ Organization and random selection of titles from literature review.
 
 ```{r, eval=FALSE}
 library(lmisc)
-p_root <- full_path(proj_root(proj.dir = "lit_review"), "lit_review")
-p_data <- full_path(p_root, "data")
+p_root <- full_path(proj_root(proj.dir = "ecoscales"), "ecoscales")
+p_data <- full_path(p_root, "external/data/draws")
 
 # Read in downloaded citations and merge
 batch1 <- read.csv(full_path(p_data, "top30_from1982_set1.csv"))  

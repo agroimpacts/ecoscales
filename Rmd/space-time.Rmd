@@ -146,7 +146,7 @@ tdt[, tlog := log10(time)]
 
 # labels for temporal axes
 # return interval
-tlab1 <- c(expression("second"^-1), expression("minute"^-1),
+tlab1 <- c(expression(paste(NULL<="second"^-1)), expression("minute"^-1),
            expression("hour"^-1), expression("day"^-1), 
            expression("week"^-1), expression("month"^-1),            
            expression("year"^-1), expression("decade"^-1),
@@ -159,13 +159,12 @@ taxis1 <- data.table(taxis1)
 setnames(taxis1, names(taxis1), "days")
 taxis1[, logdays := log10(days)]
 
-taxis2 <- cbind.data.frame(
-  c("second", "minute", "hour", "day", "week", "month", "year", "decade",
-    "century", "millenium", "10 KA"),  
-  c(1 / (24 * 60 * 60), 1 / (24 * 60), 1 / 24, 1, 7, 30, 365, 365 * 10, 
-    365 * 100, 365 * 1000, 365 * 10000))
+tlab2 <- c(expression(NULL<="second"), "minute", "hour", "day", "week", "month",
+           "year","decade", "century", "millenium", "10 KA")  
+taxis2 <- cbind.data.frame(c(1 / (24 * 60 * 60), 1 / (24 * 60), 1 / 24, 1, 7, 30,
+                             365, 365 * 10, 365 * 100, 365 * 1000, 365 * 10000))
 taxis2 <- data.table(taxis2)
-setnames(taxis2, names(taxis2), c("label", "days"))
+setnames(taxis2, names(taxis2), c("days"))
 taxis2[, logdays := log10(days)]
 
 # spatial
@@ -173,12 +172,13 @@ taxis2[, logdays := log10(days)]
 # axis(1, at = 1:8, labels = lab, las = 2)
 
 # plot resolution
-alab1 <- c(expression("0.01 cm"^2), expression("0.1 cm"^2), 
+alab1 <- c(expression(paste(NULL<="0.01 cm"^2)), expression("0.1 cm"^2), 
            expression("1 cm"^2), expression("10 cm"^2),
            expression("100 cm"^2), expression("1000 cm"^2), 
            expression("1 m"^2), expression("10 m"^2),
            expression("100 m"^2), expression("1000 m"^2), 
-           "1 ha", "10 ha", "100 ha", "1000 ha", "10000 ha")
+           "1 ha", "10 ha", "100 ha", "1000 ha", 
+           expression(paste(NULL>="10000 ha")))
 
 aaxis1 <- cbind.data.frame(c(0.000001, 0.00001, 0.0001, 0.001, 0.01, 0.1,
                              1^2, 10, 10^2, 10^3, 10^4, 10^5, 10^6, 10^7, 10^8))
@@ -187,9 +187,9 @@ setnames(aaxis1, names(aaxis1), "res")
 aaxis1[, logres := log10(res)]
 
 # sampled area
-alab2 <- c(expression("1 m"^2), expression("10 m"^2), expression("100 m"^2),
-           expression("1000 m"^2), expression("1 ha"), expression("10 ha"),
-           expression("100 ha"), expression("1000 ha"), 
+alab2 <- c(expression(paste(NULL<="1 m"^2)), expression("10 m"^2), 
+           expression("100 m"^2), expression("1000 m"^2), expression("1 ha"),
+           expression("10 ha"), expression("100 ha"), expression("1000 ha"), 
            expression(paste(10^4 , " ha")), expression(paste(10^5 , " ha")), 
            expression(paste(10^6 , " ha")), expression(paste(10^7 , " ha")), 
            expression(paste(10^8 , " ha")), expression(paste(10^9 , " ha")), 
@@ -280,7 +280,7 @@ plot(rres, legend.only = TRUE, axis.args = aargs, legend.width = 1.25,
      legend.shrink = 0.9, breaks = brks, col = rev(terrain.colors(30)))
 image(rext, col = rev(terrain.colors(30)), axes = FALSE, xlab = "", 
       ylab = "", breaks = brks2)
-axis(1, at = taxis2$logdays[-5], labels = taxis2$label[-5], las = 2,
+axis(1, at = taxis2$logdays[-5], labels = tlab2[-5], las = 2,
      cex.axis = cxa, tcl = -0.2)
 axis(2, at = aaxis2$logarea, labels = alab2[-2], las = 2, cex.axis = cxa,
      tcl = -0.2)
@@ -360,7 +360,7 @@ plot(rres2, legend.only = TRUE, axis.args = aargs, legend.width = 1.25,
 
 image(rext2, col = rev(terrain.colors(30)), axes = FALSE, xlab = "", 
       ylab = "", breaks = brks2)
-axis(1, at = taxis2$logdays[-5], labels = taxis2$label[-5], las = 2,
+axis(1, at = taxis2$logdays[-5], labels = tlab2[-5], las = 2,
      cex.axis = cxa, tcl = -0.2)
 axis(2, at = aaxis2$logarea, labels = alab2[-2], las = 2, cex.axis = cxa,
      tcl = -0.2)
@@ -403,6 +403,33 @@ extdat3[y < ey[1], y := ey[1]]
 extdat3[y > ey[2], y := ey[2]]
 coordinates(extdat3) <- ~x + y
 
+# temporal framing
+tempdat <- data.table(x = log10(to_infin_byond(datf$t_btwn_samp)), 
+                      y = log10(datf$study_duration))
+tempdat$n <- rep(1, nrow(tempdat))
+tx <- range(tempdat$x)
+tx <- round(rx / 0.5) * 0.5  # round to nearest 0.5
+tx[2] <- 6.56
+tempdat[x < rx[1], x := rx[1]]
+tempdat[x > rx[2], x := rx[2]]
+ty <- range(taxis2$logdays)
+ty <- c(floor(ty[1]), 5.56)#ceiling(ex[2]))
+tempdat[y < ty[1], y := ty[1]]
+tempdat[y > ty[2], y := ty[2]]
+coordinates(tempdat) <- ~x + y
+
+# spatial framing
+spatdat <- data.table(x = log10(datf$plot_res), y = log10(datf$sampled_area))
+spatdat$n <- rep(1, nrow(spatdat))
+sx <- range(aaxis1$logres)
+sx[1] <- -5  # set limits to 0.01 cm^2
+spatdat[x < sx[1], y := sx[1]]
+spatdat[x > sx[2], y := sx[2]]
+sy <- range(aaxis2$logarea)
+spatdat[y < sy[1], y := sy[1]]
+spatdat[y > sy[2], y := sy[2]]
+coordinates(spatdat) <- ~x + y
+
 # densities
 # resolution
 rres3 <- kdensity(rx[1], rx[2], ry[1], ry[2], 0.1, resdat3, 1)
@@ -421,6 +448,14 @@ bwidth <- (rng[2] - rng[1]) / 30
 brks2 <- seq(rng[1], rng[2], bwidth)
 brklabs2 <- brklabs #round(brks2[seq(1, length(brks2), 3)], 2)
 
+# # temporal
+# tres <- kdensity(tx[1], tx[2], ty[1], ty[2], 0.1, tempdat, 1)
+# #spatial
+# sres <- kdensity(sx[1], sx[2], sy[1], sy[2], 0.1, spatdat, 1)
+# image(sres, col = rev(terrain.colors(30)))
+
+
+
 cxa = 0.7
 pdf("paper/figures/res_v_extent.pdf", width = 7, 
     height = 2.5)
@@ -432,6 +467,8 @@ axis(1, at = taxis1$logdays[-c(5, 9, 10)], labels = tlab1[-c(5, 9, 10)],
      las = 2, tcl = -0.2, cex.axis = cxa)
 axis(2, at = aaxis1$logres[-1], labels = alab1[-1], las = 2, tcl = -0.2, 
      cex.axis = cxa)
+mtext("Sampling interval", 1, cex = cxa, line = 3)
+mtext("Spatial resolution", 2, cex = cxa, line = 3)
 
 aargs <- list(mgp = c(3, 0.25, 0), at = brklabs, labels = brklabs, 
               cex.axis = cxa, tcl = -0.1)
@@ -440,12 +477,15 @@ plot(rres3, legend.only = TRUE, axis.args = aargs, legend.width = 1.25,
 
 image(rext3, col = rev(terrain.colors(30)), axes = FALSE, xlab = "", 
       ylab = "", breaks = brks2)
-axis(1, at = taxis2$logdays[-5], labels = taxis2$label[-5], las = 2,
+axis(1, at = taxis2$logdays[-5], labels = tlab2[-5], las = 2,
      cex.axis = cxa, tcl = -0.2)
 axis(2, at = aaxis2$logarea, labels = alab2[-2], las = 2, cex.axis = cxa,
      tcl = -0.2)
 aargs <- list(mgp = c(3, 0.25, 0), at = brklabs2, labels = brklabs2, 
               cex.axis = cxa, tcl = -0.1)
+mtext("Temporal duration", 1, cex = cxa, line = 3)
+mtext("Spatial extent", 2, cex = cxa, line = 3)
+
 plot(rext3, legend.only = TRUE, axis.args = aargs, legend.width = 1.25,
      legend.shrink = 0.9, breaks = brks2, col = rev(terrain.colors(30)))
 dev.off()

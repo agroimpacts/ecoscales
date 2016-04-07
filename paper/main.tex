@@ -1,0 +1,211 @@
+% Use only LaTeX2e, calling the article.cls class and 12-point type.
+
+\documentclass[12pt]{article}
+
+% Users of the {thebibliography} environment or BibTeX should use the
+% scicite.sty package, downloadable from *Science* at
+% www.sciencemag.org/about/authors/prep/TeX_help/ .
+% This package should properly format in-text
+% reference calls and reference-list numbers.
+
+\usepackage{scicite}
+\usepackage{times}
+\usepackage{graphicx}
+\usepackage{lineno}
+
+% The following parameters seem to provide a reasonable page setup.
+
+\topmargin 0.0cm
+\oddsidemargin 0.2cm
+\textwidth 16cm 
+\textheight 21cm
+\footskip 1.0cm
+
+
+%The next command sets up an environment for the abstract to your paper.
+
+\newenvironment{sciabstract}{%
+\begin{quote} \bf}
+{\end{quote}}
+
+
+% If your reference list includes text notes as well as references,
+% include the following line; otherwise, comment it out.
+
+\renewcommand\refname{References and Notes}
+
+% The following lines set up an environment for the last note in the
+% reference list, which commonly includes acknowledgments of funding,
+% help, etc.  It's intended for users of BibTeX or the {thebibliography}
+% environment.  Users who are hand-coding their references at the end
+% using a list environment such as {enumerate} can simply add another
+% item at the end, and it will be numbered automatically.
+
+\newcounter{lastnote}
+\newenvironment{scilastnote}{%
+\setcounter{lastnote}{\value{enumiv}}%
+\addtocounter{lastnote}{+1}%
+\begin{list}%
+{\arabic{lastnote}.}
+{\setlength{\leftmargin}{.22in}}
+{\setlength{\labelsep}{.5em}}}
+{\end{list}}
+
+
+% Include your paper's title here
+
+\title{The Spatial and Temporal Domains of Modern Ecology \\
+OR Ecology's Spatio-temporal Domains\\
+OR Space, Time, and Ecology} 
+ 
+\author
+{Lyndon Estes$^{\ast1, 2}$, Labeeb Ahmed$^{3}$, Kelly Caylor$^{2}$, Jason Chang$^{3}$, \\
+Jonathan Choi$^{4}$, Erle Ellis$^{3}$, Paul Elsen$^{4}$, and Tim Treur$^{4}$ \\
+\\
+\normalsize{$^{1}$Woodrow Wilson School, Princeton University, Princeton, NJ 08544, USA}\\
+\normalsize{$^{2}$Civil and Environmental Engineering, Princeton University, Princeton, NJ 08544, USA}\\
+\normalsize{$^{3}$Geography and Environmental Systems, University of Maryland Baltimore County,}\\
+\normalsize{Baltimore, MD 21250, USA}\\
+\normalsize{$^{4}$Ecology and Evolutionary Biology, Princeton University, Princeton, NJ 08544, USA}\\
+\\
+\normalsize{$^\ast$To whom correspondence should be addressed; E-mail:  lestes@princeton.edu.}
+}
+% Include the date command, but leave its argument blank.
+
+\date{}
+
+
+
+%%%%%%%%%%%%%%%%% END OF PREAMBLE %%%%%%%%%%%%%%%%
+
+
+
+\begin{document} 
+
+% Double-space the manuscript.
+
+\baselineskip24pt
+
+% Make the title.
+
+\maketitle 
+
+
+
+% Place your abstract within the special {sciabstract} environment.
+
+\begin{sciabstract}
+An abstract
+%  An example of the style is the special\texttt{\{sciabstract\}} environment used to set up the abstract you see here.
+\end{sciabstract}
+
+\linenumbers
+The scales at which ecosystems are observed plays a critical role in shaping our understanding of how they are structured and function \cite{levin_problem_1992,chave_problem_2013}.  Ecological patterns emerge within temporal and spatial domains that may be coarser or finer than the processes that shape them, which means that investigation across multiple scales is the \emph{sine qua non} for understanding ecological phenomena \cite{levin_problem_1992}. Awareness of the importance of scale has grown rapidly since the 1980s, accelerated by the need to understand how changes in the global climate, ocean, and land systems are affecting everything from individual populations (e.g. cite) to entire biomes (e.g. cite), while technological advances in areas such as remote sensing and genetics are making it ever-easier to quantify ecological features across a broad range of scales \cite{schneider_rise_2001,chave_problem_2013}.  
+
+Given the importance of multi-scale studies for providing ecological understanding, and the growing ability to undertake them, it is important to rigorously assess whether ecology is becoming a multi-scale discipline. One approach to answering this question is to quantify the spatial and temporal domains within which observations in ecological studies are collected. Observations provide the necessary means for developing and testing the models that explain why ecological patterns vary in time and space \cite{levin_problem_1992,tilman_ecological_1989}, thus it stands to reason that the temporal and spatial range of ecological observations, and their density within different portions of those ranges, will shed light on modern ecology's progress towards a holistic, predictive understanding of ecosystems \cite{chave_problem_2013,levin_problem_1992}. In this study, we quantified the spatio-temporal domain of current ecological studies, using a representative sample of papers published between 2004-2014 in the top 30 ecological journals (by 2014 impact factor) to extract and quantify two key dimensions of spatial observation, resolution (grain) and total spatial extent, and their temporal corollaries, sampling interval and total temporal duration. We collected this information from 367 ecological observations \cite[defined here as non-manipulated, or ``natural'']{tilman_ecological_1989} reported within a 148 paper subset of 284 (add Tim's also) randomly selected articles . 
+
+%16 + 29 + 26 + 67 + 14 + tim + 10
+
+
+\begin{enumerate}
+ \item Intro/rationale 
+% \begin{enumerate}
+%   \item Understanding of natural patterns and processes depends upon the scales at which they are observed \cite{levin_problem_1992}(maybe   provide an example or two, could just come from Schneider)
+%    \item Scale is an increasingly measured aspect of ecosystems \cite{schneider_rise_2001}
+%    \item Given this importance, and the increasing awareness of scale in ecology, it is timely to consider the scales at which ecosystems are observed, as this provides insight into how our understanding of ecosystems might be affected (work in Levin's language about this). 
+%    \end{enumerate}
+   \item{What we did}
+   \begin{enumerate}
+    \item Examined representative sample of papers from top 30 ecology journals--random sample of all titles from 2005-2014. Selected studies having observation component, excluding experimental manipulations, purely theoretical studies, commentaries, etc. 
+    \item Extracted information on the spatial resolution of the study, that is, the two-dimensional space that was observed in the study; the temporal analog, which was the interval between repeat observations; the total spatial extent covered by the observations; the total time period covered. 
+    \item We recorded the scales that were actually covered by the observations, rather than potential scales that the collected data might represent--this would require information on autocorrelation length, which is not provided. 
+    \subitem For spatial resolution, this was the finest unit representing complete spatial coverage, etc. etc. 
+    \subitem Limitation for ocean studies, we did not study third dimension, volume (might be more relevant). 
+   \end{enumerate}
+   \item{What we found} 
+   \begin{enumerate}
+    \item We reviewed a total of X randomly selected papers, of which 148 met our inclusion criteria and from which 367 distinct records related to observations made were collected. [Say something about size of sample and amount of time collected???].  
+    \item  Of these, the vast majority (X\%) were field-based studies, while Y\% involved automated collection of data via instrumentation, and just Z\% made use of remote sensing.   
+    \item From a perspective of temporal resolution, the majority of observations made in ecology are not repeated.
+    \item Spatial resolution - most observations are between 10cm$^2$ to 10m$^2$
+    \item Spatial extent
+    \item Temporal extent
+   \end{enumerate}
+   \item{Implications} 
+   \begin{enumerate}
+    \item Although limited sample size, insight into the scales at which science of ecology is making bulk of observations
+    \item Despite recognized importance of making observation across scales \cite{levin_problem_1992}, this does not appear to be happening. 
+    \item Technical capabilities for making observations are not achieving adoption, despite potential of remote sensing to provide multi-scale ecological data \cite{estes_predictive_2011,estes_habitat_2008} 
+   \end{enumerate}
+
+\end{enumerate}
+
+Notes: Wheatley and Johnson (2009) citing arbitrariness of scales in wildlife studies (cited by Chave). 
+
+\begin{figure}[!ht]
+%\begin{wrapfigure}{c}{1\textwidth}
+\includegraphics[width=1\textwidth]{figures/res_v_extent.pdf}
+\vspace{-0.15 cm}
+\caption{}
+\label{afoto1}
+\end{figure}
+
+%\paragraph*{Displayed math.} 
+
+\bibliography{/Users/lestes/Dropbox/publications/fullbib}
+
+\bibliographystyle{Science}
+
+
+
+% Following is a new environment, {scilastnote}, that's defined in the
+% preamble and that allows authors to add a reference at the end of the
+% list that's not signaled in the text; such references are used in
+% *Science* for acknowledgments of funding, help, etc.
+
+%\begin{scilastnote}
+%\item We've included in the template file \texttt{scifile.tex} a new
+%environment, \texttt{\{scilastnote\}}, that generates a numbered final
+%citation without a corresponding signal in the text.  This environment
+%can be used to generate a final numbered reference containing
+%acknowledgments, sources of funding, and the like, per {\it Science\/}
+%style.
+%\end{scilastnote}
+
+
+% For your review copy (i.e., the file you initially send in for
+% evaluation), you can use the {figure} environment and the
+% \includegraphics command to stream your figures into the text, placing
+% all figures at the end.  For the final, revised manuscript for
+% acceptance and production, however, PostScript or other graphics
+% should not be streamed into your compliled file.  Instead, set
+% captions as simple paragraphs (with a \noindent tag), setting them
+% off from the rest of the text with a \clearpage as shown  below, and
+% submit figures as separate files according to the Art Department's
+% instructions.
+
+
+\clearpage
+
+
+\end{document}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
