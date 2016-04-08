@@ -17,7 +17,7 @@
 
 \topmargin 0.0cm
 \oddsidemargin 0.2cm
-\textwidth 16cm 
+\textwidth 16.5cm 
 \textheight 21cm
 \footskip 1.0cm
 
@@ -115,12 +115,11 @@ In terms of spatial resolution, here defined as the two-dimensional space in whi
 \label{afoto1}
 \end{figure}
 
-In the temporal dimensions, 30\% of the assessed observations were ``once-offs'' that were not repeated (Fig. 1C). High frequency observations (ranging between as or more frequent than once per second up to daily) comprised 25\% of observations, 20\% were made at daily to monthly time steps, while 35\% and 4\% were respectively made at monthly up to yearly and yearly to decadal intervals.  The temporal duration of studies--the total amount of time the ecological feature was observed (the number of repeat observations multiplied by the effective sampling duration, SI)--was less than 1 day for 59\% of sampled observations,  35\% between 1 day and 1 year, and just 6\% covering greater than 1 year (including several paleoecological studies covering centuries to millenia; Fig. 1D). 
+In the temporal dimensions, 30\% of the assessed observations were ``once-offs'' that were not repeated (Fig. 1C). High frequency observations (ranging between as or more frequent than once per second up to daily) comprised 25\% of observations, 20\% were made at daily to monthly time steps, while 35\% and 4\% were respectively made at monthly up to yearly and yearly to decadal intervals.  The temporal duration of studies--the total amount of time the ecological feature was observed (the number of repeat observations multiplied by the effective sampling duration, SI)--was less than 1 day for 59\% of sampled observations,  35\% between 1 day and 1 year, and just 6\% covering greater than 1 year (including several paleoecological studies covering centuries to millenia; Fig. 1D).
 
-The juxtaposition of these scales of observations provides further insight into the spatio-temporal distribution of ecological observations (Fig. 2).  
-Vast majority of cases, plot resolution scales directly with the total extent of the study--these are field studies.  Those with 
+The juxtaposition of these observational scales provides further insight into the spatio-temporal distribution of ecological observations and the domains in which they are concentrated (illustrated using two-dimensional kernel density estimates of the log-transformed scale values; Fig. 2). A comparison between the sampling interval and spatial resolution of ecological observations reveals three primary regions of observational concentration (Fig. 1A), the greatest being once-off samples with resolutions of 100 cm$^2$ to 1 m$^2$, followed next by observations of daily to monthly frequency of slightly finer resolution domain (10 cm$^2$ to slightly less than 1 m$^2$), and then a smaller center of monthly to yearly measurements collected at scales of 0.1-10 ha.  Almost no observations were collected with intervals greater than a decade, at all spatial resolutions, while high frequency (daily to sub-daily) observations were rare and collected at very fine resolutions ($<$1000 cm$^2$). Almost no observations with $\geq$1 m$^2$ resolution were collected with sub-second (effectively continuous) to hourly frequency, and the density of 10-1000 m$^2$ resolution, sub-daily to sub-monthly frequency observations was also low. 
 
-\begin{figure}[!ht]
+\begin{figure}[h]
 %\begin{wrapfigure}{c}{1\textwidth}
 \includegraphics[width=1\textwidth]{figures/kde4.pdf}
 \vspace{-0.15 cm}
@@ -128,46 +127,23 @@ Vast majority of cases, plot resolution scales directly with the total extent of
 \label{afoto1}
 \end{figure}
 
+In terms of temporal duration and spatial extent (Fig. 1B), the highest frequency ecological observations span time periods of 1 hour to $<$1 month, and cover $\leq$1 m$^2$ of space. The duration-extent domain extent appears to reach its apex at one day of duration and 1000-10,000 ha of extent. The very few observations collected that cover $>$1,000,000 ha were of sub-second duration, as these were collected by satellites that make instantaneous measurements.  
 
-Reflect nature of observation approaches. 
-Use of remote sensing still relatively rare in ecological studies--thus the synoptic view of ecosystems not being seen.  
+Comparing the two spatial scales of measurements against one another shows that observational extent scales log-linearly with resolution (Fig. 1C), revealing a nearly 1:1 correspondence up to 100 ha of both resolution and extent. This relationship indicates that the larger the plot size, the fewer the number of replicates, which is a characteristic of field-based studies because effort and cost typically increases with plot size \cite{kareiva_spatial_1988}. In our sample, 85\% of the observations were collected using manual, field-based methods. These stand in contrast to remotely sensed observations, which made up just 4\% of the sample, but which are characterized by plot resolutions that are very high relative to their spatial extent--these are the low density patches above the 1:1 line defined by the denser concentration of field studies, namely the patches at the following resolution/extent domains; 1-10 m$^2$/100-10,000 ha; 0.1-10 ha/10 million ha; 10-10,000 ha/100,000-10 billion ha.  
 
-High frequency, high resolution sampling also rare--gap into which UAS is only just allowing to be filled. 
+Comparing sampling interval to temporal duration shows that the bulk of once-off observations last between a minute to a week in duration (Fig. 1D). For repeated observations, the greatest density of observations were those made at monthly to yearly intervals and an aggregate duration of hours to weeks.  Very few repeat observations exceeded a total duration measured in years, and those that did were of daily to yearly frequency.  
 
-\begin{enumerate}
-% \item Intro/rationale 
-%    \begin{enumerate}
-%   \item Understanding of natural patterns and processes depends upon the scales at which they are observed \cite{levin_problem_1992}(maybe   provide an example or two, could just come from Schneider)
-%    \item Scale is an increasingly measured aspect of ecosystems \cite{schneider_rise_2001}
-%    \item Given this importance, and the increasing awareness of scale in ecology, it is timely to consider the scales at which ecosystems are observed, as this provides insight into how our understanding of ecosystems might be affected (work in Levin's language about this). 
-%    \end{enumerate}
-   \item{What we did}
-   \begin{enumerate}
-%    \item Examined representative sample of papers from top 30 ecology journals--random sample of all titles from 2005-2014. Selected studies having observation component, excluding experimental manipulations, purely theoretical studies, commentaries, etc. 
-%    \item Extracted information on the spatial resolution of the study, that is, the two-dimensional space that was observed in the study; the temporal analog, which was the interval between repeat observations; the total spatial extent covered by the observations; the total time period covered. 
-    \item We recorded the scales that were actually covered by the observations, rather than potential scales that the collected data might represent--this would require information on autocorrelation length, which is not provided. 
-%    \subitem For spatial resolution, this was the finest unit representing complete spatial coverage, etc. etc. 
-    \subitem Limitation for ocean studies, we did not study third dimension, volume (might be more relevant). 
-   \end{enumerate}
-   \item{What we found} 
-   \begin{enumerate}
-%    \item We reviewed a total of X randomly selected papers, of which 148 met our inclusion criteria and from which 367 distinct records related to observations made were collected. [Say something about size of sample and amount of time collected???].  
-    \item  Of these, the vast majority (X\%) were field-based studies, while Y\% involved automated collection of data via instrumentation, and just Z\% made use of remote sensing.   
-%    \item From a perspective of temporal resolution, the majority of observations made in ecology are not repeated.
-%    \item Spatial resolution - most observations are between 10cm$^2$ to 10m$^2$
-%    \item Spatial extent
-%    \item Temporal extent
-   \end{enumerate}
-   \item{Implications} 
-   \begin{enumerate}
-    \item Although limited sample size, insight into the scales at which science of ecology is making bulk of observations
-    \item Despite recognized importance of making observation across scales \cite{levin_problem_1992}, this does not appear to be happening. 
-    \item Technical capabilities for making observations are not achieving adoption, despite potential of remote sensing to provide multi-scale ecological data \cite{estes_predictive_2011,estes_habitat_2008} 
-   \end{enumerate}
-
-\end{enumerate}
-
+Reflect nature of observation approaches. \\
+Use of remote sensing still relatively rare in ecological studies--thus the synoptic view of ecosystems not being seen.  \\
+High frequency, high resolution sampling also rare--gap into which UAS is only just allowing to be filled. \\
+Don't forget to mention automated approaches. 
+Limitation for ocean studies, we did not study third dimension, volume (might be more relevant).
 Notes: Wheatley and Johnson (2009) citing arbitrariness of scales in wildlife studies (cited by Chave). 
+
+Although limited sample size, insight into the scales at which science of ecology is making bulk of observations
+Despite recognized importance of making observation across scales \cite{levin_problem_1992}, this does not appear to be happening. 
+Technical capabilities for making observations are not achieving adoption, despite potential of remote sensing to provide multi-scale ecological data \
+
 
 %\paragraph*{Displayed math.} 
 
