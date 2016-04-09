@@ -28,6 +28,13 @@ dat[, DOI := gsub("DOI:|doi:|DOI: |doi: |DOI ", "", DOI)]
 dat[, DOI := gsub("\\s", "", DOI)]  # remove DOI and whitespace
 
 dat <- dat[, names(dat)[1:20], with = FALSE]
+
+unique(dat$study_type)
+dat[, study_type := tolower(study_type)]
+kwords <- c("field", "paleo", "remote", "automated", "other")
+for(i in 1:length(kwords)) dat[like(study_type, kwords[i]), st := i]
+dat[st == 5, .N] / nrow(dat)
+
 ```
 
 `r length(unique(dat$DOI))` papers  main analysis
@@ -35,23 +42,23 @@ dat <- dat[, names(dat)[1:20], with = FALSE]
 ## Data prep
 ### Merge full and calibration datasets
 ```{r, message=FALSE, warning=FALSE, results='hide'}
-dat2 <- copy(dat[, .(plot_res, n_sites, sampled_area, samp_duration,
+dat2 <- copy(dat[, .(st, plot_res, n_sites, sampled_area, samp_duration,
                      t_btwn_samp, study_duration)])
-
-rnms <- c("DOI", "feature", "observer", "plot_res", "n_sites", 
+rnms <- c("st", "DOI", "feature", "observer", "plot_res", "n_sites", 
           "sampled_area", "t_btwn_samp", "study_duration")
 calr <- cal[, rnms, with = FALSE]
-for(j in names(calr)[c(2, 4:8)]) set(calr, j=j, value = as.numeric(calr[[j]]))
+for(j in names(calr)[c(3, 5:9)]) set(calr, j=j, value = as.numeric(calr[[j]]))
 
 # select down to columns of interest
+# st <- calr$study_type[which(calr$feature != 99)]
 calr <- calr[feature != 99, lapply(.SD, mean), by = .(DOI, feature), 
-             .SDcols = rnms[4:8]]
+             .SDcols = rnms[c(1, 5:9)]]
 length(unique(calr$DOI)) + length(unique(dat$DOI))  # 148 papers providing dat
 
+# combine full and calibration
 calr[, samp_duration := NA]
 calr[, c("DOI", "feature") := NULL]
-setcolorder(calr, names(calr)[c(1:3, 6, 4:5)])
-
+setcolorder(calr, names(calr)[c(1:4, 7, 5:6)])
 datf <- rbind(cbind("dsrc" = 1, dat2), cbind("dsrc" = 2, calr))
 ```
 
@@ -465,8 +472,7 @@ par(mfrow = c(2, 2), mar = c(6, 6, 0.3, 3), oma = c(0, 0, 0.5, 1),
     mgp = c(2, 0.25, 0))
 # resolutions
 # image(rres3, col = rev(terrain.colors(30)), breaks = brks,
-image(rres3, col = rev(terrain.colors(50)), 
-     axes = FALSE, xlab = "", ylab = "")
+image(rres3, col = rev(terrain.colors(50)), axes = FALSE, xlab = "", ylab = "")
 axis(1, at = taxis1$logdays[-c(5, 10)], labels = tlab1[-c(5, 10)], 
      las = 2, tcl = -0.2, cex.axis = cxa)
 axis(2, at = aaxis1$logres[-1], labels = alab1[-1], las = 2, tcl = -0.2, 
@@ -479,6 +485,12 @@ plot(rres3, legend.only = TRUE, axis.args = aargs, legend.width = 1.25,
      #legend.shrink = 0.9, breaks = brks, col = rev(terrain.colors(30)))
      legend.shrink = 0.9, col = rev(terrain.colors(50)))
 mtext("A", side = 3, line = -1, cex = 0.8, adj = 0.05)
+# points(resdat3$x[which(datf$st == 4)], resdat3$y[which(datf$st == 4)], 
+#        pch = 20, col = "red", cex = 0.5)
+# points(resdat3$x[which(datf$st == 3)], resdat3$y[which(datf$st == 3)], 
+#        pch = 20, col = "blue", cex = 0.5)
+# points(resdat3$x[which(datf$st == 5)], resdat3$y[which(datf$st == 5)], 
+#        pch = 20, col = "blue", cex = 0.5)
 
 # extents
 # image(rext3, col = rev(terrain.colors(30)), axes = FALSE, xlab = "", 
@@ -529,6 +541,8 @@ dev.off()
 
 # datf[, plot(log10(study_duration), log10(sampled_area), xlim)]
 
+image(rres3, col = rev(terrain.colors(100)))
+points(resdat3$x, resdat3$y, pch = 20, cex = 0.5)
 ```
 
 ## Ancillary/supplementary plots and stats
@@ -553,8 +567,9 @@ hdat[ext < -6, ext := -6]  # set minimum extent -6 (0.01 m2)
 # hist(log10(datf$plot_res), breaks = resbrks)
 # hist(log10(datf$plot_res), breaks = resbrks)
 
+cxa <- 0.9
 pdf("paper/figures/hists.pdf", width = 7, height = 2.5)
-par(mfrow = c(1, 4), mar = c(4, 2, 1, 1), oma = c(2, 3, 0, 0))
+par(mfrow = c(1, 4), mar = c(4, 1, 1, 1), oma = c(2, 3, 0, 0))
 # resolution
 h <- hist(hdat$res, breaks = aaxis1$logres, plot = FALSE)
 h$density <- h$counts / sum(h$counts) * 100
@@ -625,7 +640,7 @@ sum(hdatstat[[2]]$density[14:l]) # 7 % covered an area > 10 ha
 # interval
 l <- length(hdatstat[[3]]$density)
 sum(hdatstat[[3]]$density[l])  # 30% are once-offs
-sum(hdatstat[[3]]$density[1:3])  # 25 % < daily
+sum(hdatstat[[3]]$density[1:3])  # 24 % < daily
 sum(hdatstat[[3]]$density[4:5])  # 20% daily up to monthly
 sum(hdatstat[[3]]$density[5:6])  # 35% monthly up to yearly
 sum(hdatstat[[3]]$density[7:9]) # 4 % yearly to decadal
@@ -635,6 +650,20 @@ l <- length(hdatstat[[4]]$density)
 sum(hdatstat[[4]]$density[1:3])  # 59 % up to 1 day
 sum(hdatstat[[4]]$density[4:6])  # 35% covered between 1 day and 1 year
 sum(hdatstat[[4]]$density[7:10]) # 6% year to century
+
+# datf[, plot(log10(n_sites), log10(plot_res))]
+dat[like(study_type, "field"), plot(log10(n_sites), log10(plot_res))]
+dat[like(study_type, "field"), plot(log10(plot_res), log10(sampled_area), 
+                                    ylim = c(-10, 10))]
+
+dat[like(study_type, "remote"), 
+    points(log10(plot_res), log10(sampled_area), pch = 20, col = "red")]
+dat[like(study_type, "automated"), 
+    points(log10(plot_res), log10(sampled_area), pch = 20, col = "blue")]
+lines(aaxis1$logres, aaxis2$logarea[-16] )
+datf[, .N / nrow(datf) * 100, by = st]
+points(resdat3$x[which(datf$st == 4)], resdat3$y[which(datf$st == 4)])
+points(resdat3$x[which(datf$st == 1)], resdat3$y[which(datf$st == 1)])
 
 ```
 
