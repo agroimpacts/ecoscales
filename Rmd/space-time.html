@@ -75,18 +75,17 @@ img {
 </ul></li>
 <li><a href="#analyses"><span class="toc-section-number">1.2</span> Analyses</a><ul>
 <li><a href="#resampling-with-uncertainties"><span class="toc-section-number">1.2.1</span> Resampling with uncertainties</a></li>
-<li><a href="#bootstrapping"><span class="toc-section-number">1.2.2</span> Bootstrapping</a></li>
 </ul></li>
 <li><a href="#plots"><span class="toc-section-number">1.3</span> Plots</a><ul>
 <li><a href="#scaling-in-log10-space"><span class="toc-section-number">1.3.1</span> Scaling in log10 space</a></li>
 <li><a href="#perturbed-set"><span class="toc-section-number">1.3.2</span> Perturbed set</a></li>
-<li><a href="#bootstrap"><span class="toc-section-number">1.3.3</span> Bootstrap</a></li>
-<li><a href="#primary-dataset-main-figure"><span class="toc-section-number">1.3.4</span> Primary dataset (main figure)</a></li>
+<li><a href="#primary-dataset-main-figure"><span class="toc-section-number">1.3.3</span> Primary dataset (main figure)</a></li>
 </ul></li>
-<li><a href="#ancillarysupplementary-plots-and-stats"><span class="toc-section-number">1.4</span> Ancillary/supplementary plots and stats</a><ul>
+<li><a href="#stats-and-supplementary-plots"><span class="toc-section-number">1.4</span> Stats and supplementary plots</a><ul>
 <li><a href="#statistics"><span class="toc-section-number">1.4.1</span> Statistics</a></li>
-<li><a href="#sensitivity"><span class="toc-section-number">1.4.2</span> Sensitivity</a></li>
-<li><a href="#varying-kernel-sizes"><span class="toc-section-number">1.4.3</span> Varying kernel sizes</a></li>
+<li><a href="#scale-diversity-within-study"><span class="toc-section-number">1.4.2</span> Scale diversity within study</a></li>
+<li><a href="#sensitivity"><span class="toc-section-number">1.4.3</span> Sensitivity</a></li>
+<li><a href="#varying-kernel-sizes"><span class="toc-section-number">1.4.4</span> Varying kernel sizes</a></li>
 </ul></li>
 </ul></li>
 </ul>
@@ -98,42 +97,90 @@ img {
 library(readxl)
 library(stringdist)
 library(maptools)
+library(RColorBrewer)
 
 p_root &lt;- set_base_path(&quot;ecoscales&quot;)
 p_dat &lt;- full_path(p_root, &quot;external/data/result&quot;)
 p_calib &lt;- full_path(p_root, &quot;external/data/calibration&quot;)
 # dat &lt;- as.data.table(read_excel(full_path(p_dat, &quot;merged.xlsx&quot;)))
-dat &lt;- as.data.table(read_excel(full_path(p_dat, &quot;mergedf.xlsx&quot;)))
-cal &lt;- data.table(read_excel(fp(p_calib, &quot;merged_calibrationff.xlsx&quot;)))
+dat &lt;- as.data.table(read_excel(full_path(p_dat, &quot;mergedfff.xlsx&quot;)))
+cal &lt;- data.table(read_excel(fp(p_calib, &quot;merged_calibrationffff.xlsx&quot;)))
+full &lt;- data.table(read_excel(fp(p_dat, &quot;full_less_Treuer.xlsx&quot;)))
 
 setnames(dat, &quot;DOI/title&quot;, &quot;DOI&quot;)
 dat[, DOI := gsub(&quot;DOI:|doi:|DOI: |doi: |DOI &quot;, &quot;&quot;, DOI)]
 dat[, DOI := gsub(&quot;\\s&quot;, &quot;&quot;, DOI)]  # remove DOI and whitespace
+full &lt;- gsub(&quot;DOI:|doi:|DOI: |doi: |DOI &quot;, &quot;&quot;, full$DOI)
+full &lt;- gsub(&quot;\\s&quot;, &quot;&quot;, full)  # remove DOI and whitespace
 
-dat &lt;- dat[, names(dat)[1:20], with = FALSE]</code></pre>
-<p>138 papers main analysis</p>
+dat &lt;- dat[, names(dat)[1:20], with = FALSE]
+
+unique(dat$study_type)
+dat[, study_type := tolower(study_type)]
+kwords &lt;- c(&quot;field&quot;, &quot;paleo&quot;, &quot;remote&quot;, &quot;automated&quot;, &quot;other&quot;)
+for(i in 1:length(kwords)) dat[like(study_type, kwords[i]), st := i]
+
+# dat[st == 5, .N] / nrow(dat)
+
+# class(cal$DOI)
+# class(dat$DOI)
+# unique(cal$DOI) %in% unique(dat$DOI)
+# match(cal$DOI, dat$DOI)
+# match(dat$DOI, cal$DOI)
+# dat[dat$DOI %in% cal$DOI, DOI]
+# dat[cal$DOI %in% dat$DOI, ]
+# cal[DOI == dat[cal$DOI %in% dat$DOI, DOI][11]]
+# dat[DOI == dat[cal$DOI %in% dat$DOI, DOI][7]]</code></pre>
+<pre><code>##  [1] &quot;field_direct observation&quot;         
+##  [2] &quot;other geographic data&quot;            
+##  [3] &quot;remote sensing&quot;                   
+##  [4] &quot;passive/automated data&quot;           
+##  [5] &quot;automated data collection&quot;        
+##  [6] &quot;field/direct observation&quot;         
+##  [7] &quot;passive/automated data collection&quot;
+##  [8] &quot;other geographic data (GIS)&quot;      
+##  [9] &quot;other geographic data (census)&quot;   
+## [10] &quot;Field Study&quot;                      
+## [11] &quot;Model with Field Obs&quot;             
+## [12] &quot;Remote Sensing&quot;                   
+## [13] &quot;Paleo-Reconstruction&quot;</code></pre>
 <div id="data-prep" class="section level2">
 <h2><span class="header-section-number">1.1</span> Data prep</h2>
 <div id="merge-full-and-calibration-datasets" class="section level3">
 <h3><span class="header-section-number">1.1.1</span> Merge full and calibration datasets</h3>
-<pre class="r"><code>dat2 &lt;- copy(dat[, .(plot_res, n_sites, sampled_area, samp_duration,
-                     t_btwn_samp, study_duration)])
-
-rnms &lt;- c(&quot;DOI&quot;, &quot;feature&quot;, &quot;observer&quot;, &quot;plot_res&quot;, &quot;n_sites&quot;, 
-          &quot;sampled_area&quot;, &quot;t_btwn_samp&quot;, &quot;study_duration&quot;)
+<pre class="r"><code>dat2 &lt;- copy(dat[, .(st, DOI, study_type, plot_res, n_sites, sampled_area,
+                     samp_duration, t_btwn_samp, study_duration)])
+rnms &lt;- c(&quot;st&quot;, &quot;DOI&quot;, &quot;study_type&quot;, &quot;feature&quot;, &quot;observer&quot;, &quot;plot_res&quot;, 
+          &quot;n_sites&quot;, &quot;sampled_area&quot;, &quot;t_btwn_samp&quot;, &quot;study_duration&quot;)
 calr &lt;- cal[, rnms, with = FALSE]
-for(j in names(calr)[c(2, 4:8)]) set(calr, j=j, value = as.numeric(calr[[j]]))
+for(j in names(calr)[c(4, 6:10)]) set(calr, j=j, value = as.numeric(calr[[j]]))
 
 # select down to columns of interest
+# st &lt;- calr$study_type[which(calr$feature != 99)]
 calr &lt;- calr[feature != 99, lapply(.SD, mean), by = .(DOI, feature), 
-             .SDcols = rnms[4:8]]
-length(unique(calr$DOI)) + length(unique(dat$DOI))  # 148 papers providing dat
+             .SDcols = rnms[c(1, 6:10)]]
+length(unique(calr$DOI)) + length(unique(dat$DOI))  # 140 papers providing dat
+unique(calr$DOI)
+calr_type &lt;- data.table(cbind(&quot;DOI&quot; = unique(calr$DOI), # calib field studies
+                              &quot;study_type&quot; = c(rep(&quot;field&quot;, 5), &quot;paleo&quot;,
+                                               rep(&quot;field&quot;, 4)))) 
 
+# combine full and calibration
 calr[, samp_duration := NA]
-calr[, c(&quot;DOI&quot;, &quot;feature&quot;) := NULL]
-setcolorder(calr, names(calr)[c(1:3, 6, 4:5)])
+calr[, &quot;feature&quot; := NULL] #c(&quot;DOI&quot;, &quot;feature&quot;) := NULL]
+calr &lt;- merge(calr, calr_type, by = &quot;DOI&quot;)
+setcolorder(calr, names(calr)[c(2:1, 9, 3:5, 8, 6:7)])
+datf &lt;- rbind(cbind(&quot;dsrc&quot; = 1, dat2), cbind(&quot;dsrc&quot; = 2, calr))
 
-datf &lt;- rbind(cbind(&quot;dsrc&quot; = 1, dat2), cbind(&quot;dsrc&quot; = 2, calr))</code></pre>
+doisup &lt;- c(unique(cal$DOI_data_source), unique(dat$DOI_data_source))
+doisup &lt;- doisup[!is.na(doisup) &amp; doisup != &quot;NA&quot; &amp; doisup != &quot;-&quot;]
+doisup &lt;- unlist(strsplit(doisup, &quot;;&quot;))</code></pre>
+<p>140 papers main analysis</p>
+<p>364 papers main analysis (everyone’s but Tim’s)</p>
+<p>0.848129 % of all papers since 2004</p>
+<p>56 additional papers or other publications tracked down</p>
+<p>371 records (ecological observations)</p>
+<p><a href="#top">Back to top</a></p>
 </div>
 <div id="adjustmentsfixes" class="section level3">
 <h3><span class="header-section-number">1.1.2</span> Adjustments/fixes</h3>
@@ -145,11 +192,12 @@ datf &lt;- rbind(cbind(&quot;dsrc&quot; = 1, dat2), cbind(&quot;dsrc&quot; = 2, 
 # 1. if samp_duration != study_duration and t_btwn_samp == 0, set 
 #    study_duration == samp_duration
 names(datf)
-datf[t_btwn_samp == 0 &amp; (study_duration != samp_duration), ]  
-dat[t_btwn_samp == 0 &amp; (study_duration != samp_duration), c(1, 3, 8:13), with=F]  
-# function to set t_btwn_samp to 365 * 100000 to indicate once-off studies 
+datf[t_btwn_samp == 0 &amp; (study_duration != samp_duration), ]  </code></pre>
+<pre class="r"><code>dat[t_btwn_samp == 0 &amp; (study_duration != samp_duration), c(1, 3, 8:13), with=F]  </code></pre>
+<pre class="r"><code># function to set t_btwn_samp to 365 * 100000 to indicate once-off studies 
 # when t_btwn_samp == 0.  
 to_infin_byond &lt;- function(tbtwn) ifelse(tbtwn == 0, 365 * 10000, tbtwn)</code></pre>
+<p><a href="#top">Back to top</a></p>
 </div>
 </div>
 <div id="analyses" class="section level2">
@@ -157,7 +205,8 @@ to_infin_byond &lt;- function(tbtwn) ifelse(tbtwn == 0, 365 * 10000, tbtwn)</cod
 <div id="resampling-with-uncertainties" class="section level3">
 <h3><span class="header-section-number">1.2.1</span> Resampling with uncertainties</h3>
 <p>Defined by the per variable CV based on uncertainty between observers. Here we are just going to use apply the variability to each variable for every observation (previous incarnation used uncertainty on just the variables listed as uncertain, with recalculation of dependent variables (<code>study_duration</code>, <code>sampled_area</code>) made after pertubation [see commit prior to second or third commit on 4 April for code]).</p>
-<pre class="r"><code>p &lt;- c(0.79, 0.99, 0.53, 1.22)  # from calibration.Rmd
+<pre class="r"><code># p &lt;- c(0.64, 0.84, 0.53, 1.21)  # from calibration.Rmd
+p &lt;- c(0.64, 0.82, 1.06, 1.22)  # from calibration.Rmd
 
 # Function for bootstrapping with uncertainties
 resamp_func &lt;- function(dat, p, iter) {
@@ -189,19 +238,8 @@ bootperturb &lt;- resamp_func(datf, p = p, iter = 1000)  # 10% perturb
 # bootperturb2 &lt;- resamp_func(datf, p = p, iter = 1000)  # 10% perturb
 # all(bootperturb[[200]]$plot_res == bootperturb2[[200]]$plot_res)
 # rm(bootperturb2)</code></pre>
-</div>
-<div id="bootstrapping" class="section level3">
-<h3><span class="header-section-number">1.2.2</span> Bootstrapping</h3>
-<p>Good old-fashioned bootstrapping with replacement, no perturbation of value</p>
-<pre class="r"><code># bootstrap
-set.seed(1)
-bootsamp &lt;- lapply(1:1000, function(x) {
-  if((x / 100) %in% 1:100) print(x)
-  dnew &lt;- copy(datf[, .(plot_res, sampled_area, t_btwn_samp, study_duration)])
-  dnew &lt;- dnew[sample(1:.N, size = .N, replace = TRUE), ]
-  dnew[, t_btwn_samp := to_infin_byond(t_btwn_samp)]  # set high
-  dnew
-})</code></pre>
+<p><a href="#top">Back to top</a></p>
+<p><a href="#top">Back to top</a></p>
 </div>
 </div>
 <div id="plots" class="section level2">
@@ -221,12 +259,12 @@ tdt[, tlog := log10(time)]
 
 # labels for temporal axes
 # return interval
-tlab1 &lt;- c(expression(&quot;second&quot;^-1), expression(&quot;minute&quot;^-1),
+tlab1 &lt;- c(expression(paste(NULL&lt;=&quot;second&quot;^-1)), expression(&quot;minute&quot;^-1),
            expression(&quot;hour&quot;^-1), expression(&quot;day&quot;^-1), 
            expression(&quot;week&quot;^-1), expression(&quot;month&quot;^-1),            
            expression(&quot;year&quot;^-1), expression(&quot;decade&quot;^-1),
            expression(&quot;century&quot;^-1), 
-           expression(&quot;millenium&quot;^-1), &quot;once-off&quot;)# expression(infinity))
+           expression(&quot;millenium&quot;^-1), &quot;unreplicated&quot;)# expression(infinity))
 taxis1 &lt;- cbind.data.frame( 
   c(1 / (24 * 60 * 60), 1 / (24 * 60), 1 / 24, 1, 7, 30, 365, 365 * 10, 
     365 * 100, 365 * 1000, 365 * 10000))
@@ -234,13 +272,13 @@ taxis1 &lt;- data.table(taxis1)
 setnames(taxis1, names(taxis1), &quot;days&quot;)
 taxis1[, logdays := log10(days)]
 
-taxis2 &lt;- cbind.data.frame(
-  c(&quot;second&quot;, &quot;minute&quot;, &quot;hour&quot;, &quot;day&quot;, &quot;week&quot;, &quot;month&quot;, &quot;year&quot;, &quot;decade&quot;,
-    &quot;century&quot;, &quot;millenium&quot;, &quot;10 KA&quot;),  
-  c(1 / (24 * 60 * 60), 1 / (24 * 60), 1 / 24, 1, 7, 30, 365, 365 * 10, 
-    365 * 100, 365 * 1000, 365 * 10000))
+tlab2 &lt;- c(expression(NULL&lt;=&quot;second&quot;), &quot;minute&quot;, &quot;hour&quot;, &quot;day&quot;, &quot;week&quot;, &quot;month&quot;,
+           &quot;year&quot;,&quot;decade&quot;, &quot;century&quot;, &quot;millenium&quot;, &quot;10 KA&quot;)  
+taxis2 &lt;- cbind.data.frame(c(1 / (24 * 60 * 60), 1 / (24 * 60), 1 / 24, 1, 7, 
+                             30, 365, 365 * 10, 365 * 100, 365 * 1000, 
+                             365 * 10000))
 taxis2 &lt;- data.table(taxis2)
-setnames(taxis2, names(taxis2), c(&quot;label&quot;, &quot;days&quot;))
+setnames(taxis2, names(taxis2), c(&quot;days&quot;))
 taxis2[, logdays := log10(days)]
 
 # spatial
@@ -248,12 +286,13 @@ taxis2[, logdays := log10(days)]
 # axis(1, at = 1:8, labels = lab, las = 2)
 
 # plot resolution
-alab1 &lt;- c(expression(&quot;0.01 cm&quot;^2), expression(&quot;0.1 cm&quot;^2), 
+alab1 &lt;- c(expression(paste(NULL&lt;=&quot;0.01 cm&quot;^2)), expression(&quot;0.1 cm&quot;^2), 
            expression(&quot;1 cm&quot;^2), expression(&quot;10 cm&quot;^2),
            expression(&quot;100 cm&quot;^2), expression(&quot;1000 cm&quot;^2), 
            expression(&quot;1 m&quot;^2), expression(&quot;10 m&quot;^2),
            expression(&quot;100 m&quot;^2), expression(&quot;1000 m&quot;^2), 
-           &quot;1 ha&quot;, &quot;10 ha&quot;, &quot;100 ha&quot;, &quot;1000 ha&quot;, &quot;10000 ha&quot;)
+           &quot;1 ha&quot;, &quot;10 ha&quot;, &quot;100 ha&quot;, &quot;1000 ha&quot;, 
+           expression(paste(NULL&gt;=&quot;10000 ha&quot;)))
 
 aaxis1 &lt;- cbind.data.frame(c(0.000001, 0.00001, 0.0001, 0.001, 0.01, 0.1,
                              1^2, 10, 10^2, 10^3, 10^4, 10^5, 10^6, 10^7, 10^8))
@@ -262,20 +301,22 @@ setnames(aaxis1, names(aaxis1), &quot;res&quot;)
 aaxis1[, logres := log10(res)]
 
 # sampled area
-alab2 &lt;- c(expression(&quot;1 m&quot;^2), expression(&quot;10 m&quot;^2), expression(&quot;100 m&quot;^2),
-           expression(&quot;1000 m&quot;^2), expression(&quot;1 ha&quot;), expression(&quot;10 ha&quot;),
-           expression(&quot;100 ha&quot;), expression(&quot;1000 ha&quot;), 
+alab2 &lt;- c(expression(paste(NULL&lt;=&quot;0.1 m&quot;^2)), expression(&quot;1 m&quot;^2),
+           expression(&quot;10 m&quot;^2), 
+           expression(&quot;100 m&quot;^2), expression(&quot;1000 m&quot;^2), expression(&quot;1 ha&quot;),
+           expression(&quot;10 ha&quot;), expression(&quot;100 ha&quot;), expression(&quot;1000 ha&quot;), 
            expression(paste(10^4 , &quot; ha&quot;)), expression(paste(10^5 , &quot; ha&quot;)), 
            expression(paste(10^6 , &quot; ha&quot;)), expression(paste(10^7 , &quot; ha&quot;)), 
            expression(paste(10^8 , &quot; ha&quot;)), expression(paste(10^9 , &quot; ha&quot;)), 
            expression(paste(10^10 , &quot; ha&quot;)))
 
 aaxis2 &lt;- cbind.data.frame(
-  c(0.1 / 10000, 10 / 10000, 1000 / 10000, 1, 10, 10^2, 10^3, 10^4, 10^5, 10^6,
-    10^7, 10^8, 10^9, 10^10))
+  c(0.1 / 10000, 1 / 10000, 10 / 10000, 100 / 10000, 1000 / 10000, 1, 10, 10^2,
+    10^3, 10^4, 10^5, 10^6, 10^7, 10^8, 10^9, 10^10))
 aaxis2 &lt;- data.table(aaxis2)
 setnames(aaxis2, names(aaxis2), &quot;area&quot;)
 aaxis2[, logarea := log10(area)]</code></pre>
+<p><a href="#top">Back to top</a></p>
 </div>
 <div id="perturbed-set" class="section level3">
 <h3><span class="header-section-number">1.3.2</span> Perturbed set</h3>
@@ -285,7 +326,7 @@ resdat &lt;- data.table(x = log10(bootp_dt$t_btwn_samp),
 resdat$n &lt;- rep(1, nrow(resdat))
 rx &lt;- range(resdat$x)
 rx &lt;- round(rx / 0.5) * 0.5  # round to nearest 0.5
-# rx[1] &lt;- -5
+rx[1] &lt;- -5
 rx[2] &lt;- 6.56
 resdat[x &lt; rx[1], x := rx[1]]
 resdat[x &gt; rx[2], x := rx[2]]
@@ -316,7 +357,7 @@ coordinates(extdat) &lt;- ~x + y
 rres &lt;- kdensity(rx[1], rx[2], ry[1], ry[2], 0.1, resdat, 1)
 rres &lt;- (rres / cellStats(rres, sum)) * 100
 rng &lt;- range(rres[is.finite(rres)])
-rng[2] &lt;- 0.1
+# rng[2] &lt;- 0.1
 bwidth &lt;- (rng[2] - rng[1]) / 30
 brks &lt;- seq(rng[1], rng[2], bwidth)
 brklabs &lt;- seq(0, 0.1, 0.02)#round(brks[seq(1, length(brks), 5)], 2)
@@ -334,7 +375,7 @@ brklabs2 &lt;- round(brks2[seq(1, length(brks2), 6)], 2)
 # cols &lt;- c(rev(terrain.colors(30))[1], cols(29))
 
 cxa = 0.7
-pdf(&quot;paper/figures/res_v_extent_pbstrap.pdf&quot;, width = 7, 
+pdf(&quot;paper/figures/res_v_extent_pbstrap2.pdf&quot;, width = 7, 
     height = 2.5)
 par(mfrow = c(1, 2), mar = c(4, 4, 0.3, 3), oma = c(0, 0, 0, 1), 
     mgp = c(2, 0.5, 0))
@@ -353,98 +394,20 @@ plot(rres, legend.only = TRUE, axis.args = aargs, legend.width = 1.25,
      legend.shrink = 0.9, breaks = brks, col = rev(terrain.colors(30)))
 image(rext, col = rev(terrain.colors(30)), axes = FALSE, xlab = &quot;&quot;, 
       ylab = &quot;&quot;, breaks = brks2)
-axis(1, at = taxis2$logdays[-5], labels = taxis2$label[-5], las = 2,
+axis(1, at = taxis2$logdays[-5], labels = tlab2[-5], las = 2,
      cex.axis = cxa, tcl = -0.2)
-axis(2, at = aaxis2$logarea, labels = alab2[-2], las = 2, cex.axis = cxa,
+axis(2, at = aaxis2$logarea, labels = alab2, las = 2, cex.axis = cxa,
      tcl = -0.2)
 aargs &lt;- list(mgp = c(3, 0.25, 0), at = brklabs2, labels = brklabs2, 
               cex.axis = cxa, tcl = -0.1)
 plot(rext, legend.only = TRUE, axis.args = aargs, legend.width = 1.25,
      legend.shrink = 0.9, breaks = brks2, col = rev(terrain.colors(30)))
 dev.off()</code></pre>
-</div>
-<div id="bootstrap" class="section level3">
-<h3><span class="header-section-number">1.3.3</span> Bootstrap</h3>
-<pre class="r"><code>bootdt &lt;- rbindlist(bootsamp)
-resdat2 &lt;- data.table(x = log10(bootdt$t_btwn_samp), y = log10(bootdt$plot_res))
-resdat2$n &lt;- rep(1, nrow(resdat2))
-rx &lt;- range(resdat2$x)
-rx &lt;- round(rx / 0.5) * 0.5  # round to nearest 0.5
-rx[2] &lt;- 6.56
-resdat2[x &lt; rx[1], x := rx[1]]
-resdat2[x &gt; rx[2], x := rx[2]]
-ry &lt;- range(aaxis1$logres)
-ry[1] &lt;- -5  # set limits to 0.01 cm^2
-resdat2[y &lt; ry[1], y := ry[1]]
-resdat2[y &gt; ry[2], y := ry[2]]
-coordinates(resdat2) &lt;- ~x + y
-
-# extent
-extdat2 &lt;- data.table(x = log10(bootdt$study_duration), 
-                      y = log10(bootdt$sampled_area))
-extdat2$n &lt;- rep(1, nrow(extdat2))
-ex &lt;- range(taxis2$logdays)
-ex &lt;- c(floor(ex[1]), 5.56)#ceiling(ex[2]))
-extdat2[x &lt; ex[1], x := ex[1]]
-extdat2[x &gt; ex[2], x := ex[2]]
-ey &lt;- range(aaxis2$logarea)
-extdat2[y &lt; ey[1], y := ey[1]]
-extdat2[y &gt; ey[2], y := ey[2]]
-coordinates(extdat2) &lt;- ~x + y
-
-# densities
-# resolution
-rres2 &lt;- kdensity(rx[1], rx[2], ry[1], ry[2], 0.1, resdat2, 1)
-rres2 &lt;- (rres2 / cellStats(rres2, sum)) * 100
-rng &lt;- range(rres2[is.finite(rres2)])
-bwidth &lt;- (rng[2] - rng[1]) / 30
-brks &lt;- seq(rng[1], rng[2], bwidth)
-brklabs &lt;- seq(0, 0.1, 0.02)#round(brks[seq(1, length(brks), 5)], 2)
-
-# extent
-rext2 &lt;- kdensity(ex[1], ex[2], ey[1], ey[2], 0.1, extdat2, 1)
-rext2 &lt;- (rext2 / cellStats(rext2, sum)) * 100
-rng &lt;- range(rext2[is.finite(rext2)])
-rng[2] &lt;- 0.1
-bwidth &lt;- (rng[2] - rng[1]) / 30
-brks2 &lt;- seq(rng[1], rng[2], bwidth)
-brklabs2 &lt;- brklabs #round(brks2[seq(1, length(brks2), 3)], 2)
-
-cxa = 0.7
-pdf(&quot;paper/figures/res_v_extent_bstrap.pdf&quot;, width = 7, 
-    height = 2.5)
-par(mfrow = c(1, 2), mar = c(4, 4, 0.3, 3), oma = c(0, 0, 0, 1), 
-    mgp = c(2, 0.5, 0))
-# image(rres, col = cols, breaks = brks,
-image(rres2, col = rev(terrain.colors(30)), breaks = brks,
-     axes = FALSE, xlab = &quot;&quot;, ylab = &quot;&quot;)
-# plot(rres2, col = rev(terrain.colors(20)))
-axis(1, at = taxis1$logdays[-c(5, 9, 10)], labels = tlab1[-c(5, 9, 10)], 
-     las = 2, tcl = -0.2, cex.axis = cxa)
-axis(2, at = aaxis1$logres[-1], labels = alab1[-1], las = 2, tcl = -0.2, 
-     cex.axis = cxa)
-# plot(rres2, axes = FALSE, legend.only = TRUE)
-aargs &lt;- list(mgp = c(3, 0.25, 0), at = brklabs, labels = brklabs, 
-              cex.axis = cxa, tcl = -0.1)
-plot(rres2, legend.only = TRUE, axis.args = aargs, legend.width = 1.25,
-     legend.shrink = 0.9, breaks = brks, col = rev(terrain.colors(30)))
-
-image(rext2, col = rev(terrain.colors(30)), axes = FALSE, xlab = &quot;&quot;, 
-      ylab = &quot;&quot;, breaks = brks2)
-axis(1, at = taxis2$logdays[-5], labels = taxis2$label[-5], las = 2,
-     cex.axis = cxa, tcl = -0.2)
-axis(2, at = aaxis2$logarea, labels = alab2[-2], las = 2, cex.axis = cxa,
-     tcl = -0.2)
-aargs &lt;- list(mgp = c(3, 0.25, 0), at = brklabs2, labels = brklabs2, 
-              cex.axis = cxa, tcl = -0.1)
-plot(rext2, legend.only = TRUE, axis.args = aargs, legend.width = 1.25,
-     legend.shrink = 0.9, breaks = brks2, col = rev(terrain.colors(30)))
-dev.off()
-
-# datf[, plot(log10(study_duration), log10(sampled_area), xlim)]</code></pre>
+<p><a href="#top">Back to top</a></p>
+<p><a href="#top">Back to top</a></p>
 </div>
 <div id="primary-dataset-main-figure" class="section level3">
-<h3><span class="header-section-number">1.3.4</span> Primary dataset (main figure)</h3>
+<h3><span class="header-section-number">1.3.3</span> Primary dataset (main figure)</h3>
 <pre class="r"><code>resdat3 &lt;- data.table(x = log10(to_infin_byond(datf$t_btwn_samp)), 
                       y = log10(datf$plot_res))
 resdat3$n &lt;- rep(1, nrow(resdat3))
@@ -472,76 +435,385 @@ extdat3[y &lt; ey[1], y := ey[1]]
 extdat3[y &gt; ey[2], y := ey[2]]
 coordinates(extdat3) &lt;- ~x + y
 
+# temporal framing
+tempdat &lt;- data.table(x = log10(to_infin_byond(datf$t_btwn_samp)), 
+                      y = log10(datf$study_duration))
+tempdat$n &lt;- rep(1, nrow(tempdat))
+tx &lt;- range(tempdat$x)
+tx &lt;- round(rx / 0.5) * 0.5  # round to nearest 0.5
+tx[2] &lt;- 6.56
+tempdat[x &lt; rx[1], x := rx[1]]
+tempdat[x &gt; rx[2], x := rx[2]]
+ty &lt;- range(taxis2$logdays)
+ty &lt;- c(floor(ty[1]), 5.56)#ceiling(ex[2]))
+tempdat[y &lt; ty[1], y := ty[1]]
+tempdat[y &gt; ty[2], y := ty[2]]
+coordinates(tempdat) &lt;- ~x + y
+
+# spatial framing
+spatdat &lt;- data.table(x = log10(datf$plot_res), y = log10(datf$sampled_area))
+spatdat$n &lt;- rep(1, nrow(spatdat))
+sx &lt;- range(aaxis1$logres)
+sx[1] &lt;- -5  # set limits to 0.01 cm^2
+spatdat[x &lt; sx[1], y := sx[1]]
+spatdat[x &gt; sx[2], y := sx[2]]
+sy &lt;- range(aaxis2$logarea)
+spatdat[y &lt; sy[1], y := sy[1]]
+spatdat[y &gt; sy[2], y := sy[2]]
+coordinates(spatdat) &lt;- ~x + y
+
 # densities
 # resolution
 rres3 &lt;- kdensity(rx[1], rx[2], ry[1], ry[2], 0.1, resdat3, 1)
 rres3 &lt;- (rres3 / cellStats(rres3, sum)) * 100
-rng &lt;- range(rres3[is.finite(rres3)])
-bwidth &lt;- (rng[2] - rng[1]) / 30
-brks &lt;- seq(rng[1], rng[2], bwidth)
-brklabs &lt;- seq(0, 0.1, 0.02)#round(brks[seq(1, length(brks), 5)], 2)
+# rng &lt;- range(rres3[is.finite(rres3)])
+# bwidth &lt;- (rng[2] - rng[1]) / 30
+# brks &lt;- seq(rng[1], rng[2], bwidth)
+# brklabs &lt;- seq(0, 0.12, 0.02)#round(brks[seq(1, length(brks), 5)], 2)
+# brklabs &lt;- seq(0, 0.1, 0.02)#round(brks[seq(1, length(brks), 5)], 2)
 
 # extent
 rext3 &lt;- kdensity(ex[1], ex[2], ey[1], ey[2], 0.1, extdat3, 1)
 rext3 &lt;- (rext3 / cellStats(rext3, sum)) * 100
-rng &lt;- range(rext3[is.finite(rext3)])
-rng[2] &lt;- 0.1
-bwidth &lt;- (rng[2] - rng[1]) / 30
-brks2 &lt;- seq(rng[1], rng[2], bwidth)
-brklabs2 &lt;- brklabs #round(brks2[seq(1, length(brks2), 3)], 2)
+# rng &lt;- range(rext3[is.finite(rext3)])
+# # rng[2] &lt;- 0.1
+# bwidth &lt;- (rng[2] - rng[1]) / 30
+# brks2 &lt;- seq(rng[1], rng[2], bwidth)
+# brklabs2 &lt;- brklabs #round(brks2[seq(1, length(brks2), 3)], 2)
 
-cxa = 0.7
-pdf(&quot;paper/figures/res_v_extent.pdf&quot;, width = 7, 
-    height = 2.5)
-par(mfrow = c(1, 2), mar = c(4, 4, 0.3, 3), oma = c(0, 0, 0, 1), 
-    mgp = c(2, 0.5, 0))
-image(rres3, col = rev(terrain.colors(30)), breaks = brks,
-     axes = FALSE, xlab = &quot;&quot;, ylab = &quot;&quot;)
-axis(1, at = taxis1$logdays[-c(5, 9, 10)], labels = tlab1[-c(5, 9, 10)], 
+# temporal
+tres &lt;- kdensity(tx[1], tx[2], ty[1], ty[2], 0.1, tempdat, 1)
+tres &lt;- (tres / cellStats(tres, sum)) * 100
+# spatial
+sres &lt;- kdensity(sx[1], sx[2], sy[1], sy[2], 0.1, spatdat, 1)
+sres &lt;- (sres / cellStats(sres, sum)) * 100
+
+brkfun &lt;- function(ext, ival, n) {
+  rng &lt;- range(ext[is.finite(ext)])
+  bwidth &lt;- (rng[2] - rng[1]) / n
+  brks &lt;- seq(rng[1], rng[2], bwidth)
+  brklabs &lt;- seq(0, round(rng[2], 2), ival)
+  list(&quot;brks&quot; = brks, &quot;labs&quot; = brklabs)
+}
+
+# cxa = 0.7
+ll &lt;- 3.5
+cxa = 0.8
+stps &lt;- sapply(c(3, 4), function(x) which(datf$st == x))  # IDs rs/auto/paleo
+pchs &lt;- list(1, &quot;+&quot;)
+cexs &lt;- c(0.4, 0.6)
+cuts &lt;- 80
+
+# pdf(&quot;paper/figures/res_v_extent.pdf&quot;, width = 7, height = 2.5)
+pdf(&quot;paper/figures/kde43.pdf&quot;, width = 7, height = 5.5)
+par(mfrow = c(2, 2), mar = c(6, 6, 0.3, 3), oma = c(0, 0, 0.5, 1), 
+    mgp = c(2, 0.25, 0))
+# resolutions
+# image(rres3, col = rev(terrain.colors(30)), breaks = brks,
+image(rres3, col = rev(terrain.colors(cuts)), axes = FALSE, xlab = &quot;&quot;, 
+      ylab = &quot;&quot;)
+axis(1, at = taxis1$logdays[-c(5, 10)], labels = tlab1[-c(5, 10)], 
      las = 2, tcl = -0.2, cex.axis = cxa)
 axis(2, at = aaxis1$logres[-1], labels = alab1[-1], las = 2, tcl = -0.2, 
      cex.axis = cxa)
-
-aargs &lt;- list(mgp = c(3, 0.25, 0), at = brklabs, labels = brklabs, 
+mtext(&quot;Sampling interval&quot;, 1, cex = cxa, line = ll)
+mtext(&quot;Spatial resolution&quot;, 2, cex = cxa, line = ll)
+brks &lt;- brkfun(rres3, 0.01, cuts)  # breaks
+aargs &lt;- list(mgp = c(3, 0.25, 0), at = brks$labs, labels = brks$labs, 
               cex.axis = cxa, tcl = -0.1)
 plot(rres3, legend.only = TRUE, axis.args = aargs, legend.width = 1.25,
-     legend.shrink = 0.9, breaks = brks, col = rev(terrain.colors(30)))
+     #legend.shrink = 0.9, breaks = brks, col = rev(terrain.colors(30)))
+     legend.shrink = 0.9, col = rev(terrain.colors(cuts)))
+mtext(&quot;A&quot;, side = 3, line = -1, cex = 0.8, adj = 0.05)
+# for(i in 1:length(stps)) {
+#   points(resdat3$x[stps[[i]]], resdat3$y[stps[[i]]], pch=pchs[[i]], cex=cexs[i])
+# }
 
-image(rext3, col = rev(terrain.colors(30)), axes = FALSE, xlab = &quot;&quot;, 
-      ylab = &quot;&quot;, breaks = brks2)
-axis(1, at = taxis2$logdays[-5], labels = taxis2$label[-5], las = 2,
+# extents
+# image(rext3, col = rev(terrain.colors(30)), axes = FALSE, xlab = &quot;&quot;, 
+image(rext3, col = rev(terrain.colors(cuts)), axes = FALSE, xlab = &quot;&quot;, 
+      ylab = &quot;&quot;)#, breaks = brks2)
+axis(1, at = taxis2$logdays[-5], labels = tlab2[-5], las = 2,
      cex.axis = cxa, tcl = -0.2)
-axis(2, at = aaxis2$logarea, labels = alab2[-2], las = 2, cex.axis = cxa,
+axis(2, at = aaxis2$logarea, labels = alab2, las = 2, cex.axis = cxa,
      tcl = -0.2)
-aargs &lt;- list(mgp = c(3, 0.25, 0), at = brklabs2, labels = brklabs2, 
+brks &lt;- brkfun(rext3, 0.01, cuts)  # breaks
+aargs &lt;- list(mgp = c(3, 0.25, 0), at = brks$labs, labels = brks$labs, 
               cex.axis = cxa, tcl = -0.1)
+mtext(&quot;Temporal duration&quot;, 1, cex = cxa, line = ll)
+mtext(&quot;Spatial extent&quot;, 2, cex = cxa, line = ll)
 plot(rext3, legend.only = TRUE, axis.args = aargs, legend.width = 1.25,
-     legend.shrink = 0.9, breaks = brks2, col = rev(terrain.colors(30)))
+     #legend.shrink = 0.9, breaks = brks2, col = rev(terrain.colors(30)))
+     legend.shrink = 0.9, col = rev(terrain.colors(cuts)))
+mtext(&quot;B&quot;, side = 3, line = -1, cex = 0.8, adj = 0.05)
+# for(i in 1:length(stps)) {
+#   points(extdat3$x[stps[[i]]], extdat3$y[stps[[i]]], pch=pchs[[i]], cex=cexs[i])
+# }
+
+# spatial
+image(sres, col = rev(terrain.colors(cuts)), axes = FALSE, xlab = &quot;&quot;, 
+      ylab = &quot;&quot;)
+# points(spatdat$x, spatdat$y, cex = 0.1)
+axis(1, at = aaxis1$logres, labels = alab1, las = 2, tcl = -0.2, cex.axis = cxa)
+axis(2, at = aaxis2$logarea, labels = alab2, las = 2, tcl = -0.2, 
+     cex.axis = cxa)
+mtext(&quot;Spatial resolution&quot;, 1, cex = cxa, line = ll)
+mtext(&quot;Spatial extent&quot;, 2, cex = cxa, line = ll)
+brks &lt;- brkfun(sres, 0.01, cuts)  # breaks
+aargs &lt;- list(mgp = c(3, 0.25, 0), at = brks$labs, labels = brks$labs, 
+              cex.axis = cxa, tcl = -0.1)
+plot(sres, legend.only = TRUE, axis.args = aargs, legend.width = 1.25,
+     legend.shrink = 0.9, col = rev(terrain.colors(cuts)))
+mtext(&quot;C&quot;, side = 3, line = -1, cex = 0.8, adj = 0.05)
+# for(i in 1:length(stps)) {
+#   points(spatdat$x[stps[[i]]], spatdat$y[stps[[i]]], pch=pchs[[i]], cex=cexs[i])
+# }
+
+# temporal
+image(tres, col = rev(terrain.colors(cuts)), axes = FALSE, xlab = &quot;&quot;, ylab = &quot;&quot;)
+# points(spatdat$x, spatdat$y, cex = 0.1)
+axis(1, at = taxis1$logdays[-c(5, 10)], labels = tlab1[-c(5, 10)], 
+     las = 2, tcl = -0.2, cex.axis = cxa)
+axis(2, at = taxis2$logdays[-5], labels = tlab2[-5], las = 2,
+     cex.axis = cxa, tcl = -0.2)
+mtext(&quot;Sampling interval&quot;, 1, cex = cxa, line = ll)
+mtext(&quot;Temporal duration&quot;, 2, cex = cxa, line = ll)
+brks &lt;- brkfun(tres, 0.02, cuts)  # breaks
+aargs &lt;- list(mgp = c(3, 0.25, 0), at = brks$labs, labels = brks$labs, 
+              cex.axis = cxa, tcl = -0.1)
+plot(tres, legend.only = TRUE, axis.args = aargs, legend.width = 1.25,
+     legend.shrink = 0.9, col = rev(terrain.colors(cuts)))
+mtext(&quot;D&quot;, side = 3, line = -1, cex = 0.8, adj = 0.05)
+# for(i in 1:length(stps)) {
+#   points(tempdat$x[stps[[i]]], tempdat$y[stps[[i]]], pch=pchs[[i]], cex=cexs[i])
+# }
 dev.off()
 
-# datf[, plot(log10(study_duration), log10(sampled_area), xlim)]</code></pre>
+# datf[, plot(log10(study_duration), log10(sampled_area), xlim)]
+
+# image(rres3, col = rev(terrain.colors(100)))
+# points(resdat3$x, resdat3$y, pch = 20, cex = 0.5)
+image(sres, col = rev(terrain.colors(100)))
+points(spatdat$x, spatdat$y, pch = 20, cex = 0.5)</code></pre>
+<p><a href="#top">Back to top</a></p>
 </div>
 </div>
-<div id="ancillarysupplementary-plots-and-stats" class="section level2">
-<h2><span class="header-section-number">1.4</span> Ancillary/supplementary plots and stats</h2>
+<div id="stats-and-supplementary-plots" class="section level2">
+<h2><span class="header-section-number">1.4</span> Stats and supplementary plots</h2>
 <div id="statistics" class="section level3">
 <h3><span class="header-section-number">1.4.1</span> Statistics</h3>
 <pre class="r"><code>length(which(dat$study_type %in% 
                c(&quot;remote sensing&quot;, &quot;other geographic data&quot;))) / nrow(dat)
-dat[t_btwn_samp == 0, .N] / dat[, .N]  # 31% of samples are once-offs
-dat[study_duration == samp_duration, .N]
+length(which(dat$study_type %in% 
+               c(&quot;remote sensing&quot;, &quot;other geographic data&quot;))) / nrow(dat)
+dat[t_btwn_samp == 0, .N] / dat[, .N]  # 35% of samples are once-offs
+dat[study_duration == samp_duration, .N] / nrow(dat)
+dat[(study_duration == samp_duration) &amp; t_btwn_samp != 0]
+dat[(study_duration != samp_duration) &amp; t_btwn_samp == 0]
+
+hdat &lt;- cbind(&quot;res&quot; = log10(datf$plot_res), &quot;ext&quot; = log10(datf$sampled_area), 
+              &quot;int&quot; = log10(to_infin_byond(datf$t_btwn_samp)), 
+              &quot;dur&quot; = log10(datf$study_duration))
+hdat &lt;- data.table(hdat)
+# set bounds for histograms
+hdat[res &lt; aaxis1$logres[1], res := aaxis1$logres[1]]
+hdat[res &gt; ry[2], res := ry[2]]
+hdat[ext &lt; -6, ext := -6]  # set minimum extent -6 (0.01 m2)
+
+# hist(hdat$res, breaks = aaxis1$logres)
+# hist(log10(datf$plot_res), breaks = resbrks)
+# hist(log10(datf$plot_res), breaks = resbrks)
+
+mga &lt;- -0.34
+sfigl &lt;- -1.2
+cxa &lt;- 0.8
+cxl &lt;- 0.9
+reds &lt;- brewer.pal(9, name = &quot;Reds&quot;)
+blues &lt;- brewer.pal(9, name = &quot;Blues&quot;)
+plot(1:2, pch = 20, col = blues[c(4, 6)])
+yl &lt;- 35
+# pdf(&quot;paper/figures/hists.pdf&quot;, width = 7, height = 2.5)
+pdf(&quot;paper/figures/hists2.pdf&quot;, width = 5, height = 5)
+par(mfrow = c(2, 2), mar = c(4.5, 1, 1, 1), oma = c(2, 3, 0, 0))
+# resolution
+h &lt;- hist(hdat$res, breaks = aaxis1$logres, plot = FALSE)
+h$density &lt;- h$counts / sum(h$counts) * 100
+plot(h, freq = FALSE, ylab = &quot;&quot;, las = 2,  xaxt = &quot;n&quot;, mgp = c(3.25, 0.25, mga),
+     tcl = -0.2, cex.axis = cxa, xlab = &quot;Spatial resolution&quot;, 
+     ylim = c(0, yl - 10), main = &quot;&quot;, col = reds[4], cex.lab = cxl)
+axis(1, at = aaxis1$logres, labels = alab1, las = 2, cex.axis = cxa, 
+     tcl = -0.2, mgp = c(2, 0.25, mga))
+mtext(&quot;Percent of observations&quot;, side = 2, line = 1.5, cex = 0.8)
+mtext(&quot;A&quot;, side = 3, line = sfigl, cex = 0.8, adj = 0.05)
+
+# extent
+h &lt;- hist(hdat$ext, breaks = c(-6, aaxis2$logarea), plot = FALSE)
+h$density &lt;- h$counts / sum(h$counts) * 100
+plot(h, freq = FALSE, ylab = &quot;&quot;, las = 2,  xaxt = &quot;n&quot;, mgp = c(3.25, 0.25, mga),
+     tcl = -0.2, cex.axis = cxa, xlab = &quot;Spatial extent&quot;, ylim = c(0, yl - 10), 
+     main = &quot;&quot;, col = reds[6], cex.lab = cxl)
+axis(1, at = c(-6, aaxis2$logarea), 
+     labels = c(expression(paste(NULL&lt;=&quot;0.01m&quot;^2)), expression(paste(0.1, m^2)), 
+                alab2[-1]), las = 2, cex.axis = cxa,
+     tcl = -0.2, mgp = c(2, 0.25, mga))
+mtext(&quot;B&quot;, side = 3, line = sfigl, cex = 0.8, adj = 0.05)
+
+# interval
+tax &lt;- c(taxis2$logdays[-c(10:11)], mean(taxis2$logdays[c(10:11)]))
+h &lt;- hist(hdat$int, breaks = taxis1$logdays, plot = FALSE)
+h$density &lt;- h$counts / sum(h$counts) * 100
+plot(h, freq = FALSE, ylab = &quot;&quot;, las = 2,  xaxt = &quot;n&quot;, mgp = c(3.25, 0.25, mga),
+     tcl = -0.2, cex.axis = cxa, xlab = &quot;Sampling interval&quot;, ylim = c(0, yl), 
+     main = &quot;&quot;, col = blues[4], cex.lab = cxl)
+axis(1, at = tax, labels = tlab1[-10], las = 2, cex.axis = cxa, 
+     tcl = -0.2, mgp = c(2, 0.25, -0.34))
+mtext(&quot;C&quot;, side = 3, line = sfigl, cex = 0.8, adj = 0.05)
+mtext(&quot;Percent of observations&quot;, side = 2, line = 1.5, cex = 0.8)
+
+# duration
+# tax &lt;- c(taxis2$logdays[-c(10:11)], mean(taxis2$logdays[c(10:11)]))
+h &lt;- hist(hdat$dur, breaks = taxis2$logdays, plot = FALSE)
+h$density &lt;- h$counts / sum(h$counts) * 100
+plot(h, freq = FALSE, ylab = &quot;&quot;, las = 2,  xaxt = &quot;n&quot;, mgp = c(3.25, 0.25, mga),
+     tcl = -0.2, cex.axis = cxa, xlab = &quot;Temporal duration&quot;, ylim = c(0, yl), 
+     main = &quot;&quot;, col = blues[6], cex.lab = cxl)
+axis(1, at = taxis2$logdays, labels = tlab2, las = 2, cex.axis = cxa, 
+     tcl = -0.2, mgp = c(2, 0.25, mga))
+mtext(&quot;D&quot;, side = 3, line = sfigl, cex = 0.8, adj = 0.05)
+
+dev.off()
+
+# stats
+axisl &lt;- list(aaxis1$logres, c(-6, aaxis2$logarea), taxis1$logdays,
+              taxis2$logdays)
+hdatstat &lt;- lapply(1:4, function(x) {
+  h &lt;- hist(hdat[[x]], breaks = axisl[[x]], plot = FALSE)
+  h$density &lt;- h$counts / sum(h$counts) * 100
+  h
+})
+
+# res
+l &lt;- length(hdatstat[[1]]$density)
+sum(hdatstat[[1]]$density[4:6])  # 55 % between 10cm^2 and 1 m^2
+sum(hdatstat[[1]]$density[1:6])  #  69% &lt; 1m^2
+sum(hdatstat[[1]]$density[7:10]) # 22 % between 1 m^2 and 1 ha
+sum(hdatstat[[1]]$density[11:(l)]) # 9 % 1-10000 ha
+# dat[plot_res &gt;= 10000^2]
+
+# length(which(hdat$res &gt;= -3 &amp; hdat$res &lt;= 0)) / length(hdat$res)
+# length(which(hdat$res &lt;= 4)) / length(hdat$res)
+# sum(hdatstat[[1]]$counts[4:6]) / sum(hdatstat[[1]]$counts)
+
+# extent
+l &lt;- length(hdatstat[[2]]$density)
+sum(hdatstat[[2]]$density[1:2])  # 35 % &lt; 1 m^2
+sum(hdatstat[[2]]$density[1:6])  # 82% &lt; 1 ha
+sum(hdatstat[[2]]$density[1:7])  # 86% &lt; 10 ha
+sum(hdatstat[[2]]$density[1:8])  # 89 % &lt; 100 ha
+sum(hdatstat[[2]]$density[1:9])  # 92 % &lt; 1000 ha
+sum(hdatstat[[2]]$density[8:9])  # 6 % 10-1000 ha
+sum(hdatstat[[2]]$density[8:l])  # 14% &gt; 10 ha
+sum(hdatstat[[2]]$density[10:l]) # 8.4 % covered an area &gt; 1000 ha
+sum(hdatstat[[2]]$density[12:l]) # 5.1 % covered an area &gt; 100,000 ha
+sum(hdatstat[[2]]$density[13:l]) # 4.1 % covered an area &gt; 1,000,000 ha
+
+# length(which(hdat$ext &lt; -4)) / length(hdat$ext)
+# length(which(hdat$ext &gt; 3)) / length(hdat$ext)
+# length(which(hdat$ext &gt; 1 &amp; hdat$ext &lt;= 3)) / length(hdat$ext)
+# which(hdatstat[[2]]$breaks == log10(1000000))
+# length(hdatstat[[2]]$counts[7:8])
+# hdatstat[[2]]$mids[12]
+
+# interval
+l &lt;- length(hdatstat[[3]]$density)
+sum(hdatstat[[3]]$density[l])  # 36% are once-offs
+sum(hdatstat[[3]]$density[1:3])  # 17 % &lt; daily
+sum(hdatstat[[3]]$density[1:4])  # 17 % &lt; daily
+sum(hdatstat[[3]]$density[4:5])  # 19% daily up to monthly
+sum(hdatstat[[3]]$density[6])  # 23% monthly up to yearly
+sum(hdatstat[[3]]$density[7:9]) # 5 % yearly to decadal
+
+# duration
+l &lt;- length(hdatstat[[4]]$density)
+sum(hdatstat[[4]]$density[1:3])  # 69 % up to 1 day
+sum(hdatstat[[4]]$density[4:5])  # 19% covered between 1 day and 1 month
+sum(hdatstat[[4]]$density[6])  # 8% covered between 1 month and 1 year
+# sum(hdatstat[[4]]$density[4:6])  # 26% covered between 1 day and 1 year
+sum(hdatstat[[4]]$density[7:10]) # 5% year to century
+
+# datf[, plot(log10(n_sites), log10(plot_res))]
+# dat[like(study_type, &quot;field&quot;), plot(log10(n_sites), log10(plot_res))]
+datf[like(study_type, &quot;field&quot;), plot(log10(plot_res), log10(sampled_area), 
+                                     ylim = c(-10, 10))]
+
+datf[like(study_type, &quot;remote&quot;), 
+     points(log10(plot_res), log10(sampled_area), pch = 20, col = &quot;red&quot;)]
+datf[like(study_type, &quot;automated&quot;), 
+     points(log10(plot_res), log10(sampled_area), pch = 20, col = &quot;blue&quot;)]
+lines(aaxis1$logres, aaxis2$logarea[-16] )
+datf[, .N / nrow(datf) * 100, by = st]
+
+datf[, plot(log10(t_btwn_samp), log10(study_duration), pch = 20)]
+datf[which(hdat[[3]] &lt; -1.380211), 
+     points(log10(t_btwn_samp), log10(study_duration), pch = 20, col = &quot;blue&quot;)]
+datf[like(study_type, &quot;automated&quot;), 
+     points(log10(t_btwn_samp), log10(study_duration), pch = 20, col = &quot;red&quot;)]
 
 
-par(mfrow = c(2, 2))
-datf[, {
-  hist(log10(plot_res), main = &quot;Plot res&quot;)
-  hist(log10(t_btwn_samp), main = &quot;Interval&quot;)
-  hist(log10(sampled_area), main = &quot;Area&quot;)
-  hist(log10(study_duration), main = &quot;Duration&quot;)
-}]</code></pre>
+# points(resdat3$x[which(datf$st == 4)], resdat3$y[which(datf$st == 4)])
+# points(resdat3$x[which(datf$st == 1)], resdat3$y[which(datf$st == 1)])
+
+# types of observations
+# unique(datf$study_type)
+datf[like(study_type, &quot;field&quot;), .N] / nrow(datf)  # 80% field studies
+datf[like(study_type, &quot;auto&quot;), .N] / nrow(datf) # 12 % automated
+datf[like(study_type, &quot;auto&quot;) &amp; log10(t_btwn_samp) &lt; -1.380211, .N] /   length(which(hdat[[3]] &lt; -1.380211))  # 75% 
+
+datf[like(study_type, &quot;remote|other&quot;), .N] / nrow(datf) # 6 % automated
+datf[like(study_type, &quot;paleo&quot;), .N] / nrow(datf) * 100 # 1 % automated</code></pre>
+<p><a href="#top">Back to top</a></p>
+</div>
+<div id="scale-diversity-within-study" class="section level3">
+<h3><span class="header-section-number">1.4.2</span> Scale diversity within study</h3>
+<pre class="r"><code># plot resolution
+doin &lt;- datf[, .N, by = DOI]  # n obs/DOI
+resuni &lt;- datf[, length(unique(plot_res)), by = DOI]  # unique resolutions
+resrng &lt;- datf[, diff(range(plot_res)), by = DOI]
+rescv &lt;- datf[DOI %in% resuni[V1 &gt; 1, DOI], cv(plot_res), by = DOI]
+ressd &lt;- datf[DOI %in% resuni[V1 &gt; 1, DOI], log10(sd(plot_res)), by = DOI]
+resmu &lt;- datf[DOI %in% resuni[V1 &gt; 1, DOI], log10(mean(plot_res)), by = DOI]
+# plot(resuni$V1, resrng$V1)
+# plot(resmu$V1, ressd$V1)
+# plot(resmu$V1, rescv$V1)
+
+# sampling interval
+intuni &lt;- datf[, length(unique(t_btwn_samp)), by = DOI]  # unique intervals
+intrng &lt;- datf[, diff(range(t_btwn_samp)), by = DOI]
+intcv &lt;- datf[DOI %in% intuni[V1 &gt; 1, DOI], cv(t_btwn_samp), by = DOI]
+intsd &lt;- datf[DOI %in% intuni[V1 &gt; 1, DOI], log10(sd(t_btwn_samp)), by = DOI]
+intmu &lt;- datf[DOI %in% intuni[V1 &gt; 1, DOI], log10(mean(t_btwn_samp)), by = DOI]
+
+# Plot Resolution Statistics
+round(c(&quot;%&quot; = length(which(resuni$V1 &gt; 1)) / resrng[, .N],  # % &gt; 1 res 
+        &quot;medrng&quot; = resrng[which(resuni$V1 &gt; 1), median(V1)],  # median res rng
+        &quot;murng&quot; = resrng[which(resuni$V1 &gt; 1), mean(V1)] / 10000,  # mu res rng
+        &quot;rescv&quot; = rescv[, mean(V1)], # mean resolution CV
+        &quot;resmu&quot; = resmu[, mean(V1)],
+        &quot;muN&quot; = resuni[, mean(V1)]), 2)  # mean number of resolutions</code></pre>
+<pre><code>##      % medrng  murng  rescv  resmu    muN 
+##   0.54  22.50 835.18 149.42   1.46   2.26</code></pre>
+<pre class="r"><code># Plot Resolution Statistics
+round(c(&quot;%&quot; = length(which(intuni$V1 &gt; 1)) / intrng[, .N],  # % &gt; 1 interval
+        &quot;medrng&quot; = intrng[which(intuni$V1 &gt; 1), median(V1)],  # median int range
+        &quot;murng&quot; = intrng[which(intuni$V1 &gt; 1), mean(V1)],  # mean interval range
+        &quot;intcv&quot; = intcv[, mean(V1)], # mean intolution CV
+        &quot;intmu&quot; = intmu[, mean(V1)],
+        &quot;muN&quot; = intuni[, mean(V1)]), 2)  # mean number of intolutions</code></pre>
+<pre><code>##      % medrng  murng  intcv  intmu    muN 
+##   0.41  67.50 684.37 133.62   1.13   1.87</code></pre>
 </div>
 <div id="sensitivity" class="section level3">
-<h3><span class="header-section-number">1.4.2</span> Sensitivity</h3>
+<h3><span class="header-section-number">1.4.3</span> Sensitivity</h3>
 <p>Just for the four main variables. Rules:</p>
 <ul>
 <li>If <code>plot_res</code> and/or <code>n_sites</code> uncertain, then <code>sampled_area</code> must be. Recalculate using random draw within the uncertain variable</li>
@@ -615,10 +887,11 @@ senst[id, &quot;sarea&quot;] &lt;- 1
 # percentage of records that are uncertain
 round(colSums(senst) / nrow(senst) * 100, 1)</code></pre>
 <pre><code>##    res      n  sarea  sampd  tbtwn studyd 
-##   63.7   23.0   69.6   80.2   43.1   86.4</code></pre>
+##   61.7   21.1   68.1   80.4   40.1   86.0</code></pre>
+<p><a href="#top">Back to top</a></p>
 </div>
 <div id="varying-kernel-sizes" class="section level3">
-<h3><span class="header-section-number">1.4.3</span> Varying kernel sizes</h3>
+<h3><span class="header-section-number">1.4.4</span> Varying kernel sizes</h3>
 <pre class="r"><code># resolution data
 # resdat &lt;- data.table(x = log10(datf$t_btwn_samp), y = log10(datf$plot_res))
 # resdat$n &lt;- rep(1, nrow(resdat))
@@ -704,6 +977,7 @@ dev.off()
 # plot(ers, box = FALSE, xlim = c(-5, 15), ylim = c(-5, 15), 
 #      xlab = &quot;Study duration - log10(days)&quot;, ylab = &quot;Sampled area - log10(ha)&quot;)
 # dev.off()</code></pre>
+<p><a href="#top">Back to top</a></p>
 </div>
 </div>
 </div>

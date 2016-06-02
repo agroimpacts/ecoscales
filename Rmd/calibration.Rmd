@@ -5,6 +5,8 @@ date: "January 8, 2016"
 output: 
   html_document:
     toc: yes
+    number_sections: true
+    toc_depth: 3
     fig_caption: true
 ---
 
@@ -19,29 +21,30 @@ p_root <- set_base_path("ecoscales")
 p_dat <- fp(p_root, "external/data/calibration")
 ```
 
-```{r, eval=FALSE}
+```{r, eval=FALSE, echo = FALSE}
 # Read in and clean-up calibration data
-cal <- data.table(read_excel(fp(p_dat, "merged_calibration.xlsx")))
-cal[, DOI := gsub("DOI:|doi:|DOI: |doi: |DOI ", "", DOI)]
-cal[, DOI := gsub("\\s", "", DOI)]  # remove DOI and whitespace
-names(cal)
-dropnm <-  c("V29")#, "V31", "journal", "exclusion reason", "sensitivity")
-cal[, c(dropnm) := NULL]
-
-# check data types
-for(j in names(cal)[8:24]) set(cal, j = j, value = as.numeric(cal[[j]]))
-
-# use NA in n_sites as indicator that study was excluded
-cal[, inout := ifelse(is.na(n_sites), 0, 1)]  
+# cal <- data.table(read_excel(fp(p_dat, "merged_calibration.xlsx")))
+# cal[, DOI := gsub("DOI:|doi:|DOI: |doi: |DOI ", "", DOI)]
+# cal[, DOI := gsub("\\s", "", DOI)]  # remove DOI and whitespace
+# names(cal)
+# dropnm <-  c("V29")#, "V31", "journal", "exclusion reason", "sensitivity")
+# cal[, c(dropnm) := NULL]
+# 
+# # check data types
+# for(j in names(cal)[8:24]) set(cal, j = j, value = as.numeric(cal[[j]]))
+# 
+# # use NA in n_sites as indicator that study was excluded
+# cal[, inout := ifelse(is.na(n_sites), 0, 1)]  
 # write.csv(cal, file = fp(p_dat, "merged_calibrationf.csv"))
 ```
 
 ```{r, warning = FALSE}
 # external fixes and recodes, bring back in
 # cal <- data.table(read_excel(fp(p_dat, "merged_calibrationf.xlsx")))
-cal <- data.table(read_excel(fp(p_dat, "merged_calibrationff.xlsx")))
+# cal <- data.table(read_excel(fp(p_dat, "merged_calibrationff.xlsx")))
+cal <- data.table(read_excel(fp(p_dat, "merged_calibrationffff.xlsx")))
 names(cal)
-cal[, c("notes", "V29") := NULL]
+cal[, c("notes", "V30") := NULL]
 for(j in names(cal)[c(4:5, 10:24)]) {
   set(cal, j = j, value = as.numeric(cal[[j]]))
 }
@@ -142,9 +145,9 @@ calr[feature != 99, lapply(.SD, CV), by = .(DOI, feature),
 
 Tim needs to fix paleo studies in calibration (and main set) giving too much credit to effective area. [DONE]
 
-Others need to fix their study duration figures. Paul on paleo one in calibration, Choi, Chang, etc in main set.  [Ahmed remaining]
+Others need to fix their study duration figures. Paul on paleo one in calibration, Choi, Chang, etc in main set.  [DONE]
 
-For N-sites, count sites only once if there are repeated measures taken at them, e.g. Jonathan in 10.1111/j.1466-8238.2009.00454.x for bird counts [Chang, Ahmed remaining]
+For N-sites, count sites only once if there are repeated measures taken at them, e.g. Jonathan in 10.1111/j.1466-8238.2009.00454.x for bird counts [Chang, Ahmed remaining] 
 
 
 
