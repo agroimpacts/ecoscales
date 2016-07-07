@@ -1,0 +1,22 @@
+---
+title: "DOI to Bib"
+author: "Lyndon Estes"
+date: "May 31, 2016"
+output: html_document
+---
+
+```{r}
+library(rcrossref)
+library(readxl)
+
+dois <- read_excel("external/data/result/doi-title.xlsx")
+# fileConn <- file("paper/other/timpaul.bib")
+f <- "paper/other/timpaul.bib"
+for(i in 1:nrow(dois)) {
+  bib <- cr_cn(dois = dois$doi[i], format = "bibtex")
+  cat(cr_cn(dois = dois$doi[i], format = "bibtex"), file = f, append = TRUE, 
+      "\n\n")
+}
+
+
+```
