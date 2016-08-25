@@ -35,7 +35,7 @@
 % If your reference list includes text notes as well as references,
 % include the following line; otherwise, comment it out.
 
-\renewcommand\refname{References and Notes}
+%\renewcommand\refname{References and Notes}
 
 % The following lines set up an environment for the last note in the
 % reference list, which commonly includes acknowledgments of funding,
@@ -135,7 +135,7 @@ Ecology Letters & 17.95 \\
 \subsubsection*{Estimating observational scales}
 \vspace{-10pt}
 
-Each observer first reviewed the papers in the calibration set, and then commenced reviewing papers in their individual random draws, beginning at the top of the list and then proceeding until at least 20 eligible papers describing ecological observations were reviewed. In cases where the reviewed papers used observations that were described in another publication, we reviewed those source papers in order to extract the observational dimensions. We excluded papers that were opinion or perspectives pieces (unless they presented or used existing observational data), theoretical studies based on generated data, or those which were entirely based on experimental manipulations. We left out the latter category because our intent was to evaluate the domains for observations of natural systems, and we wanted to avoid the bias that would be imposed by the relatively narrow spatial and temporal scales of experiments \cite{kareiva_spatial_1988,tilman_global_2011}.  
+Each observer first reviewed the papers in the calibration set, and then commenced reviewing papers in their individual random draws, beginning at the top of the list and then proceeding until at least 20 eligible papers describing ecological observations were reviewed. In cases where the reviewed papers used observations that were described in another publication, we reviewed those source papers in order to extract the observational dimensions. We excluded papers that were opinion or perspectives pieces (unless they presented or used existing observational data), theoretical studies based on generated data, or those which were entirely based on experimental manipulations. We left out the latter category because our intent was to evaluate the domains for observations of natural systems, and we wanted to avoid the bias that would be imposed by the relatively narrow spatial and temporal scales of experiments \cite{kareiva_spatial_1988,tilman_global_2011}.  A bibliography of the reviewed papers follows the References and Notes section below. 
 
 To record the spatio-temporal dimensions of ecological observations, we considered the observational scales to be those at which a total measurement of the feature(s) of interest was made, rather than the scales that might be represented by the observations.  As an example, if a paper reported data on plant species diversity collected using 10 1 m$^2$ sub-plots randomly placed within a larger plot of 100 m$^2$, of which 10 were placed, we recorded 1 m$^2$ as the spatial resolution and 100 m$^2$ as the total extent of the observation. While the 10 sub-plots might be representative of diversity at larger scales (e.g. the particular plant community), that relationship depends both on sample design (number of replicates, placement, grain/resolution) and the properties of the ecosystem \cite{underwood_experiments_1997,palmer_scale_1994, cao_comparison_2002}. Most studies also did not quantify the broader scales represented by their observations, nor did they report dimensions that would allow these to be independently estimated, such as the maximum distance between sample plots, which could have been used to estimate the spatial extent represented by the sample \cite{palmer_scale_1994}.
 
@@ -152,7 +152,7 @@ A fuller description of the project methodology is contained within the answers 
 \def\Hsubitem{\item [Q\arabic{enumi}.\arabic{enumi}.]} 
 \vspace{-0.5cm}
 \begin{enumerate}
-  \Hitem \emph{\textbf{What are the general inclusion/exclusion criteria for studies?}} Studies should be excluded from this analysis if they are: 1) opinion/perspectives pieces; 2) model-only studies, particularly theoretical models, which are not developed or tested against observed data; 3) if they are experimental manipulations (but if there is a study that has a mix of observational and experimental, record the observational treatments and exclude the manipulated treatments).
+  \Hitem \emph{\textbf{What are the general inclusion/exclusion criteria for studies?}} Studies should be excluded from this analysis if they are: 1) opinion/perspectives pieces; 2) book reviews; 3) model-only studies, particularly theoretical models, which are not developed or tested against observed data; 4) if they are experimental manipulations (but if there is a study that has a mix of observational and experimental, record the observational treatments and exclude the manipulated treatments).
   
   \Hitem \emph{\textbf{What are the standard categories to be used for defining “Study type”?}} Define study type according to the following categories: Remote sensing, passive/automated data collection, other geographic data (e.g. non-remotely sensed GIS data), field/direct observation, or paleo-reconstruction (tree rings, charcoal cores, etc).
 
@@ -275,39 +275,7 @@ Figure S1 indicates the effect that varying bandwidth has on the appearance of t
 \clearpage
 \bibliography{/Users/lestes/Dropbox/publications/fullbib}
 
-\bibliographystyle{Science}
-
-
-
-% Following is a new environment, {scilastnote}, that's defined in the
-% preamble and that allows authors to add a reference at the end of the
-% list that's not signaled in the text; such references are used in
-% *Science* for acknowledgments of funding, help, etc.
-
-%\begin{scilastnote}
-%\item We've included in the template file \texttt{scifile.tex} a new
-%environment, \texttt{\{scilastnote\}}, that generates a numbered final
-%citation without a corresponding signal in the text.  This environment
-%can be used to generate a final numbered reference containing
-%acknowledgments, sources of funding, and the like, per {\it Science\/}
-%style.
-%\end{scilastnote}
-
-
-% For your review copy (i.e., the file you initially send in for
-% evaluation), you can use the {figure} environment and the
-% \includegraphics command to stream your figures into the text, placing
-% all figures at the end.  For the final, revised manuscript for
-% acceptance and production, however, PostScript or other graphics
-% should not be streamed into your compliled file.  Instead, set
-% captions as simple paragraphs (with a \noindent tag), setting them
-% off from the rest of the text with a \clearpage as shown  below, and
-% submit figures as separate files according to the Art Department's
-% instructions.
-
-
-\clearpage
-
+\bibliographystyle{naturemag}
 
 \end{document}
 
