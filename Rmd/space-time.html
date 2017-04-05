@@ -107,7 +107,8 @@ p_calib &lt;- full_path(p_root, &quot;external/data/calibration&quot;)
 # dat &lt;- as.data.table(read_excel(full_path(p_dat, &quot;merged.xlsx&quot;)))
 dat &lt;- as.data.table(read_excel(full_path(p_dat, &quot;mergedfff.xlsx&quot;)))
 cal &lt;- data.table(read_excel(fp(p_calib, &quot;merged_calibrationffff.xlsx&quot;)))
-full &lt;- data.table(read_excel(fp(p_dat, &quot;full_less_Treuer.xlsx&quot;)))
+full &lt;- data.table(read_excel(fp(p_dat, &quot;full_no_treuer_toss.xlsx&quot;)))
+# full &lt;- data.table(read_excel(fp(p_dat, &quot;full_less_Treuer.xlsx&quot;)))
 
 setnames(dat, &quot;DOI/title&quot;, &quot;DOI&quot;)
 dat[, DOI := gsub(&quot;DOI:|doi:|DOI: |doi: |DOI &quot;, &quot;&quot;, DOI)]
@@ -116,12 +117,10 @@ full &lt;- gsub(&quot;DOI:|doi:|DOI: |doi: |DOI &quot;, &quot;&quot;, full$DOI)
 full &lt;- gsub(&quot;\\s&quot;, &quot;&quot;, full)  # remove DOI and whitespace
 
 dat &lt;- dat[, names(dat)[1:20], with = FALSE]
-
 unique(dat$study_type)
 dat[, study_type := tolower(study_type)]
 kwords &lt;- c(&quot;field&quot;, &quot;paleo&quot;, &quot;remote&quot;, &quot;automated&quot;, &quot;other&quot;)
 for(i in 1:length(kwords)) dat[like(study_type, kwords[i]), st := i]
-
 # dat[st == 5, .N] / nrow(dat)
 
 # class(cal$DOI)
@@ -132,7 +131,8 @@ for(i in 1:length(kwords)) dat[like(study_type, kwords[i]), st := i]
 # dat[dat$DOI %in% cal$DOI, DOI]
 # dat[cal$DOI %in% dat$DOI, ]
 # cal[DOI == dat[cal$DOI %in% dat$DOI, DOI][11]]
-# dat[DOI == dat[cal$DOI %in% dat$DOI, DOI][7]]</code></pre>
+# dat[DOI == dat[cal$DOI %in% dat$DOI, DOI][7]]
+# dat[observer == &quot;Treuer&quot;, unique(DOI)]  # 19</code></pre>
 <pre><code>##  [1] &quot;field_direct observation&quot;         
 ##  [2] &quot;other geographic data&quot;            
 ##  [3] &quot;remote sensing&quot;                   
@@ -177,8 +177,8 @@ doisup &lt;- c(unique(cal$DOI_data_source), unique(dat$DOI_data_source))
 doisup &lt;- doisup[!is.na(doisup) &amp; doisup != &quot;NA&quot; &amp; doisup != &quot;-&quot;]
 doisup &lt;- unlist(strsplit(doisup, &quot;;&quot;))</code></pre>
 <p>140 papers main analysis</p>
-<p>364 papers main analysis (everyone’s but Tim’s)</p>
-<p>0.848129 % of all papers since 2004</p>
+<p>346 papers main analysis (adding in Tim’s rejected number separately)</p>
+<p>0.8061885 % of all papers since 2004</p>
 <p>56 additional papers or other publications tracked down</p>
 <p>371 records (ecological observations)</p>
 <p><a href="#top">Back to top</a></p>

@@ -42,10 +42,15 @@ p_dat <- fp(p_root, "external/data/calibration")
 # external fixes and recodes, bring back in
 # cal <- data.table(read_excel(fp(p_dat, "merged_calibrationf.xlsx")))
 # cal <- data.table(read_excel(fp(p_dat, "merged_calibrationff.xlsx")))
-cal <- data.table(read_excel(fp(p_dat, "merged_calibrationffff.xlsx")))
+cal <- data.table(read_excel(fp(p_dat, "merged_calibrationfffff.xlsx")))
 names(cal)
-cal[, c("notes", "V30") := NULL]
-for(j in names(cal)[c(4:5, 10:24)]) {
+
+cal[, c("notes", "V31") := NULL]
+nuvars <- c("inout", "feature", "study_year", "st", "plot_res", "n_sites",
+            "act_ext", "eff_ext", "samp_dur", "t_btwn_samp", "act_dur", 
+            "eff_dur", paste0("comp", 1:3), paste0("struc", 1:3), 
+            paste0("func", 1:3))
+for(j in nuvars) {
   set(cal, j = j, value = as.numeric(cal[[j]]))
 }
 # length(which(is.na(cal$feature)))
@@ -94,14 +99,14 @@ legend(x = "topleft", pch = pchs, pt.cex = cxs, col = cols,
 ## Variance in extracted statistics
 ### By DOI
 ```{r}
-varnms <- c("plot_res", "n_sites", "sampled_area", "t_btwn_samp", 
-            "study_duration")
+varnms <- c("plot_res", "n_sites", "act_ext", "eff_ext", "t_btwn_samp", 
+            "act_dur", "eff_dur")
 mus <- cal[inout == 1, lapply(.SD, mean, na.rm = TRUE), by = .(DOI, observer),             .SDcols = varnms]  # mean variable val per paper per observer
 # variance and mean per paper across observers
 vars <- mus[, lapply(.SD, sd, na.rm = TRUE), by = DOI, .SDcols = varnms] 
 musmu <- mus[, lapply(.SD, mean, na.rm = TRUE), by = DOI, .SDcols = varnms]
 
-par(mfrow = c(3, 2), mar = c(3, 3, 2, 2), mgp = c(1.5, 0.5, 0))
+par(mfrow = c(3, 3), mar = c(3, 3, 2, 2), mgp = c(1.5, 0.5, 0))
 for(i in varnms) {
   mu <- musmu[, get(i)]
   sdev <- vars[, get(i)]
@@ -125,30 +130,23 @@ colMeans(sapply(varnms, function(i) {
 
 ### By feature (individual records) across DOIs
 ```{r, results='hold'}
-CV <- function(x) sd(x) / mean(x)
+CV <- function(x) sd(x, na.rm = TRUE) / mean(x, na.rm = TRUE)
 rnms <- c("DOI", "feature", "observer", "plot_res", "n_sites", 
-          "sampled_area", "t_btwn_samp", "study_duration")
+          "act_ext", "eff_ext", "t_btwn_samp", "act_dur", "eff_dur")
 calr <- cal[, rnms, with = FALSE]
+
 # calr[feature != 99, ]
 # calr[feature != 99, lapply(.SD, mean), by = .(DOI, feature), 
 #      .SDcols = rnms[4:7]]
 # calr[feature != 99, .N, by = .(DOI, feature)]
 calr[feature != 99, lapply(.SD, CV), by = .(DOI, feature), 
-     .SDcols = rnms[4:8]][, lapply(.SD, mean, na.rm = TRUE), 
-                          .SDcols = rnms[4:8]]
+     .SDcols = rnms[4:10]][, lapply(.SD, mean, na.rm = TRUE), 
+                          .SDcols = rnms[4:10]]
 
 # par(mfcol = c(10, 4), mar = c(2, 2, 2, 2), mgp = c(1.5, 0.5, 0))
 # mus[, plot(plot_res), by = DOI]
 
 ```
-
-
-Tim needs to fix paleo studies in calibration (and main set) giving too much credit to effective area. [DONE]
-
-Others need to fix their study duration figures. Paul on paleo one in calibration, Choi, Chang, etc in main set.  [DONE]
-
-For N-sites, count sites only once if there are repeated measures taken at them, e.g. Jonathan in 10.1111/j.1466-8238.2009.00454.x for bird counts [Chang, Ahmed remaining] 
-
 
 
 

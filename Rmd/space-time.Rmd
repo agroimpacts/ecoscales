@@ -21,28 +21,55 @@ p_root <- set_base_path("ecoscales")
 p_dat <- full_path(p_root, "external/data/result")
 p_calib <- full_path(p_root, "external/data/calibration")
 # dat <- as.data.table(read_excel(full_path(p_dat, "merged.xlsx")))
-dat <- as.data.table(read_excel(full_path(p_dat, "mergedfff.xlsx")))
-cal <- data.table(read_excel(fp(p_calib, "merged_calibrationffff.xlsx")))
-full <- data.table(read_excel(fp(p_dat, "full_less_Treuer.xlsx")))
+dat <- as.data.table(read_excel(full_path(p_dat, "mergedfffff.xlsx")))
+dato <- as.data.table(read_excel(full_path(p_dat, "archive/mergedfff.xlsx")))
+cal <- data.table(read_excel(fp(p_calib, "merged_calibrationfffff.xlsx")))
+full <- data.table(read_excel(fp(p_dat, "full_no_treuer_toss.xlsx")))
+# full <- data.table(read_excel(fp(p_dat, "full_less_Treuer.xlsx")))
+
+setnames(dato, "DOI/title", "DOI")
+dato[, DOI := gsub("DOI:|doi:|DOI: |doi: |DOI ", "", DOI)]
+dato[, DOI := gsub("\\s", "", DOI)]  # remove DOI and whitespace
+
 
 setnames(dat, "DOI/title", "DOI")
 dat[, DOI := gsub("DOI:|doi:|DOI: |doi: |DOI ", "", DOI)]
 dat[, DOI := gsub("\\s", "", DOI)]  # remove DOI and whitespace
+cal[, DOI := gsub("\\s", "", DOI)]  # remove DOI and whitespace
 full <- gsub("DOI:|doi:|DOI: |doi: |DOI ", "", full$DOI)
 full <- gsub("\\s", "", full)  # remove DOI and whitespace
-unique(full)
 
-dat <- dat[, names(dat)[1:20], with = FALSE]
-
-unique(dat$study_type)
+# subset main results and define study type
+dat <- dat[, names(dat)[1:22], with = FALSE]
 dat[, study_type := tolower(study_type)]
-kwords <- c("field", "paleo", "remote", "automated", "other")
-for(i in 1:length(kwords)) dat[like(study_type, kwords[i]), st := i]
+# kwords <- c("field", "paleo", "remote", "automated", "other")
+tst <- dat[, study_type]
+
+kwords <- cbind(c("field", "paleo", "remote", "automated", "other"), 
+                c("field", "paleo", "remote", "automated", "other"))
+# for(i in 1:length(kwords)) dat[like(study_type, kwords[i]), st := i]
+for(i in 1:nrow(kwords)) {
+  dat[like(study_type, kwords[i, 1]), study_type := kwords[i, 2]]
+}
+# cbind(tst, dat[, study_type])
 
 # dat[st == 5, .N] / nrow(dat)
 
-# class(cal$DOI)
-# class(dat$DOI)
+kwords <- cbind(c("field", "direct", "paleo", "remote", "automated", "other"),
+                c("field", "field", "paleo", "remote", "automated", "other"))
+cal[, study_type := tolower(study_type)]
+tst <- cal[, study_type]
+for(i in 1:nrow(kwords)) {
+  cal[like(study_type, kwords[i, 1]), study_type := kwords[i, 2]]
+}
+# cbind(tst, cal[, study_type])
+
+# unique(dat$DOI)
+# a <- unique(dato$DOI)
+# b <- unique(dat$DOI)
+# notin <- sort(a)[!sort(a) %in% sort(b)]
+# dato[DOI %in% notin, 1:5, with = FALSE]
+# dat[observer == "Ahmed" & journal == "Oecologia"]
 # unique(cal$DOI) %in% unique(dat$DOI)
 # match(cal$DOI, dat$DOI)
 # match(dat$DOI, cal$DOI)
@@ -50,46 +77,64 @@ for(i in 1:length(kwords)) dat[like(study_type, kwords[i]), st := i]
 # dat[cal$DOI %in% dat$DOI, ]
 # cal[DOI == dat[cal$DOI %in% dat$DOI, DOI][11]]
 # dat[DOI == dat[cal$DOI %in% dat$DOI, DOI][7]]
+# dat[observer == "Treuer", unique(DOI)]  # 19
 
 ```
 
 ## Data prep
 ### Merge full and calibration datasets
 ```{r, message=FALSE, warning=FALSE, results='hide'}
-dat2 <- copy(dat[, .(st, DOI, study_type, plot_res, n_sites, sampled_area,
-                     samp_duration, t_btwn_samp, study_duration)])
-rnms <- c("st", "DOI", "study_type", "feature", "observer", "plot_res", 
-          "n_sites", "sampled_area", "t_btwn_samp", "study_duration")
+# dat2 <- copy(dat[, .(st, DOI, study_type, plot_res, n_sites, act_ext, eff_ext,
+#                      samp_dur, t_btwn_samp, act_dur, eff_dur)])
+# rnms <- c("st", "DOI", "study_type", "feature", "observer", "plot_res", 
+#           "n_sites", "act_ext", "eff_ext", "samp_dur", "t_btwn_samp",
+#           "act_dur", "eff_dur")
+dat2 <- copy(dat[, .(DOI, study_type, plot_res, n_sites, act_ext, eff_ext,
+                     samp_dur, t_btwn_samp, act_dur, eff_dur)])
+rnms <- c("DOI", "study_type", "feature", "observer", "plot_res", 
+          "n_sites", "act_ext", "eff_ext", "samp_dur", "t_btwn_samp",
+          "act_dur", "eff_dur")
 calr <- cal[, rnms, with = FALSE]
-for(j in names(calr)[c(4, 6:10)]) set(calr, j=j, value = as.numeric(calr[[j]]))
+selind <- c(3, 5:length(rnms))
+for(j in names(calr)[selind]) set(calr, j=j, value = as.numeric(calr[[j]]))
 
+# str(calr)
 # select down to columns of interest
 # st <- calr$study_type[which(calr$feature != 99)]
-calr <- calr[feature != 99, lapply(.SD, mean), by = .(DOI, feature), 
-             .SDcols = rnms[c(1, 6:10)]]
-length(unique(calr$DOI)) + length(unique(dat$DOI))  # 140 papers providing dat
-unique(calr$DOI)
-calr_type <- data.table(cbind("DOI" = unique(calr$DOI), # calib field studies
-                              "study_type" = c(rep("field", 5), "paleo",
-                                               rep("field", 4)))) 
+calr_type <- calr[feature != 99, { 
+  list(unique(study_type[!is.na(study_type)]))
+}, by = .(DOI, feature)][, list("study_type" = unique(V1)), by = DOI]
+
+
+# calr[DOI == "10.1007/s00442-005-0338-3" & feature == 2, 
+#      mean(eff_dur, na.rm = T)]
+calr <- calr[feature != 99, {
+  lapply(.SD, function(x) mean(x, na.rm = TRUE))
+},  by = .(DOI, feature), .SDcols = rnms[c(5:ncol(calr))]]
+length(unique(calr$DOI)) + length(unique(dat$DOI))  # 134 papers providing dat
+# unique(calr$DOI)
+
+# calr_type <- data.table(cbind("DOI" = unique(calr$DOI), # calib field studies
+#                               "study_type" = c(rep("field", 5), "paleo",
+#                                                rep("field", 4)))) 
 
 # combine full and calibration
-calr[, samp_duration := NA]
+# calr[, samp_dur := NA]
+calr[, samp_dur := NA]
 calr[, "feature" := NULL] #c("DOI", "feature") := NULL]
 calr <- merge(calr, calr_type, by = "DOI")
-setcolorder(calr, names(calr)[c(2:1, 9, 3:5, 8, 6:7)])
+setcolorder(calr, names(dat2))
 datf <- rbind(cbind("dsrc" = 1, dat2), cbind("dsrc" = 2, calr))
 doisup <- c(unique(cal$DOI_data_source), unique(dat$DOI_data_source))
 doisup <- doisup[!is.na(doisup) & doisup != "NA" & doisup != "-"]
 doisup <- unlist(strsplit(doisup, ";"))
-
 ```
 
 `r length(unique(datf$DOI))` papers  main analysis
 
-`r length(unique(full)) + 20 + 57` papers main analysis (everyone's but Tim's)
+`r length(unique(full)) + (57 - 19)` papers main analysis (adding in Tim's rejected number separately)
 
-`r (length(unique(full)) + 20 + 57) / 42918 * 100` % of all papers since 2004
+`r (length(unique(full)) + (57 - 19)) / 42918 * 100` % of all papers since 2004
 
 `r length(unique(doisup))` additional papers or other publications tracked down
 
@@ -98,16 +143,16 @@ doisup <- unlist(strsplit(doisup, ";"))
 <a href="#top">Back to top</a>
 
 ### Adjustments/fixes
-1. if `samp_duration != study_duration` and `t_btwn_samp == 0`, set `study_duration == samp_duration` (actually, no, in many cases there is a good reason to have to `study_duration != samp_duration` (see below))
+1. if `samp_dur != act_dur` and `t_btwn_samp == 0`, set `act_dur == samp_dur` (actually, no, in many cases there is a good reason to have to `act_dur != samp_dur` (see below))
 2. Prior to scaling the data in log10 space, we need to make one adjustment. Time between samples has many 0 values because many observations are simply one-offs.  Set these to an arbitrarily large value which will represent clear separation on axis from high frequency studies. A function is defined here for this purpose, and will be applied after bootstrapping is done. 
 
 ```{r, message=FALSE, warning=FALSE, results='hide'}
 # apply fixes (mostly to account for observer omissions)
-# 1. if samp_duration != study_duration and t_btwn_samp == 0, set 
-#    study_duration == samp_duration
+# 1. if samp_dur != act_dur and t_btwn_samp == 0, set 
+#    act_dur == samp_dur
 names(datf)
-datf[t_btwn_samp == 0 & (study_duration != samp_duration), ]  
-dat[t_btwn_samp == 0 & (study_duration != samp_duration), c(1, 3, 8:13), with=F]  
+datf[t_btwn_samp == 0 & (act_dur != samp_dur), ]  
+dat[t_btwn_samp == 0 & (act_dur != samp_dur), c(1, 3, 8:13), with=F]  
 # function to set t_btwn_samp to 365 * 100000 to indicate once-off studies 
 # when t_btwn_samp == 0.  
 to_infin_byond <- function(tbtwn) ifelse(tbtwn == 0, 365 * 10000, tbtwn)
@@ -119,7 +164,7 @@ to_infin_byond <- function(tbtwn) ifelse(tbtwn == 0, 365 * 10000, tbtwn)
 ## Analyses
 ### Resampling with uncertainties
 
-Defined by the per variable CV based on uncertainty between observers. Here we are just going to use apply the variability to each variable for every observation (previous incarnation used uncertainty on just the variables listed as uncertain, with recalculation of dependent variables (`study_duration`, `sampled_area`) made after pertubation [see commit prior to second or third commit on 4 April for code]).
+Defined by the per variable CV based on uncertainty between observers. Here we are just going to use apply the variability to each variable for every observation (previous incarnation used uncertainty on just the variables listed as uncertain, with recalculation of dependent variables (`act_dur`, `act_ext`) made after pertubation [see commit prior to second or third commit on 4 April for code]).
 
 ```{r, eval=FALSE}
 # p <- c(0.64, 0.84, 0.53, 1.21)  # from calibration.Rmd
@@ -131,7 +176,7 @@ resamp_func <- function(dat, p, iter) {
     if((x / 100) %in% 1:100) print(x)
     if(length(p) < 4) stop("p must be length of 4", call. = FALSE)
     
-    dnew <- copy(datf[, .(plot_res, sampled_area, t_btwn_samp, study_duration)])
+    dnew <- copy(datf[, .(plot_res, act_ext, t_btwn_samp, act_dur)])
     # modifiers
     modvec <- sapply(p, function(y) {
       mv <- runif(nrow(dnew), min = 1 - y, max = 1 + y)
@@ -140,8 +185,8 @@ resamp_func <- function(dat, p, iter) {
 
     for(j in 1:ncol(modvec)) set(dnew, j = j, value = dnew[[j]] * modvec[, j])
     dnew[plot_res <= 0, plot_res := 0.00000001]
-    dnew[sampled_area <= 0, sampled_area := 0.00000001]
-    dnew[study_duration <= 0, study_duration := 0.00000001]
+    dnew[act_ext <= 0, act_ext := 0.00000001]
+    dnew[act_dur <= 0, act_dur := 0.00000001]
     dnew[t_btwn_samp < 0, t_btwn_samp := 0.00000001]
 
     dnew[, t_btwn_samp := to_infin_byond(t_btwn_samp)]  # set high
@@ -244,13 +289,13 @@ aaxis2[, logarea := log10(area)]
 length(which(datf$study_type %in% 
                c("remote sensing", "other geographic data"))) / nrow(datf)
 datf[t_btwn_samp == 0, .N] / datf[, .N]  # 36% of samples are once-offs
-datf[study_duration == samp_duration, .N] / nrow(datf)
-datf[(study_duration == samp_duration) & t_btwn_samp != 0]
-datf[(study_duration != samp_duration) & t_btwn_samp == 0]
+datf[act_dur == samp_dur, .N] / nrow(datf)
+datf[(act_dur == samp_dur) & t_btwn_samp != 0]
+datf[(act_dur != samp_dur) & t_btwn_samp == 0]
 
-hdat <- cbind("res" = log10(datf$plot_res), "ext" = log10(datf$sampled_area), 
+hdat <- cbind("res" = log10(datf$plot_res), "ext" = log10(datf$act_ext), 
               "int" = log10(to_infin_byond(datf$t_btwn_samp)), 
-              "dur" = log10(datf$study_duration))
+              "dur" = log10(datf$act_dur))
 hdat <- data.table(hdat)
 # set bounds for histograms
 hdat[res < aaxis1$logres[1], res := aaxis1$logres[1]]
@@ -265,9 +310,9 @@ vs <- c("res", "ext", "int", "dur")
 hdat_bs <- lapply(1:length(bootperturb), function(x) {  # x <- 1
   print(x)
   DT <- bootperturb[[x]]
-  hdb <- cbind("res" = log10(DT$plot_res), "ext" = log10(DT$sampled_area), 
+  hdb <- cbind("res" = log10(DT$plot_res), "ext" = log10(DT$act_ext), 
                "int" = log10(to_infin_byond(DT$t_btwn_samp)), 
-               "dur" = log10(DT$study_duration))
+               "dur" = log10(DT$act_dur))
   hdb <- data.table(hdb)
   hdb[res < aaxis1$logres[1], res := aaxis1$logres[1]]
   hdb[res > ry[2], res := ry[2]]
@@ -505,21 +550,21 @@ sum(hdatst[7:10]) # 4.5% year to century
 
 # datf[, plot(log10(n_sites), log10(plot_res))]
 # dat[like(study_type, "field"), plot(log10(n_sites), log10(plot_res))]
-datf[like(study_type, "field"), plot(log10(plot_res), log10(sampled_area), 
+datf[like(study_type, "field"), plot(log10(plot_res), log10(act_ext), 
                                      ylim = c(-10, 10))]
 
 datf[like(study_type, "remote"), 
-     points(log10(plot_res), log10(sampled_area), pch = 20, col = "red")]
+     points(log10(plot_res), log10(act_ext), pch = 20, col = "red")]
 datf[like(study_type, "automated"), 
-     points(log10(plot_res), log10(sampled_area), pch = 20, col = "blue")]
+     points(log10(plot_res), log10(act_ext), pch = 20, col = "blue")]
 lines(aaxis1$logres, aaxis2$logarea[-16] )
 datf[, .N / nrow(datf) * 100, by = st]
 
-datf[, plot(log10(t_btwn_samp), log10(study_duration), pch = 20)]
+datf[, plot(log10(t_btwn_samp), log10(act_dur), pch = 20)]
 datf[which(hdat[[3]] < -1.380211), 
-     points(log10(t_btwn_samp), log10(study_duration), pch = 20, col = "blue")]
+     points(log10(t_btwn_samp), log10(act_dur), pch = 20, col = "blue")]
 datf[like(study_type, "automated"), 
-     points(log10(t_btwn_samp), log10(study_duration), pch = 20, col = "red")]
+     points(log10(t_btwn_samp), log10(act_dur), pch = 20, col = "red")]
 
 
 # points(resdat3$x[which(datf$st == 4)], resdat3$y[which(datf$st == 4)])
@@ -564,8 +609,8 @@ resdat3[y > ry[2], y := ry[2]]
 coordinates(resdat3) <- ~x + y
 
 # extent
-extdat3 <- data.table(x = log10(kdat$study_duration), 
-                      y = log10(kdat$sampled_area))
+extdat3 <- data.table(x = log10(kdat$act_dur), 
+                      y = log10(kdat$act_ext))
 extdat3$n <- rep(1, nrow(extdat3))
 ex <- range(taxis2$logdays)
 ex <- c(floor(ex[1]), 5.56)#ceiling(ex[2]))
@@ -578,7 +623,7 @@ coordinates(extdat3) <- ~x + y
 
 # temporal framing
 tempdat <- data.table(x = log10(to_infin_byond(kdat$t_btwn_samp)), 
-                      y = log10(kdat$study_duration))
+                      y = log10(kdat$act_dur))
 tempdat <- tempdat[round(x, 8) != 6.56229286, ]  # remove one-time observations
 tempdat$n <- rep(1, nrow(tempdat))
 tx <- range(tempdat$x)
@@ -594,7 +639,7 @@ tempdat[y > ty[2], y := ty[2]]
 coordinates(tempdat) <- ~x + y
 
 # spatial framing
-spatdat <- data.table(x = log10(kdat$plot_res), y = log10(kdat$sampled_area))
+spatdat <- data.table(x = log10(kdat$plot_res), y = log10(kdat$act_ext))
 spatdat$n <- rep(1, nrow(spatdat))
 sx <- range(aaxis1$logres)
 sx[1] <- -5  # set limits to 0.01 cm^2
@@ -734,7 +779,7 @@ mtext("D", side = 3, line = -1, cex = 0.8, adj = 0.05)
 # }
 dev.off()
 
-# datf[, plot(log10(study_duration), log10(sampled_area), xlim)]
+# datf[, plot(log10(act_dur), log10(act_ext), xlim)]
 
 # image(rres3, col = rev(terrain.colors(100)))
 # points(resdat3$x, resdat3$y, pch = 20, cex = 0.5)
@@ -747,12 +792,12 @@ dev.off()
 ### Sensitivity
 Just for the four main variables. Rules: 
 
-+ If `plot_res` and/or `n_sites` uncertain, then `sampled_area` must be. Recalculate using random draw within the uncertain variable 
-+ If `t_btwn_samp` and/or `samp_duration` uncertain, do the same as above, but we have no variable for n repeats for calculating `study_duration`.
++ If `plot_res` and/or `n_sites` uncertain, then `act_ext` must be. Recalculate using random draw within the uncertain variable 
++ If `t_btwn_samp` and/or `samp_dur` uncertain, do the same as above, but we have no variable for n repeats for calculating `act_dur`.
 
 ```{r}
-svars <- c("plot_res", "n_sites", "sampled_area", "samp_duration",
-           "t_btwn_samp", "study_duration")
+svars <- c("plot_res", "n_sites", "act_ext", "samp_dur",
+           "t_btwn_samp", "act_dur")
 
 sens <- gsub("\\\\", ";", dat$sensitivity)
 sens <- gsub(", ", ";", gsub("; ", ";", sens))
@@ -801,18 +846,18 @@ colnames(senst) <- c("res", "n", "sarea", "sampd", "tbtwn", "studyd")
 
 # apply fixes (mostly to account for observer omissions)
 
-# 1. if samp_duration OR t_btwn_samp is uncertain, study_duration must also be. 
+# 1. if samp_dur OR t_btwn_samp is uncertain, act_dur must also be. 
 id <- which((senst$sampd == 1 | senst$tbtwn == 1) & senst$studyd == 0)
 senst[id, "studyd"] <- 1 
 
-# 2. if study_duration is uncertain but t_btwn and samp_duration are not, treat
+# 2. if act_dur is uncertain but t_btwn and samp_dur are not, treat
 # both as uncertain
 # although it is possible that just n_repeats is uncertain, but more likely 
 # that observers didn't note this is sensitive. 
 id <- which(senst$tbtwn == 0 & senst$sampd == 0 & senst$studyd == 1)
 senst[id, c("sampd", "tbtwn")] <- 1
 
-# 3. if plot_res or n_sites is uncertain, then sampled_area must be
+# 3. if plot_res or n_sites is uncertain, then act_ext must be
 id <- which((senst$res == 1 | senst$n == 1) & senst$sarea == 0)
 senst[id, "sarea"] <- 1
 
@@ -947,7 +992,7 @@ round(c("%" = length(which(intuni$V1 > 1)) / intrng[, .N],  # % > 1 interval
 set.seed(1)
 bootsamp <- lapply(1:1000, function(x) {
   if((x / 100) %in% 1:100) print(x)
-  dnew <- copy(datf[, .(plot_res, sampled_area, t_btwn_samp, study_duration)])
+  dnew <- copy(datf[, .(plot_res, act_ext, t_btwn_samp, act_dur)])
   dnew <- dnew[sample(1:.N, size = .N, replace = TRUE), ]
   dnew[, t_btwn_samp := to_infin_byond(t_btwn_samp)]  # set high
   dnew
@@ -976,8 +1021,8 @@ resdat2[y > ry[2], y := ry[2]]
 coordinates(resdat2) <- ~x + y
 
 # extent
-extdat2 <- data.table(x = log10(bootdt$study_duration), 
-                      y = log10(bootdt$sampled_area))
+extdat2 <- data.table(x = log10(bootdt$act_dur), 
+                      y = log10(bootdt$act_ext))
 extdat2$n <- rep(1, nrow(extdat2))
 ex <- range(taxis2$logdays)
 ex <- c(floor(ex[1]), 5.56)#ceiling(ex[2]))
@@ -1037,7 +1082,7 @@ plot(rext2, legend.only = TRUE, axis.args = aargs, legend.width = 1.25,
      legend.shrink = 0.9, breaks = brks2, col = rev(terrain.colors(30)))
 dev.off()
 
-# datf[, plot(log10(study_duration), log10(sampled_area), xlim)]
+# datf[, plot(log10(act_dur), log10(act_ext), xlim)]
 ```
 
 <a href="#top">Back to top</a>
@@ -1054,7 +1099,7 @@ stype[like(V1, "automated"), newnm := "automated"]
 tbtwn <- datf$t_btwn_samp
 # which(tbtwn < (0.1 / (60 * 60 * 24)) & tbtwn > 0)
 tbtwn <- ifelse(tbtwn == 0, 0.1 / (60 * 60 * 24), tbtwn)
-tempdat2 <- data.table(x = log10(tbtwn), y = log10(datf$study_duration))
+tempdat2 <- data.table(x = log10(tbtwn), y = log10(datf$act_dur))
 tempdat2[x == min(x), x := -5.5]
 tempdat2[x > -5.5 & x < tx[1], x := tx[1]]
 # tempdat2[y == min(y)]
@@ -1063,9 +1108,9 @@ tx2 <- round(range(tempdat2$x), 1)
 ty2 <- round(range(tempdat2$y), 1)
 
 # tempdat2 <- data.table(x = log10(to_infin_byond(datf$t_btwn_samp)), 
-#                       y = log10(datf$study_duration))
+#                       y = log10(datf$act_dur))
 spatdat2 <- data.table(x = log10(datf$plot_res / 10000), # convert to ha
-                       y = log10(datf$sampled_area))
+                       y = log10(datf$act_ext))
 sx2 <- round(range(spatdat2$x), 1)
 sx2[2] <- 4.8
 sy2 <- round(range(spatdat2$y), 1)
