@@ -13,7 +13,7 @@ output:
 ```{r, message = FALSE, warning=FALSE, results='hold'}
 library(ecoscales)
 library(readxl)
-library(stringdist)
+# library(stringdist)
 library(maptools)
 library(RColorBrewer)
 
@@ -22,16 +22,16 @@ p_dat <- full_path(p_root, "external/data/result")
 p_calib <- full_path(p_root, "external/data/calibration")
 # dat <- as.data.table(read_excel(full_path(p_dat, "merged.xlsx")))
 dat <- as.data.table(read_excel(full_path(p_dat, "mergedfffff.xlsx")))
-dato <- as.data.table(read_excel(full_path(p_dat, "archive/mergedfff.xlsx")))
+# dato <- as.data.table(read_excel(full_path(p_dat, "archive/mergedfff.xlsx")))
 cal <- data.table(read_excel(fp(p_calib, "merged_calibrationfffff.xlsx")))
 full <- data.table(read_excel(fp(p_dat, "full_no_treuer_toss.xlsx")))
 # full <- data.table(read_excel(fp(p_dat, "full_less_Treuer.xlsx")))
 
-setnames(dato, "DOI/title", "DOI")
-dato[, DOI := gsub("DOI:|doi:|DOI: |doi: |DOI ", "", DOI)]
-dato[, DOI := gsub("\\s", "", DOI)]  # remove DOI and whitespace
+# setnames(dato, "DOI/title", "DOI")
+# dato[, DOI := gsub("DOI:|doi:|DOI: |doi: |DOI ", "", DOI)]
+# dato[, DOI := gsub("\\s", "", DOI)]  # remove DOI and whitespace
 
-
+# clean up DOIs
 setnames(dat, "DOI/title", "DOI")
 dat[, DOI := gsub("DOI:|doi:|DOI: |doi: |DOI ", "", DOI)]
 dat[, DOI := gsub("\\s", "", DOI)]  # remove DOI and whitespace
@@ -43,7 +43,7 @@ full <- gsub("\\s", "", full)  # remove DOI and whitespace
 dat <- dat[, names(dat)[1:22], with = FALSE]
 dat[, study_type := tolower(study_type)]
 # kwords <- c("field", "paleo", "remote", "automated", "other")
-tst <- dat[, study_type]
+# tst <- dat[, study_type]
 
 kwords <- cbind(c("field", "paleo", "remote", "automated", "other"), 
                 c("field", "paleo", "remote", "automated", "other"))
@@ -58,7 +58,7 @@ for(i in 1:nrow(kwords)) {
 kwords <- cbind(c("field", "direct", "paleo", "remote", "automated", "other"),
                 c("field", "field", "paleo", "remote", "automated", "other"))
 cal[, study_type := tolower(study_type)]
-tst <- cal[, study_type]
+# tst <- cal[, study_type]
 for(i in 1:nrow(kwords)) {
   cal[like(study_type, kwords[i, 1]), study_type := kwords[i, 2]]
 }
@@ -91,6 +91,8 @@ for(i in 1:nrow(kwords)) {
 #           "act_dur", "eff_dur")
 dat2 <- copy(dat[, .(DOI, study_type, plot_res, n_sites, act_ext, eff_ext,
                      samp_dur, t_btwn_samp, act_dur, eff_dur)])
+selind <- 3:ncol(dat2)
+for(j in names(dat2)[selind]) set(dat2, j=j, value = as.numeric(dat2[[j]]))
 rnms <- c("DOI", "study_type", "feature", "observer", "plot_res", 
           "n_sites", "act_ext", "eff_ext", "samp_dur", "t_btwn_samp",
           "act_dur", "eff_dur")
@@ -152,7 +154,7 @@ doisup <- unlist(strsplit(doisup, ";"))
 #    act_dur == samp_dur
 names(datf)
 datf[t_btwn_samp == 0 & (act_dur != samp_dur), ]  
-dat[t_btwn_samp == 0 & (act_dur != samp_dur), c(1, 3, 8:13), with=F]  
+dat[t_btwn_samp == 0 & (act_dur != samp_dur), c(1, 3, 8:13), with = F]  
 # function to set t_btwn_samp to 365 * 100000 to indicate once-off studies 
 # when t_btwn_samp == 0.  
 to_infin_byond <- function(tbtwn) ifelse(tbtwn == 0, 365 * 10000, tbtwn)
@@ -168,25 +170,37 @@ Defined by the per variable CV based on uncertainty between observers. Here we a
 
 ```{r, eval=FALSE}
 # p <- c(0.64, 0.84, 0.53, 1.21)  # from calibration.Rmd
-p <- c(0.58, 0.82, 0.99, 1.24)  # from calibration.Rmd
+# p <- c(0.58, 0.82, 0.99, 1.24)  # from calibration.Rmd
+##     plot_res   n_sites   act_ext   eff_ext t_btwn_samp  act_dur   eff_dur
+## 1: 0.5769693 0.3821107 0.7196559 0.4049972     1.01134 1.253045 0.5284913
+p <- c(0.58, 0.72, 0.41, 1.01, 1.25, 0.53)  # from calibration.Rmd
 
 # Function for bootstrapping with uncertainties
-resamp_func <- function(dat, p, iter) {
-  bout <- lapply(1:iter, function(x) {
+vars <- c("plot_res", "act_ext", "eff_ext", "t_btwn_samp", "act_dur", 
+          "eff_dur")
+
+resamp_func <- function(dat, vars, p, iter) {
+  bout <- lapply(1:iter, function(x) {  # x <- 1
     if((x / 100) %in% 1:100) print(x)
-    if(length(p) < 4) stop("p must be length of 4", call. = FALSE)
+    if(length(p) < length(var)) stop("p must be length of var", call. = FALSE)
     
-    dnew <- copy(datf[, .(plot_res, act_ext, t_btwn_samp, act_dur)])
+    # dnew <- copy(datf[, .(plot_res, act_ext, eff_ext, t_btwn_samp, act_dur)])
+    # dnew <- copy(datf[, vars, with = FALSE])
+    dnew <- copy(dat[, vars, with = FALSE])
     # modifiers
     modvec <- sapply(p, function(y) {
       mv <- runif(nrow(dnew), min = 1 - y, max = 1 + y)
       mv
     })
-
+    # plot(dnew[[j]] * modvec[, j], dnew[[j]])
+    
+    # perturb and set any values < 0 to very small amount
     for(j in 1:ncol(modvec)) set(dnew, j = j, value = dnew[[j]] * modvec[, j])
     dnew[plot_res <= 0, plot_res := 0.00000001]
     dnew[act_ext <= 0, act_ext := 0.00000001]
+    dnew[eff_ext <= 0, eff_ext := 0.00000001]
     dnew[act_dur <= 0, act_dur := 0.00000001]
+    dnew[eff_dur <= 0, eff_dur := 0.00000001]
     dnew[t_btwn_samp < 0, t_btwn_samp := 0.00000001]
 
     dnew[, t_btwn_samp := to_infin_byond(t_btwn_samp)]  # set high
@@ -196,11 +210,19 @@ resamp_func <- function(dat, p, iter) {
 }
 
 set.seed(1)
-bootperturb <- resamp_func(datf, p = p, iter = 1000)  # 10% perturb
+bootperturb <- resamp_func(datf, vars = vars, p = p, iter = 1000) # 10% perturb
 # bootperturb2 <- resamp_func(datf, p = p, iter = 1000)  # 10% perturb
 # all(bootperturb[[200]]$plot_res == bootperturb2[[200]]$plot_res)
 # rm(bootperturb2)
+```
 
+```{r, echo = FALSE, eval=FALSE}
+# check
+par(mfrow = c(2, 3))
+for(i in sample(1:1000, 6)) {
+  plot(datf[, eff_ext], datf[, eff_ext] - bootperturb[[i]][, eff_ext], 
+       pch = 20)
+}
 ```
 
 <a href="#top">Back to top</a>
@@ -262,7 +284,8 @@ aaxis1 <- data.table(aaxis1)
 setnames(aaxis1, names(aaxis1), "res")
 aaxis1[, logres := log10(res)]
 
-# sampled area
+# effective extent
+### fix this here to have label for 10^-6 (so that limit isn't hard-coded below)
 alab2 <- c(expression(paste(NULL<="0.1 m"^2)), expression("1 m"^2),
            expression("10 m"^2), 
            expression("100 m"^2), expression("1000 m"^2), expression("1 ha"),
@@ -272,13 +295,13 @@ alab2 <- c(expression(paste(NULL<="0.1 m"^2)), expression("1 m"^2),
            expression(paste(10^8 , " ha")), expression(paste(10^9 , " ha")), 
            expression(paste(10^10 , " ha")))
 
+### fix this here to have value for 10^-6 (so that limit isn't hard-coded below)
 aaxis2 <- cbind.data.frame(
   c(0.1 / 10000, 1 / 10000, 10 / 10000, 100 / 10000, 1000 / 10000, 1, 10, 10^2,
     10^3, 10^4, 10^5, 10^6, 10^7, 10^8, 10^9, 10^10))
 aaxis2 <- data.table(aaxis2)
 setnames(aaxis2, names(aaxis2), "area")
 aaxis2[, logarea := log10(area)]
-
 ```
 
 <a href="#top">Back to top</a>
@@ -286,38 +309,59 @@ aaxis2[, logarea := log10(area)]
 ### Figure 1 
 
 ```{r, eval=FALSE}
-length(which(datf$study_type %in% 
-               c("remote sensing", "other geographic data"))) / nrow(datf)
-datf[t_btwn_samp == 0, .N] / datf[, .N]  # 36% of samples are once-offs
+# length(which(datf$study_type %in% c("remote", "other"))) / nrow(datf)
+datf[t_btwn_samp == 0, .N] / datf[, .N]  # 38% of samples are once-offs
 datf[act_dur == samp_dur, .N] / nrow(datf)
 datf[(act_dur == samp_dur) & t_btwn_samp != 0]
 datf[(act_dur != samp_dur) & t_btwn_samp == 0]
 
-hdat <- cbind("res" = log10(datf$plot_res), "ext" = log10(datf$act_ext), 
+hdat <- cbind("res" = log10(datf$plot_res), "aext" = log10(datf$act_ext),
+              "ext" = log10(datf$eff_ext), 
               "int" = log10(to_infin_byond(datf$t_btwn_samp)), 
-              "dur" = log10(datf$act_dur))
+              "adur" = log10(datf$act_dur), "dur" = log10(datf$eff_dur))
+# NA data checks
+# hdat[is.na(rowSums(hdat)), ]
+# dat[DOI %in% datf[which(is.na(rowSums(hdat))), DOI], ]
+# dat[DOI %in% datf[which(is.na(hdat[, 6])), DOI]]
+# dat[DOI %in% datf[which(is.na(hdat[, 3])), DOI]]
+# calr[DOI %in% datf[which(is.na(hdat[, 3])), DOI] & is.na(eff_ext)]
+
 hdat <- data.table(hdat)
+
 # set bounds for histograms
-hdat[res < aaxis1$logres[1], res := aaxis1$logres[1]]
-hdat[res > ry[2], res := ry[2]]
-hdat[ext < -6, ext := -6]  # set minimum extent -6 (0.01 m2)
+# first set variable limits
+vlr <- range(aaxis1$logres)  #for resolution
+### fix in scaling section (so that min extent limit isn't hard-coded)
+vle <- c(-6, range(aaxis2$logarea)[2])  ### fix
+
+# then apply limits to main (unperturbed) set of variables
+hdat[res < vlr[1], res := vlr[1]]  # set min res to 0.01 cm"^2 
+hdat[res > vlr[2], res := vlr[2]]  # set max res to 10000 ha 
+hdat[ext < vle[1], ext := vle[1]]  # set minimum extent -6 (0.01 m2) 
+hdat[ext > vle[2], ext := vle[2]]  # set maximum extent 10 (10^10 ha)
+# hdat[aext < vle[1], aext := vle[1]]  # set minimum extent -6 (0.01 m2) 
+# hdat[aext > vle[2], aext := vle[2]]  # set maximum extent 10 (10^10 ha)
+
 
 # histograms from bootstrap
+### fix in scaling section (so that min extent limit isn't hard-coded)
 brksl <- list(aaxis1$logres, c(-6, aaxis2$logarea), taxis1$logdays,
-              taxis2$logdays)
+              taxis2$logdays)  
 
 vs <- c("res", "ext", "int", "dur")
 hdat_bs <- lapply(1:length(bootperturb), function(x) {  # x <- 1
   print(x)
   DT <- bootperturb[[x]]
-  hdb <- cbind("res" = log10(DT$plot_res), "ext" = log10(DT$act_ext), 
+  hdb <- cbind("res" = log10(DT$plot_res), "ext" = log10(DT$eff_ext), 
                "int" = log10(to_infin_byond(DT$t_btwn_samp)), 
-               "dur" = log10(DT$act_dur))
+               "dur" = log10(DT$eff_dur))
   hdb <- data.table(hdb)
-  hdb[res < aaxis1$logres[1], res := aaxis1$logres[1]]
-  hdb[res > ry[2], res := ry[2]]
-  hdb[, lapply(.SD, range)]
-  hdb[ext < -6, ext := -6]  # set minimum extent -6 (0.01 m2)
+  hdb[res < vlr[1], res := vlr[1]]  # set min res to 0.01 cm"^2 
+  hdb[res > vlr[2], res := vlr[2]]  # set max res to 10000 ha 
+  # hdb[, lapply(.SD, range, na.rm = TRUE)]
+  ### fix in scaling section (so that this limit isn't hard-coded)
+  hdb[ext < vle[1], ext := vle[1]]  # set minimum extent -6 (0.01 m2)
+  hdb[ext > vle[2], ext := vle[2]]  # set maximum extent 10 (10^10 ha)
   hists <- lapply(1:length(vs), function(y) {  # y <- 2
     #print(y)
     hdbv <- hdb[[vs[y]]]
@@ -358,28 +402,31 @@ cxl <- 0.9
 reds <- brewer.pal(9, name = "Reds")
 blues <- brewer.pal(9, name = "Blues")
 plot(1:2, pch = 20, col = blues[c(4, 6)])
-yl <- 35
+yl <- c(25, 40)
 # pdf("paper/figures/hists.pdf", width = 7, height = 2.5)
-pdf("paper/figures/hists3.pdf", width = 5, height = 5)
+pdf("paper/figures/hists.pdf", width = 5, height = 5)
 par(mfrow = c(2, 2), mar = c(4.5, 1, 1, 1), oma = c(2, 3, 0, 0))
 # resolution
 h <- hist(hdat$res, breaks = aaxis1$logres, plot = FALSE)
 h$density <- h$counts / sum(h$counts) * 100
 plot(h, freq = FALSE, ylab = "", las = 2,  xaxt = "n", mgp = c(3.25, 0.25, mga),
      tcl = -0.2, cex.axis = cxa, xlab = "Spatial resolution", 
-     ylim = c(0, yl - 10), main = "", col = reds[4], cex.lab = cxl)
+     ylim = c(0, yl[1]), main = "", col = reds[4], cex.lab = cxl)
 axis(1, at = aaxis1$logres, labels = alab1, las = 2, cex.axis = cxa, 
      tcl = -0.2, mgp = c(2, 0.25, mga))
 mtext("Percent of observations", side = 2, line = 1.5, cex = 0.8)
 mtext("A", side = 3, line = sfigl, cex = 0.8, adj = 0.05)
 
 # extent
+### fix in scaling section (so that this limit isn't hard-coded)
 h <- hist(hdat$ext, breaks = c(-6, aaxis2$logarea), plot = FALSE)
+# h <- hist(hdat$aext, breaks = c(-6, aaxis2$logarea), plot = FALSE)
 h$density <- h$counts / sum(h$counts) * 100
 plot(h, freq = FALSE, ylab = "", las = 2,  xaxt = "n", mgp = c(3.25, 0.25, mga),
-     tcl = -0.2, cex.axis = cxa, xlab = "Spatial extent", ylim = c(0, yl - 10), 
+     tcl = -0.2, cex.axis = cxa, xlab = "Spatial extent", ylim = c(0, yl[1]), 
      main = "", col = reds[6], cex.lab = cxl)
-axis(1, at = c(-6, aaxis2$logarea), 
+### fix in scaling section (so that this limit isn't hard-coded)
+axis(1, at = c(-6, aaxis2$logarea),  
      labels = c(expression(paste(NULL<="0.01m"^2)), expression(paste(0.1, m^2)),                 alab2[-1]), las = 2, cex.axis = cxa,
      tcl = -0.2, mgp = c(2, 0.25, mga))
 mtext("B", side = 3, line = sfigl, cex = 0.8, adj = 0.05)
@@ -389,7 +436,7 @@ tax <- c(taxis2$logdays[-c(10:11)], mean(taxis2$logdays[c(10:11)]))
 h <- hist(hdat$int, breaks = taxis1$logdays, plot = FALSE)
 h$density <- h$counts / sum(h$counts) * 100
 plot(h, freq = FALSE, ylab = "", las = 2,  xaxt = "n", mgp = c(3.25, 0.25, mga),
-     tcl = -0.2, cex.axis = cxa, xlab = "Sampling interval", ylim = c(0, yl), 
+     tcl = -0.2, cex.axis = cxa, xlab = "Sampling interval", ylim = c(0, yl[2]), 
      main = "", col = blues[4], cex.lab = cxl)
 axis(1, at = tax, labels = tlab1[-10], las = 2, cex.axis = cxa, 
      tcl = -0.2, mgp = c(2, 0.25, -0.34))
@@ -401,7 +448,7 @@ mtext("Percent of observations", side = 2, line = 1.5, cex = 0.8)
 h <- hist(hdat$dur, breaks = taxis2$logdays, plot = FALSE)
 h$density <- h$counts / sum(h$counts) * 100
 plot(h, freq = FALSE, ylab = "", las = 2,  xaxt = "n", mgp = c(3.25, 0.25, mga),
-     tcl = -0.2, cex.axis = cxa, xlab = "Temporal duration", ylim = c(0, yl), 
+     tcl = -0.2, cex.axis = cxa, xlab = "Temporal duration", ylim = c(0, yl[2]), 
      main = "", col = blues[6], cex.lab = cxl)
 axis(1, at = taxis2$logdays, labels = tlab2, las = 2, cex.axis = cxa, 
      tcl = -0.2, mgp = c(2, 0.25, mga))
@@ -415,10 +462,12 @@ xlabs <- c("Spatial resolution", "Spatial extent", "Sampling interval",
            "Temporal duration")
 # axes <- list("aax1" = aaxis1$logres, "aax2" = c(-6, aaxis2$logarea), 
 #              "tax1" = taxis1$logdays, "tax2" = taxis2$logdays)
+### fix in scaling section (so that this limit isn't hard-coded)
 axes2 <- list("aax1" = aaxis1$logres, "aax2" = c(-6, aaxis2$logarea), 
               "tax1" = c(taxis2$logdays[-c(10:11)],
                          mean(taxis2$logdays[c(10:11)])), 
               "tax2" = taxis2$logdays)
+### fix in scaling section (so that this limit isn't hard-coded)
 axlabs <- list(alab1, c(expression(paste(NULL<="0.01m"^2)),
                         expression(paste(0.1, m^2)), alab2[-1]),
                tlab1[-10], tlab2)
@@ -442,7 +491,6 @@ hdatstat_bt <- lapply(1:length(hdat_bsdt), function(x) {
 })
 names(hdatstat_bt) <- vs
 
-
 # pdf("paper/figures/hists.pdf", width = 7, height = 2.5)
 pdf("paper/figures/hists_bs.pdf", width = 5, height = 5)
 par(mfrow = c(2, 2), mar = c(4.5, 1, 1, 1), oma = c(2, 3, 0, 0))
@@ -453,8 +501,8 @@ for(i in 1:length(hdatstat_bt)) {  # i <- 1
   mids <- sapply(2:length(axv), function(x) mean(c(axv[x], axv[x - 1])))
 
     # base plot
-  yl <- ifelse(i %in% c(1, 2), 30, 35) 
-  plot(c(axv[1], axv[length(axv)]), c(0, yl - 10), ylab = "", las = 2, 
+  yl <- ifelse(i %in% c(1, 2), 25, 40) 
+  plot(c(axv[1], axv[length(axv)]), c(0, yl), ylab = "", las = 2, 
          xaxt = "n", xlab = xlabs[i], ylim = c(0, yl), main = "", 
          col = cols[i], cex.lab = cxl, pch = "", bty = "l", axes = FALSE)
   
@@ -484,12 +532,11 @@ dev.off()
 # bootp_dt
 # axisl <- list(aaxis1$logres, c(-6, aaxis2$logarea), taxis1$logdays,
 #               taxis2$logdays)
-hdatstat <- lapply(1:4, function(x) {
-  h <- hist(hdat[[x]], breaks = brksl[[x]], plot = FALSE)
-  h$density <- h$counts / sum(h$counts) * 100
-  h
-})
-
+# hdatstat <- lapply(1:4, function(x) {
+#   h <- hist(hdat[[x]], breaks = brksl[[x]], plot = FALSE)
+#   h$density <- h$counts / sum(h$counts) * 100
+#   h
+# })
 
 # res
 # hdatst <- hdatstat[[1]]$density
@@ -505,6 +552,9 @@ sum(hdatst[11:(l)]) # 9 % 1-10000 ha
 # length(which(hdat$res <= 4)) / length(hdat$res)
 # sum(hdatstat[[1]]$counts[4:6]) / sum(hdatstat[[1]]$counts)
 
+##############
+# Ended here 6/4/2017 
+##############
 # extent
 # hdatst <- hdatstat[[2]]$density
 hdatst <- hdatstat_bt$ext$mu
