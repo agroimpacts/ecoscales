@@ -42,7 +42,7 @@ p_dat <- fp(p_root, "external/data/calibration")
 # external fixes and recodes, bring back in
 # cal <- data.table(read_excel(fp(p_dat, "merged_calibrationf.xlsx")))
 # cal <- data.table(read_excel(fp(p_dat, "merged_calibrationff.xlsx")))
-cal <- data.table(read_excel(fp(p_dat, "merged_calibrationfffff.xlsx")))
+cal <- data.table(read_excel(fp(p_dat, "merged_calibrationffffff.xlsx")))
 names(cal)
 
 cal[, c("notes", "V31") := NULL]
@@ -106,23 +106,23 @@ mus <- cal[inout == 1, lapply(.SD, mean, na.rm = TRUE), by = .(DOI, observer),  
 vars <- mus[, lapply(.SD, sd, na.rm = TRUE), by = DOI, .SDcols = varnms] 
 musmu <- mus[, lapply(.SD, mean, na.rm = TRUE), by = DOI, .SDcols = varnms]
 
-par(mfrow = c(3, 3), mar = c(3, 3, 2, 2), mgp = c(1.5, 0.5, 0))
-for(i in varnms) {
-  mu <- musmu[, get(i)]
-  sdev <- vars[, get(i)]
-#   print(paste(i, ":", sdev))
-  print(paste(i, ":", round(mu, 2), ":", round(sdev, 2), ":", 
-              round(sdev / mu, 2)))
-  # plot(mu, sdev / mu, xlab = "mean", ylab = "CV", main = i)
-  plot(mu, sdev, xlab = "mean", ylab = "sd", main = i)
-}
+# par(mfrow = c(3, 3), mar = c(3, 3, 2, 2), mgp = c(1.5, 0.5, 0))
+# for(i in varnms) {
+#   mu <- musmu[, get(i)]
+#   sdev <- vars[, get(i)]
+# #   print(paste(i, ":", sdev))
+#   print(paste(i, ":", round(mu, 2), ":", round(sdev, 2), ":", 
+#               round(sdev / mu, 2)))
+#   # plot(mu, sdev / mu, xlab = "mean", ylab = "CV", main = i)
+#   plot(mu, sdev, xlab = "mean", ylab = "sd", main = i)
+# }
 
 vars[, lapply(.SD, mean, na.rm = TRUE), .SDcols = varnms]
-colMeans(sapply(varnms, function(i) {
+round(colMeans(sapply(varnms, function(i) {
   mu <- musmu[, get(i)]
   sdev <- vars[, get(i)]
   sdev / mu
-}), na.rm = TRUE)
+}), na.rm = TRUE), 3)
 
 # calr[DOI == "10.1007/s00442-005-0338-3" & feature == 2]
 ```
@@ -139,8 +139,9 @@ calr <- cal[, rnms, with = FALSE]
 # calr[feature != 99, lapply(.SD, mean), by = .(DOI, feature), 
 #      .SDcols = rnms[4:7]]
 # calr[feature != 99, .N, by = .(DOI, feature)]
+mymu <- function(x) round(mean(x, na.rm = TRUE), 3)
 calr[feature != 99, lapply(.SD, CV), by = .(DOI, feature), 
-     .SDcols = rnms[4:10]][, lapply(.SD, mean, na.rm = TRUE), 
+     .SDcols = rnms[4:10]][, lapply(.SD, mymu), 
                           .SDcols = rnms[4:10]]
 
 # par(mfcol = c(10, 4), mar = c(2, 2, 2, 2), mgp = c(1.5, 0.5, 0))
