@@ -43,7 +43,7 @@ p_dat <- fp(p_root, "external/data/calibration")
 # cal <- data.table(read_excel(fp(p_dat, "merged_calibrationf.xlsx")))
 # cal <- data.table(read_excel(fp(p_dat, "merged_calibrationff.xlsx")))
 cal <- data.table(read_excel(fp(p_dat, "merged_calibrationffffff.xlsx")))
-names(cal)
+# names(cal)
 
 cal[, c("notes", "V31") := NULL]
 nuvars <- c("inout", "feature", "study_year", "st", "plot_res", "n_sites",

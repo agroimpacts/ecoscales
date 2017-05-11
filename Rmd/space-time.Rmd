@@ -108,7 +108,6 @@ calr_type <- calr[feature != 99, {
   list(unique(study_type[!is.na(study_type)]))
 }, by = .(DOI, feature)][, list("study_type" = unique(V1)), by = DOI]
 
-
 # calr[DOI == "10.1007/s00442-005-0338-3" & feature == 2, 
 #      mean(eff_dur, na.rm = T)]
 calr <- calr[feature != 99, {
@@ -175,7 +174,11 @@ Defined by the per variable CV based on uncertainty between observers. Here we a
 # p <- c(0.58, 0.82, 0.99, 1.24)  # from calibration.Rmd
 ##     plot_res   n_sites   act_ext   eff_ext t_btwn_samp  act_dur   eff_dur
 ## 1: 0.5769693 0.3821107 0.7196559 0.4049972     1.01134 1.253045 0.5284913
-p <- c(0.58, 0.75, 0.50, 1.01, 1.23, 0.59)  # from calibration.Rmd
+##    plot_res n_sites  act_ext  eff_ext t_btwn_samp  act_dur  eff_dur
+##       0.494   0.457    0.749    0.499       0.475    1.093    0.338
+##    plot_res n_sites  act_ext  eff_ext t_btwn_samp  act_dur  eff_dur
+##       0.577   0.382     0.72    0.405       1.045    1.261    0.643
+p <- c(0.58, 0.72, 0.41, 1.05, 1.26, 0.64)  # from calibration.Rmd
 
 # Functions for bootstrapping with uncertainties
 # sets unreplicated observations to arbitrarily large number
@@ -384,79 +387,6 @@ hdat_bsdt <- lapply(1:length(vs), function(x) { # x <- 1
   DT <- data.table(mat)
 })
 
-# hdat_bsdt <- lapply(1:length(vs), function(x) { # x <- 1
-#   mat <- do.call(rbind, lapply(1:length(hdat_bs), function(y) {
-#     hdat_bs[[y]][[x]]
-#   }))
-#   data.table(mat)
-# })
-
-# setnames(hdat_bsdt, names(hdat_bsdt), as.character(aaxis1$logres))
-
-# hist(hdat$res, breaks = aaxis1$logres)
-# hist(log10(datf$plot_res), breaks = resbrks)
-# hist(log10(datf$plot_res), breaks = resbrks)
-
-## Ordinary histograms
-mga <- -0.34
-sfigl <- -1.2
-cxa <- 0.8
-cxl <- 0.9
-reds <- brewer.pal(9, name = "Reds")
-blues <- brewer.pal(9, name = "Blues")
-# plot(1:2, pch = 20, col = blues[c(4, 6)])
-yl <- c(25, 40)
-# pdf("paper/figures/hists.pdf", width = 7, height = 2.5)
-pdf("paper/figures/hists.pdf", width = 5, height = 5)
-par(mfrow = c(2, 2), mar = c(4.5, 1, 1, 1), oma = c(2, 3, 0, 0))
-# resolution
-h <- hist(hdat$res, breaks = aaxis1$logres, plot = FALSE)
-h$density <- h$counts / sum(h$counts) * 100
-plot(h, freq = FALSE, ylab = "", las = 2,  xaxt = "n", mgp = c(3.25, 0.25, mga),
-     tcl = -0.2, cex.axis = cxa, xlab = "Spatial resolution", 
-     ylim = c(0, yl[1]), main = "", col = reds[4], cex.lab = cxl)
-axis(1, at = aaxis1$logres, labels = alab1, las = 2, cex.axis = cxa, 
-     tcl = -0.2, mgp = c(2, 0.25, mga))
-mtext("Percent of observations", side = 2, line = 1.5, cex = 0.8)
-mtext("A", side = 3, line = sfigl, cex = 0.8, adj = 0.05)
-
-# extent
-h <- hist(hdat$ext, breaks = aaxis2$logarea, plot = FALSE)
-# h <- hist(hdat$aext, breaks = c(-6, aaxis2$logarea), plot = FALSE)
-h$density <- h$counts / sum(h$counts) * 100
-plot(h, freq = FALSE, ylab = "", las = 2,  xaxt = "n", mgp = c(3.25, 0.25, mga),
-     tcl = -0.2, cex.axis = cxa, xlab = "Spatial extent", ylim = c(0, yl[1]), 
-     main = "", col = reds[6], cex.lab = cxl)
-axis(1, at = aaxis2$logarea,
-     labels = alab2,
-     # labels = c(expression(paste(NULL<="0.01m"^2)), expression(paste(0.1, m^2)),                 alab2[-1]), 
-     las = 2, cex.axis = cxa,
-     tcl = -0.2, mgp = c(2, 0.25, mga))
-mtext("B", side = 3, line = sfigl, cex = 0.8, adj = 0.05)
-
-# interval
-tax <- c(taxis2$logdays[-c(10:11)], mean(taxis2$logdays[c(10:11)]))
-h <- hist(hdat$int, breaks = taxis1$logdays, plot = FALSE)
-h$density <- h$counts / sum(h$counts) * 100
-plot(h, freq = FALSE, ylab = "", las = 2,  xaxt = "n", mgp = c(3.25, 0.25, mga),
-     tcl = -0.2, cex.axis = cxa, xlab = "Sampling interval", ylim = c(0, yl[2]), 
-     main = "", col = blues[4], cex.lab = cxl)
-axis(1, at = tax, labels = tlab1[-10], las = 2, cex.axis = cxa, 
-     tcl = -0.2, mgp = c(2, 0.25, -0.34))
-mtext("C", side = 3, line = sfigl, cex = 0.8, adj = 0.05)
-mtext("Percent of observations", side = 2, line = 1.5, cex = 0.8)
-
-# duration
-# tax <- c(taxis2$logdays[-c(10:11)], mean(taxis2$logdays[c(10:11)]))
-h <- hist(hdat$dur, breaks = taxis2$logdays, plot = FALSE)
-h$density <- h$counts / sum(h$counts) * 100
-plot(h, freq = FALSE, ylab = "", las = 2,  xaxt = "n", mgp = c(3.25, 0.25, mga),
-     tcl = -0.2, cex.axis = cxa, xlab = "Temporal duration", ylim = c(0, yl[2]),      main = "", col = blues[6], cex.lab = cxl)
-axis(1, at = taxis2$logdays, labels = tlab2, las = 2, cex.axis = cxa, 
-     tcl = -0.2, mgp = c(2, 0.25, mga))
-mtext("D", side = 3, line = sfigl, cex = 0.8, adj = 0.05)
-dev.off()
-
 ### Bootstrapped histograms (now main figure)
 qtf <- function(x) c(mean(x), quantile(x, probs = c(0.025, 0.975))) # quant f
 xlabs <- c("Spatial resolution", "Spatial extent", "Sampling interval", 
@@ -467,8 +397,6 @@ axes2 <- list("aax1" = aaxis1$logres, "aax2" = aaxis2$logarea,
               "tax1" = c(taxis2$logdays[-c(10:11)],
                          mean(taxis2$logdays[c(10:11)])), 
               "tax2" = taxis2$logdays)
-# axlabs <- list(alab1, c(expression(paste(NULL<="0.01m"^2)),
-#                         expression(paste(0.1, m^2)), alab2[-c(1:2)]),
 axlabs <- list(alab1, alab2, tlab1[-10], tlab2)
 mga <- -0.34
 sfigl <- -1.2
@@ -490,8 +418,9 @@ hdatstat_bt <- lapply(1:length(hdat_bsdt), function(x) {
 })
 names(hdatstat_bt) <- vs
 
-# pdf("paper/figures/hists.pdf", width = 7, height = 2.5)
-pdf("paper/figures/hists_bs.pdf", width = 5, height = 5)
+# pdf("paper/figures/hists_bs.pdf", width = 5, height = 5)
+png("paper/figures/hists_bs.png", width = 5, height = 5, res = 600, 
+    units = "in")
 par(mfrow = c(2, 2), mar = c(4.5, 1, 1, 1), oma = c(2, 3, 0, 0))
 
 for(i in 1:length(hdatstat_bt)) {  # i <- 1
@@ -538,8 +467,9 @@ dev.off()
 # })
 ```
 
+
 Statistics associated with Figure 1: percentage of observations falling within different scale ranges, and associated with different observational methods
-```{r}
+```{r, eval = FALSE}
 # res
 # hdatst <- hdatstat[[1]]$density
 hdatst <- hdatstat_bt$res$mu
@@ -613,10 +543,6 @@ datf[which(hdat[[3]] < -1.380211),
      points(log10(t_btwn_samp), log10(act_dur), pch = 20, col = "blue")]
 datf[like(study_type, "automated"), 
      points(log10(t_btwn_samp), log10(act_dur), pch = 20, col = "red")]
-
-
-# points(resdat3$x[which(datf$st == 4)], resdat3$y[which(datf$st == 4)])
-# points(resdat3$x[which(datf$st == 1)], resdat3$y[which(datf$st == 1)])
 
 # types of observations
 # unique(datf$study_type)
@@ -710,20 +636,10 @@ coordinates(spatdat) <- ~x + y
 # resolution
 rres3 <- kdensity(rx[1], rx[2], ry[1], ry[2], 0.1, resdat3, 1)
 rres3 <- (rres3 / cellStats(rres3, sum)) * 100
-# rng <- range(rres3[is.finite(rres3)])
-# bwidth <- (rng[2] - rng[1]) / 30
-# brks <- seq(rng[1], rng[2], bwidth)
-# brklabs <- seq(0, 0.12, 0.02)#round(brks[seq(1, length(brks), 5)], 2)
-# brklabs <- seq(0, 0.1, 0.02)#round(brks[seq(1, length(brks), 5)], 2)
 
 # extent
 rext3 <- kdensity(ex[1], ex[2], ey[1], ey[2], 0.1, extdat3, 1)
 rext3 <- (rext3 / cellStats(rext3, sum)) * 100
-# rng <- range(rext3[is.finite(rext3)])
-# # rng[2] <- 0.1
-# bwidth <- (rng[2] - rng[1]) / 30
-# brks2 <- seq(rng[1], rng[2], bwidth)
-# brklabs2 <- brklabs #round(brks2[seq(1, length(brks2), 3)], 2)
 
 # temporal
 tres <- kdensity(tx[1], tx[2], ty[1], ty[2], 0.1, tempdat, 1)
@@ -836,21 +752,7 @@ dev.off()
 <a href="#top">Back to top</a>
 
 ### Figure 3
-```{r}
-datf[, plot(log10(eff_ext), log10(act_ext))]
-datf[, plot(log10(act_dur), log10(eff_dur))]
-datf[log10(eff_dur) < log10(act_dur)]
-calr[log10(eff_dur) < log10(act_dur)]
-dat[DOI == "10.1007/s10021-013-9684-x"]
-cal[DOI == "10.1007/s00442-010-1713-2"]
-dat[DOI %in% datf[log10(eff_ext) < log10(act_ext), DOI]]
-dat[DOI %in% datf[log10(eff_ext) < log10(act_ext), DOI]]
-datf[log10(eff_ext) < log10(act_ext), ]
-datf[DOI == "10.1111/j.1466-8238.2011.00658.x", 
-     .(log10(round(eff_ext)), log10(round(act_ext)))]
-datf[DOI == "10.1111/j.1466-8238.2011.00658.x", 
-     .(round(eff_ext), round(act_ext))]
-
+```{r, eval=FALSE}
 # actual versus effective duration
 kdat <- bootp_dt  # bootstrap
 # tempdat2 <- data.table(x = log10(kdat$act_dur), y = log10(kdat$eff_dur))
@@ -902,6 +804,144 @@ bump <- 3
 cols <- inferno(cuts + bump)[-c(2:(bump + 1))]
 # plot(1:cuts, col = cols, pch = 20)
 
+# par(mfrow = c(1, 2))
+# datf[, {
+#   # sel = which()
+#   eext = log10(eff_ext)
+#   aext = log10(act_ext)
+#   edur = log10(eff_dur[t_btwn_samp != 365 * 10000])
+#   adur = log10(act_dur[t_btwn_samp != 365 * 10000])
+#   plot(aext, eext - aext)
+#   plot(adur, edur - adur)
+#   length(edur)
+# }]
+
+# Difference in effective versus actual extent/duration against actual ext/dur
+hdat_bs2 <- lapply(1:length(bootperturb), function(x) {  # x <- 1
+  print(x)
+  DT <- bootperturb[[x]]
+  edb <- DT[, lapply(.SD, log10), .SDcol = c("eff_ext", "act_ext")]
+  # edb <- edb[eff_ext >= act_ext, ]  # drop eff_dur < act
+  setnames(edb, c("eff_ext", "act_ext"), c("eext", "aext"))
+  edb[, dif := eext - aext]
+
+  tdb <- DT[t_btwn_samp != 365 * 10000, lapply(.SD, log10), 
+            .SDcol = c("eff_dur", "act_dur")]
+  # tdb <- tdb[eff_dur >= act_dur, ]  # drop eff_dur < act
+  setnames(tdb, c("eff_dur", "act_dur"), c("edur", "adur"))
+  # print(paste(edb[, .N], tdb[, .N]))
+  tdb[, dif := edur - adur]
+  return(list("edb" = edb, "tdb" = tdb, #"elm" = elm, "tlm" = tlm, 
+              "Ns" = c(edb[, .N], tdb[, .N])))
+})
+
+# check number of drops due to eff < act
+# hdat_bs2_ns <- do.call(rbind, lapply(hdat_bs2, function(x) x$Ns))
+# summary(bootperturb[[1]][, .N] - hdat_bs2_ns[, 1])
+# summary(bootperturb[[1]][t_btwn_samp != 365 * 10000, .N] - hdat_bs2_ns[, 2])
+
+# extract regression coefficients
+# hdat_bs2_elm <- do.call(rbind, lapply(hdat_bs2, function(x) coef(x$elm)[, 1]))
+# hdat_bs2_tlm <- do.call(rbind, lapply(hdat_bs2, function(x) coef(x$tlm)[, 1]))
+
+# calculate box statistics
+# Extent differences
+eint <- aaxis2$logarea
+edif_int <- rbindlist(lapply(hdat_bs2, function(y) {  # y <- hdat_bs2[[2]]
+  dd <- copy(y$edb[!is.na(aext)])
+  dd[aext < ex[1], aext := ex[1]]  # set to min
+  # dd[, list("int" = findInterval(aext, eint), "dif" = dif)]
+  dd[, int := findInterval(aext, eint, rightmost.closed = TRUE)]
+  # dd[, list("dif" = mean(dif, na.rm = TRUE), "N" = .N), by = int][order(int)]
+}))
+ints <- sort(edif_int[, unique(int)])
+ebox <- lapply(ints, function(x) edif_int[int == x, lmisc::box_stats(dif)])
+pctobs <- sapply(ints, function(x) edif_int[int == x, .N])
+ewgt <- pctobs / sum(pctobs)
+# ealphs <- (ewgt - min(ewgt)) / diff(range(ewgt))
+ewgtint <- c(0, 1, 5, 10, 15, 20, 25) / 100  # weight intervals
+ewgttxt <- c("  0", "  1", "  5", seq(10, 25, 5))
+ecols <- findInterval(ewgt, ewgtint)  # corresponding color index
+
+# temporal differences
+dint <- taxis2$logdays[-5]
+tx <- range(dint)
+ddif_int <- rbindlist(lapply(hdat_bs2, function(y) {  # y <- hdat_bs2[[2]]
+  dd <- copy(y$tdb[!is.na(adur)])
+  dd[adur < tx[1], adur := tx[1]]  # set to min
+  dd[adur > tx[2], adur := tx[2]]  # set to max
+  dd[, int := findInterval(adur, dint, rightmost.closed = TRUE)]  # include high
+}))
+dints <- sort(ddif_int[, unique(int)])
+tbox <- lapply(dints, function(x) ddif_int[int == x, lmisc::box_stats(dif)])
+pctobs <- sapply(dints, function(x) ddif_int[int == x, .N])
+dwgt <- pctobs / sum(pctobs)
+# dalphs <- (dwgt - min(dwgt)) / diff(range(dwgt))
+dwgtint <- c(0, 1, 5, 10, 15, 20, 25, 30) / 100  # weight intervals
+dwgttxt <- c("  0", "  1", "  5", seq(10, 30, 5))
+dcols <- findInterval(dwgt, dwgtint)  
+
+# y grid line function
+ylines <- function(yr, by, lty = 1, col = "grey") {
+  abline(h = seq.int(from = yr[1], to = yr[2], by = 2), lty = lty, col = col)
+}
+
+# pdf("paper/figures/act_v_eff_diff.pdf", width = 7, height = 4)
+png("paper/figures/act_v_eff_diff.png", width = 7, height = 4, res = 600, 
+    units = "in")
+par(mfrow = c(1, 2), mar = c(4, 0, 1, 0.75), oma = c(0, 3, 0, 0))
+bx <- rowMeans(cbind(eint[-length(eint)], eint[-1]))
+# cols <- sapply(ealphs, function(x) rgb(0, 0.1, 1, alpha = x))
+cols <- brewer.pal(length(ewgtint) - 1, "Blues")
+plot(ex, c(0, 14), pch = "", xlab = "", ylab = "", xaxt = "n", yaxt = "n",
+     mgp = c(3, 0.5, 0), tcl = -0.2, xaxs = "i")
+polygon(c(ex, rev(ex), ex[1]), c(-1, -1, 15, 15, -1), col = "grey90")
+ylines(yr = c(0, 14), by = 2, col = "grey95")
+for(i in 1:length(ebox)) {
+  boxplot_v(bx[i], y = ebox[[i]], n = 1.75, whiskhgt = 1.5, 
+            bfill = cols[ecols][i])
+} 
+axis(1, at = eint, labels = alab2, las = 2, tcl = -0.2, cex.axis = cxa, 
+     mgp = c(3, 0.5, 0))
+axis(2, at = seq(0, 14, 2), las = 2, tcl = -0.2, cex.axis = cxa, 
+     mgp = c(3, 0.5, 0))
+mtext("Actual Extent", side = 1, line = 3, cex = 0.9)
+mtext("Difference Between", side = 2, line = 2.1, cex = 0.9)
+mtext("Effective and Actual (Decades)", side = 2, line = 1.4, cex = 0.9)
+lrng <- c(mean(ex), max(ex) - 0.05 * max(ex))
+xs <- seq(lrng[1], lrng[2], by = (diff(lrng)) / (length(cols)))
+rect_shade(xs, y = c(11.5, 12.5), fillcol = cols, linecol = "grey30")
+text(xs, rep(10.5, length(xs)), ewgttxt, srt = 90, col = "grey30")
+text(mean(xs), 13, "% of observations", col = "grey30")
+mtext("A", side = 3, line = -1, cex = 1, adj = 0.05)
+
+# duration
+bx <- rowMeans(cbind(dint[-length(dint)], dint[-1]))
+bd <- abs(dint[-length(dint)] - dint[-1])
+# cols <- sapply(dalphs, function(x) rgb(1, 0, 0.1, alpha = x))
+cols <- brewer.pal(length(dwgtint) - 1, "Reds")
+plot(tx, c(0, 14), pch = "", xlab = "", ylab = "", xaxt = "n", xaxs = "i",
+     mgp = c(3, 0.5, 0), tcl = -0.2, yaxt = "n")
+polygon(c(tx, rev(tx), tx[1]), c(-1, -1, 15, 15, -1), col = "grey90")
+ylines(yr = c(0, 14), by = 2, col = "grey95")
+for(i in 1:length(tbox)) {
+  boxplot_v(bx[i], y = tbox[[i]], n = 0.9, inhgt = bd[i] * 10, whiskhgt = 0.5, 
+            bfill = cols[dcols][i])
+} 
+axis(1, at = dint, labels = tlab2[-c(5)], las = 2, tcl = -0.2, cex.axis = cxa, 
+     mgp = c(3, 0.5, 0))
+axis(2, at = seq(0, 14, 2), labels = rep("", 8), las = 2, tcl = -0.2, 
+     cex.axis = cxa, mgp = c(3, 0.5, 0))
+mtext("Actual Duration", side = 1, line = 3, cex = 0.9)
+lrng <- c(mean(tx), max(tx) - 0.05 * max(tx))
+xs <- seq(lrng[1], lrng[2], by = (diff(lrng)) / (length(cols)))
+rect_shade(xs, y = c(11.5, 12.5), fillcol = cols, linecol = "grey30")
+text(xs, rep(10.5, length(xs)), dwgttxt, srt = 90, col = "grey30")
+text(mean(xs), 13, "% of observations", col = "grey30")
+mtext("B", side = 3, line = -1, cex = 1, adj = 0.05)
+dev.off()
+
+# Kernel density version
 pdf("paper/figures/act_v_eff.pdf", width = 7, height = 3)
 par(mfrow = c(1, 2), mar = c(4.5, 4.5, 0.3, 3), oma = c(0, 0, 0.2, 1), 
     mgp = c(2, 0.25, 0))
@@ -940,177 +980,6 @@ mtext("B", side = 3, line = -1, cex = 0.8, adj = 0.05, col = "white")
 dev.off()
 
 
-# par(mfrow = c(1, 2))
-# datf[, {
-#   # sel = which()
-#   eext = log10(eff_ext)
-#   aext = log10(act_ext)
-#   edur = log10(eff_dur[t_btwn_samp != 365 * 10000])
-#   adur = log10(act_dur[t_btwn_samp != 365 * 10000])
-#   plot(aext, eext - aext)
-#   plot(adur, edur - adur)
-#   length(edur)
-# }]
-
-
-# Bootstrap version
-vs1 <- c("eff_ext", "act_ext", "eff_dur", "act_dur")
-vs2 <- c("eext", "aext", "edur", "adur")
-hdat_bs2 <- lapply(1:length(bootperturb), function(x) {  # x <- 1
-  # print(x)
-  DT <- bootperturb[[x]]
-  edb <- DT[, lapply(.SD, log10), .SDcol = c("eff_ext", "act_ext")]
-  # edb <- edb[eff_ext >= act_ext, ]  # drop eff_dur < act
-  setnames(edb, c("eff_ext", "act_ext"), c("eext", "aext"))
-  edb[, dif := eext - aext]
-  # elm <- edb[, lm(dif ~ aext)]
-  # preds <- predict(elm, newdata = data.frame(aext = extdum))
-  # plot(extdum, preds)
-
-  tdb <- DT[t_btwn_samp != 365 * 10000, lapply(.SD, log10), 
-            .SDcol = c("eff_dur", "act_dur")]
-  # tdb <- tdb[eff_dur >= act_dur, ]  # drop eff_dur < act
-  setnames(tdb, c("eff_dur", "act_dur"), c("edur", "adur"))
-  print(paste(edb[, .N], tdb[, .N]))
-  tdb[, dif := edur - adur]
-  # tlm <- tdb[, summary(lm(dif ~ adur))]
-  return(list("edb" = edb, "tdb" = tdb, #"elm" = elm, "tlm" = tlm, 
-              "Ns" = c(edb[, .N], tdb[, .N])))
-})
-
-# check number of drops due to eff < act
-# hdat_bs2_ns <- do.call(rbind, lapply(hdat_bs2, function(x) x$Ns))
-# summary(bootperturb[[1]][, .N] - hdat_bs2_ns[, 1])
-# summary(bootperturb[[1]][t_btwn_samp != 365 * 10000, .N] - hdat_bs2_ns[, 2])
-
-# extract regression coefficients
-# hdat_bs2_elm <- do.call(rbind, lapply(hdat_bs2, function(x) coef(x$elm)[, 1]))
-# hdat_bs2_tlm <- do.call(rbind, lapply(hdat_bs2, function(x) coef(x$tlm)[, 1]))
-
-# calculate box statistics
-# Extent differences
-eint <- aaxis2$logarea
-edif_int <- rbindlist(lapply(hdat_bs2, function(y) {  # y <- hdat_bs2[[2]]
-  dd <- copy(y$edb[!is.na(aext)])
-  dd[aext < ex[1], aext := ex[1]]  # set to min
-  # dd[, list("int" = findInterval(aext, eint), "dif" = dif)]
-  dd[, int := findInterval(aext, eint)]
-  # dd[, list("dif" = mean(dif, na.rm = TRUE), "N" = .N), by = int][order(int)]
-}))
-
-ints <- sort(edif_int[, unique(int)])
-ebox <- lapply(ints, function(x) edif_int[int == x, lmisc::box_stats(dif)])
-pctobs <- sapply(ints, function(x) edif_int[int == x, .N])
-ewgt <- pctobs / sum(pctobs)
-ewgt * 100
-ealphs <- (ewgt - min(ewgt)) / diff(range(ewgt))
-
-# temporal differences
-dint <- taxis2$logdays[-5]
-tx <- range(dint)
-ddif_int <- rbindlist(lapply(hdat_bs2, function(y) {  # y <- hdat_bs2[[2]]
-  dd <- copy(y$tdb[!is.na(adur)])
-  dd[adur < tx[1], adur := tx[1]]  # set to min
-  dd[adur > tx[2], adur := tx[2]]  # set to max
-  dd[, int := findInterval(adur, dint)]
-}))
-
-dints <- sort(ddif_int[, unique(int)])
-tbox <- lapply(dints, function(x) ddif_int[int == x, lmisc::box_stats(dif)])
-pctobs <- sapply(dints, function(x) ddif_int[int == x, .N])
-dwgt <- pctobs / sum(pctobs)
-dalphs <- (dwgt - min(dwgt)) / diff(range(dwgt))
-
-pdf("paper/figures/act_v_eff_diff.pdf", width = 7, height = 4)
-par(mfrow = c(1, 2), mar = c(4, 0, 1, 0.75), oma = c(0, 3, 0, 0))
-bx <- rowMeans(cbind(eint[-length(eint)], eint[-1]))
-cols <- sapply(ealphs, function(x) rgb(0, 0.1, 1, alpha = x))
-# plot(1:length(cols), col = lcols, pch = 20)
-plot(ex, c(0, 14), pch = "", xlab = "", ylab = "", xaxt = "n", yaxt = "n",
-     mgp = c(3, 0.5, 0), tcl = -0.2, xaxs = "i")
-# grid(lty = 1, col="gray")
-# polygon(c(ex, rev(ex), ex[1]), c(-1, -1, 15, 15, -1), col = "grey90")
-for(i in 1:length(ebox)) {
-  boxplot_v(bx[i], y = ebox[[i]], n = 1.75, whiskhgt = 1.5, bfill = cols[i])
-} 
-axis(1, at = eint, labels = alab2, las = 2, tcl = -0.2, cex.axis = cxa, 
-     mgp = c(3, 0.5, 0))
-axis(2, at = seq(0, 14, 2), las = 2, tcl = -0.2, cex.axis = cxa, 
-     mgp = c(3, 0.5, 0))
-mtext("Actual Extent", side = 1, line = 3)
-mtext("Difference Magnitude:", side = 2, line = 2)
-mtext("Effective minus Actual", side = 2, line = 1)
-# xs <- seq(2, 10, by = (10 - 2) / (length(ealphs)))
-# ealphss <- sort(ealphs, decreasing = TRUE)
-# lcols <- sapply(ealphss, function(x) rgb(0, 0.1, 1, alpha = x))
-# rect_shade(xs, y = c(13, 14), fillcol = lcols, linecol = "grey")
-# text(xs, rep(13, length(xs)), sort(round(ewgt * 100), decreasing = TRUE),
-#      srt = 90)
-
-bx <- rowMeans(cbind(dint[-length(dint)], dint[-1]))
-bd <- abs(dint[-length(dint)] - dint[-1])
-cols <- sapply(dalphs, function(x) rgb(1, 0, 0.1, alpha = x))
-# plot(1:length(cols), col = cols, pch = 20)
-plot(tx, c(0, 14), pch = "", xlab = "", ylab = "", xaxt = "n", 
-     mgp = c(3, 0.5, 0), tcl = -0.2, yaxt = "n")
-for(i in 1:length(tbox)) {
-  boxplot_v(bx[i], y = tbox[[i]], n = 0.9, inhgt = bd[i] * 10, whiskhgt = 0.5, 
-            bfill = cols[i])
-} 
-axis(1, at = dint, labels = tlab2[-c(5)], las = 2, tcl = -0.2, cex.axis = cxa, 
-     mgp = c(3, 0.5, 0))
-axis(2, at = seq(0, 14, 2), labels = rep("", 8), las = 2, tcl = -0.2, 
-     cex.axis = cxa, mgp = c(3, 0.5, 0))
-mtext("Actual Duration", side = 1, line = 3)
-dev.off()
-
-# # Calculate predictions from ensemble of regression coefficients
-# extdum <- seq(-10, 10, 1)
-# extpred <- do.call(rbind, lapply(1:nrow(hdat_bs2_elm), function(x) {
-#   hdat_bs2_elm[x, 1] + hdat_bs2_elm[x, 2] * extdum
-# }))
-# extconf <- apply(extpred, 2, function(x) c(mean(x), quantile(x, c(0.025, 0.975))))
-# durdum <- seq(-5, 5, 1)
-# durpred <- lapply(1:nrow(hdat_bs2_tlm), function(x) {
-#   hdat_bs2_tlm[x, 1] + hdat_bs2_tlm[x, 2] * durdum
-# })
-# 
-# plot(extmu[, 1], extmu[, 2], col = "grey", pch = 20)
-# lines(extdum, extconf[1, ])
-# lines(extdum, extconf[2, ])
-# 
-# 
-# datf[, plot(log10(act_ext), log10(eff_ext - act_ext))]
-# 
-# log10(0.1 - 0.05)
-# log10(0.1) - log10(0.05)
-# a <- seq(0.1, 10, 0.1)^10
-# mv <- runif(length(a), min = 1 - 0.4, max = 1 + 0.4)
-# b <- sapply(1:length(a), function(x) a[x] * mv[x])
-# plot(a, b)
-# cbind(log10(a), log10(b), log10(a) - log10(b), a, b, log10(a - b))
-# plot(log10(a), log10(b))
-# 
-# datf2 <- copy(datf[, .(act_ext, eff_ext)])
-# chkd <- datf2[order(act_ext), {
-#    ae = round(act_ext, 6)
-#    ee = round(eff_ext, 2) 
-#    aext = round(log10(act_ext), 2)
-#    eext = round(log10(eff_ext), 2)
-#    dif = round(ee - ae, 6)
-#    dlog = round(log10(eff_ext) - log10(act_ext), 2)
-#    logd = round(log10(eff_ext - act_ext), 2)
-#    list("ae" = ae, "ee" = ee, "aext" = aext, "eext" = eext, 
-#         "dif" = dif, "dlog" = dlog, "logd" = logd)
-# }]
-# chkd[1:100, ]
-# chkd[, plot(aext, logd)]
-# 
-# plot(durmu[, 1], durmu[, 2])
-# plot(extmu[, 1], extmu[, 2])
-
-
-
 ```
 
 
@@ -1124,29 +993,35 @@ Just for the four main variables. Rules:
 + If `t_btwn_samp` and/or `samp_dur` uncertain, do the same as above, but we have no variable for n repeats for calculating `act_dur`.
 
 ```{r}
-svars <- c("plot_res", "n_sites", "act_ext", "samp_dur",
-           "t_btwn_samp", "act_dur")
-
+svars <- c("plot_res", "n_sites", "act_ext", "eff_ext", "samp_dur",
+           "t_btwn_samp", "act_dur", "eff_dur")
 sens <- gsub("\\\\", ";", dat$sensitivity)
 sens <- gsub(", ", ";", gsub("; ", ";", sens))
 sens <- tolower(sens)
 sensl <- strsplit(sens, ";")
 # unique(unlist(sensl))
 
-sens2 <- gsub("plo_", "plot_", sens)  # fix this one
+sens2 <- gsub("plo_|plot-", "plot_", sens)  # fix this one
 sens2 <- gsub("[[:blank:]]", "_", sens2)  # replace spaces with _
+sens2 <- gsub("-", "_", sens2)  # replace - with _
 
-corrtab <- cbind(c("^res", "plo_res", "sample_area", "samples_area", 
-                   "sampled area",
+corrtab <- cbind(c("^res", "plo_res", "plot_resolution", "plot_size", 
+                   "sample_area", "samples_area", "sampled area", "study_area",
+                   "sampled_area",
                    "t_btwn_samples", "t_btwn_sample", "t_btwn_samp_samp", 
-                   "t_twn_samp", "t_btw_samp", "samp_duratiion", 
-                   "sampling_duration", "sample_duration", 
-                   "plot_resolution", "number_of_sites", 
-                   "time_between_sampling", "plot_size", 
-                   "time_between_samples", "samp_study", ":", " ", ";_"), 
-                 c(svars[c(1, 1, 3, 3, 3, 5, 5, 5, 5, 5, 4, 4, 4, 1, 2,
-                           5, 1, 5)], "samp;study", ";", ";", ";"))
+                   "t_twn_samp", "t_btw_samp", "time_between_sampling", 
+                   "time_between_samples", 
+                   "samp_duratiion", "sampling_duration", "sample_duration", 
+                   "number_of_sites", 
+                   "study_span", "sutdy_span", "study_dur", "study_soan",
+                   "samp_study", ":", " ", ";_", 
+                   "duration", "dure", 
+                   "extent"), 
+                 c(rep("plot_res", 4), rep("act_ext", 5), rep("t_btwn_samp", 7),                    rep("samp_dur", 3), "n_sites", rep("eff_dur", 4), 
+                   "samp;study", ";", ";", ";", 
+                   "dur", "dur", "ext"))
 
+# replace
 for(i in 1:nrow(corrtab)) {
   sens2 <- gsub(corrtab[i, 1], corrtab[i, 2], sens2)
 }
@@ -1156,38 +1031,32 @@ for(i in 1:nrow(corrtab)) {
 sens2[is.na(sens2)] <- "none"
 sensl2 <- lapply(1:length(sens2), function(x) strsplit(sens2[x], ";")[[1]])
 # unique(unlist(sensl))
-# unique(unlist(sensl2))
+unique(unlist(sensl2))
+
 
 # create a sensitivity table
 senst <- do.call(cbind.data.frame, lapply(svars, function(x) {
   v <- sapply(sensl2, function(y) ifelse(any(y == x), 1, 0))
   # ifelse(is.na(v), 0, v)
 }))
-colnames(senst) <- c("res", "n", "sarea", "sampd", "tbtwn", "studyd")
-
-# add column for uncertainty about n repeats
-# senst$nrep <- rep(0, nrow(senst))
-
-# i <- 300:305
-# sensl2[i]
-# senst[i, ]
+colnames(senst) <- c("res", "n", "aext", "eext", "sampd", "tbtwn", "actdur", 
+                     "effdur")
 
 # apply fixes (mostly to account for observer omissions)
-
 # 1. if samp_dur OR t_btwn_samp is uncertain, act_dur must also be. 
-id <- which((senst$sampd == 1 | senst$tbtwn == 1) & senst$studyd == 0)
-senst[id, "studyd"] <- 1 
+id <- which((senst$sampd == 1 | senst$tbtwn == 1) & senst$actdur == 0)
+senst[id, "actdur"] <- 1
 
 # 2. if act_dur is uncertain but t_btwn and samp_dur are not, treat
 # both as uncertain
 # although it is possible that just n_repeats is uncertain, but more likely 
 # that observers didn't note this is sensitive. 
-id <- which(senst$tbtwn == 0 & senst$sampd == 0 & senst$studyd == 1)
+id <- which(senst$tbtwn == 0 & senst$sampd == 0 & senst$actdur == 1)
 senst[id, c("sampd", "tbtwn")] <- 1
 
 # 3. if plot_res or n_sites is uncertain, then act_ext must be
-id <- which((senst$res == 1 | senst$n == 1) & senst$sarea == 0)
-senst[id, "sarea"] <- 1
+id <- which((senst$res == 1 | senst$n == 1) & senst$aext == 0)
+senst[id, "aext"] <- 1
 
 # percentage of records that are uncertain
 round(colSums(senst) / nrow(senst) * 100, 1)
@@ -1198,6 +1067,14 @@ round(colSums(senst) / nrow(senst) * 100, 1)
 
 ### Varying kernel sizes
 ```{r,eval = FALSE}
+# redo range variables
+rx <- range(resdat3$x)
+rx <- round(rx / 0.5) * 0.5  # round to nearest 0.5
+rx[1] <- -5  # set min interval to less than second
+rx[2] <- 5.57  # set max interval to millenium
+ex <- range(taxis2$logdays)
+ex <- c(floor(ex[1]), 5.56) ### should this be 5.57?  #ceiling(ex[2]))
+ey <- range(aaxis2$logarea)
 
 # density rasters
 # vary the kernel size about them
@@ -1209,16 +1086,18 @@ kernsl <- lapply(c(0.4, 0.7, 1), function(x) {
   kerns <- list("res" = rr, "ext" = er)
 })
 
+# plot parameters
 cxa <- 1.25
+cuts <- 40
+bump <- 3
+cols <- inferno(cuts + bump)[-c(2:(bump + 1))]
 
 # As separate plots
 pdf("paper/figures/res_v_extent_ksize2.pdf", width = 8, height = 10)
 par(mfrow = c(3, 2), oma = c(6, 3, 0, 0), mar = c(1, 5, 3, 4))
-lapply(1:3, function(i) {  # i <- 3
-  x <- kernsl[[i]]
-  # x <- kernsl[[1]]
-  image(x$res, col = rev(terrain.colors(80)), axes = FALSE, xlab = "", 
-        ylab = "")#, ylim = range(aaxis1$logarea))
+for(i in 1:3) {  # i <- 3
+  x <- kernsl[[i]] # x <- kernsl[[1]]
+  image(x$res, col = cols, axes = FALSE, xlab = "", ylab = "")
   if(i == 3) {
     axis(1, at = taxis1$logdays[-c(5, 9, 10)], labels = tlab1[-c(5, 9, 10)], 
          las = 2, tcl = -0.2, cex.axis = cxa)
@@ -1228,11 +1107,9 @@ lapply(1:3, function(i) {  # i <- 3
   aargs <- list(mgp = c(3, 0.25, 0), #at = brklabs, labels = brklabs, 
                 cex.axis = cxa, tcl = -0.1)
   plot(x$res, legend.only = TRUE, axis.args = aargs, legend.width = 1.25,
-     legend.shrink = 0.9, #breaks = brks, 
-     col = rev(terrain.colors(80)))
+     legend.shrink = 0.9, col = cols)#breaks = brks, 
   
-  image(x$ext, col = rev(terrain.colors(80)), axes = FALSE, xlab = "", 
-        ylab = "")
+  image(x$ext, col = cols, axes = FALSE, xlab = "", ylab = "")
   if(i == 3) {
     axis(1, at = taxis2$logdays[-5], labels = tlab2[-5], las = 2,
          cex.axis = cxa, tcl = -0.2)
@@ -1242,20 +1119,21 @@ lapply(1:3, function(i) {  # i <- 3
   aargs <- list(mgp = c(3, 0.25, 0), #at = brklabs2, labels = brklabs2, 
                 cex.axis = cxa, tcl = -0.1)
   plot(x$ext, legend.only = TRUE, axis.args = aargs, legend.width = 1.25,
-       legend.shrink = 0.9, #breaks = brks2, 
-       col = rev(terrain.colors(80)))
-})
-par(xpd = NA)
-xx <- grconvertX(0.5, from = "ndc", to = "inches")
-ii <- c(0.4, 0.6, 0.8, 1)
-yy <- c(0.95, 0.75, 0.5, 0.25)
-# yy <- c(-1, -5, -10, -20)
-for(i in 1:length(ii)) {
-  y <- grconvertY(yy[i], from = "ndc", to = "inches")
-  # text(x = xx, y = y, labels = paste("kernel =", ii[i]))
-  # par(xpd = NA)
-  # mtext(text = paste("kernel =", ii[i]), side = 3, line = yy[i])
+       legend.shrink = 0.9, col = cols)#breaks = brks2, 
 }
+# # par(xpd = NA)
+# for(j in c("in", "dev", "ndc", "nfc", "npc", "nic")) {
+#   xx <- grconvertX(0.5, from = "user", to = j)
+#   ii <- c(0.4, 0.6, 0.8, 1)
+#   yy <- c(0.95, 0.75, 0.5, 0.25)
+#   # yy <- c(-1, -5, -10, -20)
+#   for(i in 1:length(ii)) {
+#     y <- grconvertY(yy[i], from = "user", to = j)
+#     text(x = xx, y = y, labels = paste("kernel =", ii[i]))
+#     # par(xpd = NA)
+#     # mtext(text = paste("kernel =", ii[i]), side = 3, line = yy[i])
+#   }
+# }
 dev.off()
 
 # plot(rrs, xlim = c(-5, 15), ylim = c(-5, 15), 
@@ -1416,69 +1294,3 @@ dev.off()
 <a href="#top">Back to top</a>
 
 
-### Polygon version of plots
-
-```{r, eval = FALSE, echo = FALSE}
-stype <- data.table(datf[, study_type])
-stype[like(V1, "remote|other"), newnm := "remote"]
-stype[like(V1, "field|paleo"), newnm := "field"]
-stype[like(V1, "automated"), newnm := "automated"]
-
-tbtwn <- datf$t_btwn_samp
-# which(tbtwn < (0.1 / (60 * 60 * 24)) & tbtwn > 0)
-tbtwn <- ifelse(tbtwn == 0, 0.1 / (60 * 60 * 24), tbtwn)
-tempdat2 <- data.table(x = log10(tbtwn), y = log10(datf$act_dur))
-tempdat2[x == min(x), x := -5.5]
-tempdat2[x > -5.5 & x < tx[1], x := tx[1]]
-# tempdat2[y == min(y)]
-tempdat2[y > ty[2], y := ty[2]]
-tx2 <- round(range(tempdat2$x), 1)
-ty2 <- round(range(tempdat2$y), 1)
-
-# tempdat2 <- data.table(x = log10(to_infin_byond(datf$t_btwn_samp)), 
-#                       y = log10(datf$act_dur))
-spatdat2 <- data.table(x = log10(datf$plot_res / 10000), # convert to ha
-                       y = log10(datf$act_ext))
-sx2 <- round(range(spatdat2$x), 1)
-sx2[2] <- 4.8
-sy2 <- round(range(spatdat2$y), 1)
-
-# x1 = interval, x2 = study duration
-# y1 = plot res, y2 = extent
-
-pgons <- lapply(1:nrow(tempdat2), function(i) {  # i <- 6
-  print(i)
-  x <- c(rep(tempdat2[i, x], 2), rep(tempdat2[i, y], 2), tempdat2[i, x])
-  y <- c(spatdat2[i, x], rep(spatdat2[i, y], 2), rep(spatdat2[i, x], 2))
-  Polygons(list(Polygon(cbind(x, y))), ID = as.character(i))
-})
-spgons <- SpatialPolygons(pgons)
-spgons$type <- stype$newnm
-
-xl <- range(c(tx2, ty2))
-yl <- range(c(sx2, sy2))
-
-# not compelling, polygonized version
-apha <- 0.05
-par(mar = rep(2, 4))
-plot(spgons, lty = 0, axes = TRUE, xlim = xl, ylim = yl)
-plot(spgons[spgons$type == "field", ], add = TRUE, 
-     col = rgb(1, 0, 0, alpha = apha), border = "transparent")
-plot(spgons[spgons$type == "remote", ], add = TRUE, 
-     col = rgb(0, 1, 0, alpha = apha), border = "transparent")
-plot(spgons[spgons$type == "automated", ], add = TRUE, 
-     col = rgb(0, 0, 1, alpha = apha), border = "transparent")
-
-# rasterized version less compelling
-r <- raster(extent(c(range(c(tx2, ty2)), range(sx2, sy2))))
-res(r) <- 0.1
-r[] <- 1
-plot(r)
-rpts <- rasterToPoints(r, spatial = TRUE)
-spct <- sapply(over(rpts, geometry(spgons), returnList = TRUE), length)
-rpts$n <- spct
-rptsgrd <- SpatialPixelsDataFrame(rpts, rpts@data)
-rptsr <- raster(rptsgrd, layer = "n")
-plot(rptsr)
-
-```

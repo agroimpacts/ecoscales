@@ -148,19 +148,9 @@ p_dat &lt;- fp(p_root, &quot;external/data/calibration&quot;)</code></pre>
 # cal &lt;- data.table(read_excel(fp(p_dat, &quot;merged_calibrationf.xlsx&quot;)))
 # cal &lt;- data.table(read_excel(fp(p_dat, &quot;merged_calibrationff.xlsx&quot;)))
 cal &lt;- data.table(read_excel(fp(p_dat, &quot;merged_calibrationffffff.xlsx&quot;)))
-names(cal)</code></pre>
-<pre><code>##  [1] &quot;V1&quot;              &quot;observer&quot;        &quot;DOI&quot;            
-##  [4] &quot;inout&quot;           &quot;feature&quot;         &quot;study_year&quot;     
-##  [7] &quot;st&quot;              &quot;study_type&quot;      &quot;country_region&quot; 
-## [10] &quot;subject_matter&quot;  &quot;plot_res&quot;        &quot;n_sites&quot;        
-## [13] &quot;act_ext&quot;         &quot;eff_ext&quot;         &quot;samp_dur&quot;       
-## [16] &quot;t_btwn_samp&quot;     &quot;act_dur&quot;         &quot;eff_dur&quot;        
-## [19] &quot;comp1&quot;           &quot;comp2&quot;           &quot;comp3&quot;          
-## [22] &quot;struc1&quot;          &quot;struc2&quot;          &quot;struc3&quot;         
-## [25] &quot;func1&quot;           &quot;func2&quot;           &quot;func3&quot;          
-## [28] &quot;tax_breadth&quot;     &quot;DOI_data_source&quot; &quot;notes&quot;          
-## [31] &quot;V31&quot;</code></pre>
-<pre class="r"><code>cal[, c(&quot;notes&quot;, &quot;V31&quot;) := NULL]
+# names(cal)
+
+cal[, c(&quot;notes&quot;, &quot;V31&quot;) := NULL]
 nuvars &lt;- c(&quot;inout&quot;, &quot;feature&quot;, &quot;study_year&quot;, &quot;st&quot;, &quot;plot_res&quot;, &quot;n_sites&quot;,
             &quot;act_ext&quot;, &quot;eff_ext&quot;, &quot;samp_dur&quot;, &quot;t_btwn_samp&quot;, &quot;act_dur&quot;, 
             &quot;eff_dur&quot;, paste0(&quot;comp&quot;, 1:3), paste0(&quot;struc&quot;, 1:3), 
@@ -253,16 +243,16 @@ musmu &lt;- mus[, lapply(.SD, mean, na.rm = TRUE), by = DOI, .SDcols = varnms]
 
 vars[, lapply(.SD, mean, na.rm = TRUE), .SDcols = varnms]</code></pre>
 <pre><code>##    plot_res  n_sites  act_ext  eff_ext t_btwn_samp  act_dur  eff_dur
-## 1: 650.1084 121.4068 8.758947 53950399    5310.147 151098.5 76065.75</code></pre>
+## 1: 650.1084 121.4068 8.758947 53950399    5310.359 151099.1 76055.32</code></pre>
 <pre class="r"><code>round(colMeans(sapply(varnms, function(i) {
   mu &lt;- musmu[, get(i)]
   sdev &lt;- vars[, get(i)]
   sdev / mu
 }), na.rm = TRUE), 3)</code></pre>
 <pre><code>##    plot_res     n_sites     act_ext     eff_ext t_btwn_samp     act_dur 
-##       0.494       0.457       0.749       0.499       0.466       1.062 
+##       0.494       0.457       0.749       0.499       0.475       1.093 
 ##     eff_dur 
-##       0.411</code></pre>
+##       0.338</code></pre>
 <pre class="r"><code># calr[DOI == &quot;10.1007/s00442-005-0338-3&quot; &amp; feature == 2]</code></pre>
 </div>
 <div id="by-feature-individual-records-across-dois" class="section level3">
@@ -284,7 +274,7 @@ calr[feature != 99, lapply(.SD, CV), by = .(DOI, feature),
 # par(mfcol = c(10, 4), mar = c(2, 2, 2, 2), mgp = c(1.5, 0.5, 0))
 # mus[, plot(plot_res), by = DOI]</code></pre>
 <pre><code>##    plot_res n_sites act_ext eff_ext t_btwn_samp act_dur eff_dur
-## 1:    0.577   0.382    0.72   0.405       1.011    1.23   0.588</code></pre>
+## 1:    0.577   0.382    0.72   0.405       1.045   1.261   0.643</code></pre>
 </div>
 </div>
 </div>
