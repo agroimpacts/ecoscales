@@ -142,12 +142,6 @@ $(document).ready(function () {
 <li><a href="#sensitivity"><span class="toc-section-number">1.4.1</span> Sensitivity</a></li>
 <li><a href="#varying-kernel-sizes"><span class="toc-section-number">1.4.2</span> Varying kernel sizes</a></li>
 </ul></li>
-<li><a href="#tried-and-deprecated"><span class="toc-section-number">1.5</span> Tried and deprecated</a><ul>
-<li><a href="#scale-diversity-within-study"><span class="toc-section-number">1.5.1</span> Scale diversity within study</a></li>
-<li><a href="#normal-bootstrapping"><span class="toc-section-number">1.5.2</span> Normal bootstrapping</a></li>
-<li><a href="#normal-bootstrapping-plot"><span class="toc-section-number">1.5.3</span> Normal bootstrapping plot</a></li>
-<li><a href="#polygon-version-of-plots"><span class="toc-section-number">1.5.4</span> Polygon version of plots</a></li>
-</ul></li>
 </ul></li>
 </ul>
 </div>
@@ -587,16 +581,23 @@ dev.off()
 # })</code></pre>
 <p>Statistics associated with Figure 1: percentage of observations falling within different scale ranges, and associated with different observational methods</p>
 <pre class="r"><code># res
-# hdatst &lt;- hdatstat[[1]]$density
+# sum(hdatst[4:6])  # 53 % between 10cm^2 and 1 m^2
+# sum(hdatst[1:6])  #  67% &lt; 1m^2
+# sum(hdatst[7:10]) # 24 % between 1 m^2 and 1 ha
+# sum(hdatst[11:(l)]) # 9 % 1-10000 ha
+# dat[plot_res &gt;= 10000^2]
 hdatst &lt;- hdatstat_bt$res$mu
 l &lt;- length(hdatst)
-sum(hdatst[4:6])  # 53 % between 10cm^2 and 1 m^2
-sum(hdatst[1:6])  #  67% &lt; 1m^2
-sum(hdatst[7:10]) # 24 % between 1 m^2 and 1 ha
-sum(hdatst[11:(l)]) # 9 % 1-10000 ha
-# dat[plot_res &gt;= 10000^2]
-
-# length(which(hdat$res &gt;= -3 &amp; hdat$res &lt;= 0)) / length(hdat$res)
+hds &lt;- c(&quot;10cm^2 - 1 m^2&quot;, &quot;&lt;1m^2&quot;, &quot;1 m^2-1 ha&quot;, &quot;1-10000 ha&quot;)
+inds &lt;- list(4:6, 1:6, 7:10, 11:l)
+sapply(1:length(inds), function(x) {
+  v &lt;- round(sum(hdatst[inds[[x]]]), 1)
+  names(v) &lt;- hds[x]
+  v
+})</code></pre>
+<pre><code>## 10cm^2 - 1 m^2          &lt;1m^2     1 m^2-1 ha     1-10000 ha 
+##           52.8           66.6           24.1            9.3</code></pre>
+<pre class="r"><code># length(which(hdat$res &gt;= -3 &amp; hdat$res &lt;= 0)) / length(hdat$res)
 # length(which(hdat$res &lt;= 4)) / length(hdat$res)
 # sum(hdatstat[[1]]$counts[4:6]) / sum(hdatstat[[1]]$counts)
 
@@ -604,70 +605,94 @@ sum(hdatst[11:(l)]) # 9 % 1-10000 ha
 # hdatst &lt;- hdatstat[[2]]$density
 hdatst &lt;- hdatstat_bt$ext$mu
 l &lt;- length(hdatst)
-sum(hdatst[1:2])  # 36 % &lt; 1 m^2
-sum(hdatst[1:6])  # 82% &lt; 1 ha
-sum(hdatst[1:7])  # 86% &lt; 10 ha
-sum(hdatst[1:8])  # 90 % &lt; 100 ha
-sum(hdatst[1:9])  # 92 % &lt; 1000 ha
-sum(hdatst[8:9])  # 6 % 10-1000 ha
-sum(hdatst[8:l])  # 14% &gt; 10 ha
-sum(hdatst[10:l]) # 8.2 % covered an area &gt; 1000 ha
-sum(hdatst[12:l]) # 5.1 % covered an area &gt; 100,000 ha
-sum(hdatst[13:l]) # 3.9 % covered an area &gt; 1,000,000 ha
-
-# length(which(hdat$ext &lt; -4)) / length(hdat$ext)
-# length(which(hdat$ext &gt; 3)) / length(hdat$ext)
-# length(which(hdat$ext &gt; 1 &amp; hdat$ext &lt;= 3)) / length(hdat$ext)
-# which(hdatstat[[2]]$breaks == log10(1000000))
-# length(hdatstat[[2]]$counts[7:8])
-# hdatstat[[2]]$mids[12]
-
-# interval
+# sum(hdatst[1:2])  # 36 % &lt; 1 m^2
+# sum(hdatst[1:6])  # 82% &lt; 1 ha
+# sum(hdatst[1:7])  # 86% &lt; 10 ha
+# sum(hdatst[1:8])  # 90 % &lt; 100 ha
+# sum(hdatst[1:9])  # 92 % &lt; 1000 ha
+# sum(hdatst[8:9])  # 6 % 10-1000 ha
+# sum(hdatst[8:l])  # 14% &gt; 10 ha
+# sum(hdatst[10:l]) # 8.2 % covered an area &gt; 1000 ha
+# sum(hdatst[12:l]) # 5.1 % covered an area &gt; 100,000 ha
+# sum(hdatst[13:l]) # 3.9 % covered an area &gt; 1,000,000 ha
+hds &lt;- c(&quot;&lt;1 ha&quot;, &quot;&lt;10 ha&quot;, &quot;&lt;100 ha&quot;, &quot;&lt;1000ha&quot;, &quot;10-1K ha&quot;, &quot;&gt;10ha&quot;, &quot;1K-1MK&quot;,
+         &quot;&gt;1Kha&quot;, &quot;&gt;100Kha&quot;, &quot;&gt;1Mha&quot;)
+inds &lt;- list(1:6, 1:7, 1:8, 1:9, 8:9, 8:l, 10:12, 10:l, 12:l, 13:l)
+sapply(1:length(inds), function(x) {
+  v &lt;- round(sum(hdatst[inds[[x]]]), 1)
+  names(v) &lt;- hds[x]
+  v
+})</code></pre>
+<pre><code>##    &lt;1 ha   &lt;10 ha  &lt;100 ha  &lt;1000ha 10-1K ha    &gt;10ha   1K-1MK    &gt;1Kha 
+##     11.3     19.1     30.9     42.0     22.9     80.9     42.4     58.0 
+##  &gt;100Kha    &gt;1Mha 
+##     27.4     15.6</code></pre>
+<pre class="r"><code># interval
 # hdatst &lt;- hdatstat[[3]]$density
 hdatst &lt;- hdatstat_bt$int$mu
 l &lt;- length(hdatst)
-sum(hdatst[l])  # 36% are once-offs
-sum(hdatst[1:3])  # 15 % &lt; daily
-sum(hdatst[1:4])  # 25 % &lt; weekly
-sum(hdatst[4:5])  # 21% daily up to monthly
-sum(hdatst[6])  # 19% monthly up to yearly
-sum(hdatst[7:8]) # 8.2 % yearly to decadal
-
-# duration
+# sum(hdatst[l])  # 36% are once-offs
+# sum(hdatst[1:3])  # 15 % &lt; daily
+# sum(hdatst[1:4])  # 25 % &lt; weekly
+# sum(hdatst[4:5])  # 21% daily up to monthly
+# sum(hdatst[6])  # 19% monthly up to yearly
+# sum(hdatst[7:8]) # 8.2 % yearly to decadal
+hds &lt;- c(&quot;norep&quot;, &quot;&lt;daily&quot;, &quot;&lt;weekly&quot;, &quot;day-mo&quot;, &quot;mo-yr&quot;, &quot;yr-dec&quot;)
+inds &lt;- list(l, 1:3, 1:4, 4:5, 6, 7:8)
+sapply(1:length(inds), function(x) {
+  v &lt;- round(sum(hdatst[inds[[x]]]), 1)
+  names(v) &lt;- hds[x]
+  v
+})</code></pre>
+<pre><code>##   norep  &lt;daily &lt;weekly  day-mo   mo-yr  yr-dec 
+##    37.2    16.8    26.0    20.0    17.5     8.3</code></pre>
+<pre class="r"><code># duration
 # hdatst &lt;- hdatstat[[4]]$density
 hdatst &lt;- hdatstat_bt$dur$mu
 l &lt;- length(hdatst)
-sum(hdatst[1:3])  # 71 % up to 1 day
-sum(hdatst[4:5])  # 17% covered between 1 day and 1 month
-sum(hdatst[6])  # 7.3% covered between 1 month and 1 year
-# sum(hdatstat[[4]]$density[4:6])  # 26% covered between 1 day and 1 year
-sum(hdatst[7:10]) # 4.5% year to century
-
-# datf[, plot(log10(n_sites), log10(plot_res))]
+# sum(hdatst[1:3])  # 71 % up to 1 day
+# sum(hdatst[4:5])  # 17% covered between 1 day and 1 month
+# sum(hdatst[6])  # 7.3% covered between 1 month and 1 year
+# # sum(hdatstat[[4]]$density[4:6])  # 26% covered between 1 day and 1 year
+# sum(hdatst[7:10]) # 4.5% year to century
+hds &lt;- c(&quot;&lt;=daily&quot;, &quot;day-mo&quot;, &quot;mo-yr&quot;, &quot;yr-dec&quot;, &quot;yr-cent&quot;)
+inds &lt;- list(1:3, 4:5, 6, 7, 8:10)
+sapply(1:length(inds), function(x) {
+  v &lt;- round(sum(hdatst[inds[[x]]]), 1)
+  names(v) &lt;- hds[x]
+  v
+})</code></pre>
+<pre><code>## &lt;=daily  day-mo   mo-yr  yr-dec yr-cent 
+##    31.0     9.9    22.9    26.6     9.7</code></pre>
+<pre class="r"><code># datf[, plot(log10(n_sites), log10(plot_res))]
 # dat[like(study_type, &quot;field&quot;), plot(log10(n_sites), log10(plot_res))]
-datf[like(study_type, &quot;field&quot;), plot(log10(plot_res), log10(act_ext), 
-                                     ylim = c(-10, 10))]
-datf[like(study_type, &quot;remote&quot;), 
-     points(log10(plot_res), log10(act_ext), pch = 20, col = &quot;red&quot;)]
-datf[like(study_type, &quot;automated&quot;), 
-     points(log10(plot_res), log10(act_ext), pch = 20, col = &quot;blue&quot;)]
-lines(aaxis1$logres, aaxis2$logarea[-c(16:17)] )
-datf[, .N / nrow(datf) * 100, by = st]
+# datf[like(study_type, &quot;field&quot;), plot(log10(plot_res), log10(act_ext), 
+#                                      ylim = c(-10, 10))]
+# datf[like(study_type, &quot;remote&quot;), 
+#      points(log10(plot_res), log10(act_ext), pch = 20, col = &quot;red&quot;)]
+# datf[like(study_type, &quot;automated&quot;), 
+#      points(log10(plot_res), log10(act_ext), pch = 20, col = &quot;blue&quot;)]
+# lines(aaxis1$logres, aaxis2$logarea[-c(16:17)] )
+# datf[, .N / nrow(datf) * 100, by = st]
 
-datf[, plot(log10(t_btwn_samp), log10(act_dur), pch = 20)]
-datf[which(hdat[[3]] &lt; -1.380211), 
-     points(log10(t_btwn_samp), log10(act_dur), pch = 20, col = &quot;blue&quot;)]
-datf[like(study_type, &quot;automated&quot;), 
-     points(log10(t_btwn_samp), log10(act_dur), pch = 20, col = &quot;red&quot;)]
+# datf[, plot(log10(t_btwn_samp), log10(act_dur), pch = 20)]
+# datf[which(hdat[[3]] &lt; -1.380211), 
+#      points(log10(t_btwn_samp), log10(act_dur), pch = 20, col = &quot;blue&quot;)]
+# datf[like(study_type, &quot;automated&quot;), 
+#      points(log10(t_btwn_samp), log10(act_dur), pch = 20, col = &quot;red&quot;)]
 
 # types of observations
 # unique(datf$study_type)
-datf[like(study_type, &quot;field&quot;), .N] / nrow(datf)  # 80% field studies
-datf[like(study_type, &quot;auto&quot;), .N] / nrow(datf) # 12 % automated
-datf[like(study_type, &quot;auto&quot;) &amp; log10(t_btwn_samp) &lt; -1.380211, .N] / 
-  length(which(hdat[[&quot;int&quot;]] &lt; -1.380211))  # 78 % high frequency obs automated 
-datf[like(study_type, &quot;remote|other&quot;), .N] / nrow(datf) # 7 % remote
-datf[like(study_type, &quot;paleo&quot;), .N] / nrow(datf) * 100 # &lt;1 % paleo</code></pre>
+datf[, round(.N / nrow(datf) * 100, 2), by = study_type]</code></pre>
+<pre><code>##    study_type    V1
+## 1:      field 79.95
+## 2:  automated 12.40
+## 3:     remote  6.33
+## 4:      other  0.53
+## 5:      paleo  0.79</code></pre>
+<pre class="r"><code>round(datf[study_type == &quot;automated&quot; &amp; log10(t_btwn_samp) &lt; -1.380211, .N] / 
+        hdat[int &lt; -1.380211, .N] * 100, 2)</code></pre>
+<pre><code>## [1] 74.07</code></pre>
 <p><a href="#top">Back to top</a></p>
 </div>
 <div id="figure-2" class="section level3">
@@ -1250,25 +1275,6 @@ dev.off()
 #      xlab = &quot;Study duration - log10(days)&quot;, ylab = &quot;Sampled area - log10(ha)&quot;)
 # dev.off()</code></pre>
 <p><a href="#top">Back to top</a></p>
-</div>
-</div>
-<div id="tried-and-deprecated" class="section level2">
-<h2><span class="header-section-number">1.5</span> Tried and deprecated</h2>
-<p>Code not shown in HTML</p>
-<div id="scale-diversity-within-study" class="section level3">
-<h3><span class="header-section-number">1.5.1</span> Scale diversity within study</h3>
-<p><a href="#top">Back to top</a></p>
-</div>
-<div id="normal-bootstrapping" class="section level3">
-<h3><span class="header-section-number">1.5.2</span> Normal bootstrapping</h3>
-<p><a href="#top">Back to top</a></p>
-</div>
-<div id="normal-bootstrapping-plot" class="section level3">
-<h3><span class="header-section-number">1.5.3</span> Normal bootstrapping plot</h3>
-<p><a href="#top">Back to top</a></p>
-</div>
-<div id="polygon-version-of-plots" class="section level3">
-<h3><span class="header-section-number">1.5.4</span> Polygon version of plots</h3>
 </div>
 </div>
 </div>

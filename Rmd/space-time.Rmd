@@ -310,6 +310,10 @@ aaxis2 <- data.table(aaxis2)
 setnames(aaxis2, names(aaxis2), "area")
 aaxis2[, logarea := log10(area)]
 ```
+```{r, eval = FALSE, echo = FALSE}
+save(aaxis1, aaxis2, taxis1, taxis2, alab1, alab2, tlab1, tlab2, 
+     file = fp(p_dat, "derived/dimbreaks.rda"))
+```
 
 <a href="#top">Back to top</a>
 
@@ -466,19 +470,31 @@ dev.off()
 #   h
 # })
 ```
-
+```{r, echo = FALSE, eval = FALSE}
+save(hdat, hdatstat_bt, file = fp(p_dat, "derived/hdatstat.rda"))
+```
 
 Statistics associated with Figure 1: percentage of observations falling within different scale ranges, and associated with different observational methods
-```{r, eval = FALSE}
+```{r, echo = FALSE}
+load(fp(p_dat, "derived/hdatstat.rda"))
+load(fp(p_dat, "derived/dimbreaks.rda"))
+```
+```{r}
 # res
-# hdatst <- hdatstat[[1]]$density
+# sum(hdatst[4:6])  # 53 % between 10cm^2 and 1 m^2
+# sum(hdatst[1:6])  #  67% < 1m^2
+# sum(hdatst[7:10]) # 24 % between 1 m^2 and 1 ha
+# sum(hdatst[11:(l)]) # 9 % 1-10000 ha
+# dat[plot_res >= 10000^2]
 hdatst <- hdatstat_bt$res$mu
 l <- length(hdatst)
-sum(hdatst[4:6])  # 53 % between 10cm^2 and 1 m^2
-sum(hdatst[1:6])  #  67% < 1m^2
-sum(hdatst[7:10]) # 24 % between 1 m^2 and 1 ha
-sum(hdatst[11:(l)]) # 9 % 1-10000 ha
-# dat[plot_res >= 10000^2]
+hds <- c("10cm^2 - 1 m^2", "<1m^2", "1 m^2-1 ha", "1-10000 ha")
+inds <- list(4:6, 1:6, 7:10, 11:l)
+sapply(1:length(inds), function(x) {
+  v <- round(sum(hdatst[inds[[x]]]), 1)
+  names(v) <- hds[x]
+  v
+})
 
 # length(which(hdat$res >= -3 & hdat$res <= 0)) / length(hdat$res)
 # length(which(hdat$res <= 4)) / length(hdat$res)
@@ -488,71 +504,83 @@ sum(hdatst[11:(l)]) # 9 % 1-10000 ha
 # hdatst <- hdatstat[[2]]$density
 hdatst <- hdatstat_bt$ext$mu
 l <- length(hdatst)
-sum(hdatst[1:2])  # 36 % < 1 m^2
-sum(hdatst[1:6])  # 82% < 1 ha
-sum(hdatst[1:7])  # 86% < 10 ha
-sum(hdatst[1:8])  # 90 % < 100 ha
-sum(hdatst[1:9])  # 92 % < 1000 ha
-sum(hdatst[8:9])  # 6 % 10-1000 ha
-sum(hdatst[8:l])  # 14% > 10 ha
-sum(hdatst[10:l]) # 8.2 % covered an area > 1000 ha
-sum(hdatst[12:l]) # 5.1 % covered an area > 100,000 ha
-sum(hdatst[13:l]) # 3.9 % covered an area > 1,000,000 ha
-
-# length(which(hdat$ext < -4)) / length(hdat$ext)
-# length(which(hdat$ext > 3)) / length(hdat$ext)
-# length(which(hdat$ext > 1 & hdat$ext <= 3)) / length(hdat$ext)
-# which(hdatstat[[2]]$breaks == log10(1000000))
-# length(hdatstat[[2]]$counts[7:8])
-# hdatstat[[2]]$mids[12]
+# sum(hdatst[1:2])  # 36 % < 1 m^2
+# sum(hdatst[1:6])  # 82% < 1 ha
+# sum(hdatst[1:7])  # 86% < 10 ha
+# sum(hdatst[1:8])  # 90 % < 100 ha
+# sum(hdatst[1:9])  # 92 % < 1000 ha
+# sum(hdatst[8:9])  # 6 % 10-1000 ha
+# sum(hdatst[8:l])  # 14% > 10 ha
+# sum(hdatst[10:l]) # 8.2 % covered an area > 1000 ha
+# sum(hdatst[12:l]) # 5.1 % covered an area > 100,000 ha
+# sum(hdatst[13:l]) # 3.9 % covered an area > 1,000,000 ha
+hds <- c("<1 ha", "<10 ha", "<100 ha", "<1000ha", "10-1K ha", ">10ha", "1K-1MK",
+         ">1Kha", ">100Kha", ">1Mha")
+inds <- list(1:6, 1:7, 1:8, 1:9, 8:9, 8:l, 10:12, 10:l, 12:l, 13:l)
+sapply(1:length(inds), function(x) {
+  v <- round(sum(hdatst[inds[[x]]]), 1)
+  names(v) <- hds[x]
+  v
+})
 
 # interval
 # hdatst <- hdatstat[[3]]$density
 hdatst <- hdatstat_bt$int$mu
 l <- length(hdatst)
-sum(hdatst[l])  # 36% are once-offs
-sum(hdatst[1:3])  # 15 % < daily
-sum(hdatst[1:4])  # 25 % < weekly
-sum(hdatst[4:5])  # 21% daily up to monthly
-sum(hdatst[6])  # 19% monthly up to yearly
-sum(hdatst[7:8]) # 8.2 % yearly to decadal
+# sum(hdatst[l])  # 36% are once-offs
+# sum(hdatst[1:3])  # 15 % < daily
+# sum(hdatst[1:4])  # 25 % < weekly
+# sum(hdatst[4:5])  # 21% daily up to monthly
+# sum(hdatst[6])  # 19% monthly up to yearly
+# sum(hdatst[7:8]) # 8.2 % yearly to decadal
+hds <- c("norep", "<daily", "<weekly",  "day-mo", "mo-yr", "yr-dec")
+inds <- list(l, 1:3, 1:4, 4:5, 6, 7:8)
+sapply(1:length(inds), function(x) {
+  v <- round(sum(hdatst[inds[[x]]]), 1)
+  names(v) <- hds[x]
+  v
+})
 
 # duration
 # hdatst <- hdatstat[[4]]$density
 hdatst <- hdatstat_bt$dur$mu
 l <- length(hdatst)
-sum(hdatst[1:3])  # 71 % up to 1 day
-sum(hdatst[4:5])  # 17% covered between 1 day and 1 month
-sum(hdatst[6])  # 7.3% covered between 1 month and 1 year
-# sum(hdatstat[[4]]$density[4:6])  # 26% covered between 1 day and 1 year
-sum(hdatst[7:10]) # 4.5% year to century
+# sum(hdatst[1:3])  # 71 % up to 1 day
+# sum(hdatst[4:5])  # 17% covered between 1 day and 1 month
+# sum(hdatst[6])  # 7.3% covered between 1 month and 1 year
+# # sum(hdatstat[[4]]$density[4:6])  # 26% covered between 1 day and 1 year
+# sum(hdatst[7:10]) # 4.5% year to century
+hds <- c("<=daily", "day-mo", "mo-yr", "yr-dec", "yr-cent")
+inds <- list(1:3, 4:5, 6, 7, 8:10)
+sapply(1:length(inds), function(x) {
+  v <- round(sum(hdatst[inds[[x]]]), 1)
+  names(v) <- hds[x]
+  v
+})
+
 
 # datf[, plot(log10(n_sites), log10(plot_res))]
 # dat[like(study_type, "field"), plot(log10(n_sites), log10(plot_res))]
-datf[like(study_type, "field"), plot(log10(plot_res), log10(act_ext), 
-                                     ylim = c(-10, 10))]
-datf[like(study_type, "remote"), 
-     points(log10(plot_res), log10(act_ext), pch = 20, col = "red")]
-datf[like(study_type, "automated"), 
-     points(log10(plot_res), log10(act_ext), pch = 20, col = "blue")]
-lines(aaxis1$logres, aaxis2$logarea[-c(16:17)] )
-datf[, .N / nrow(datf) * 100, by = st]
+# datf[like(study_type, "field"), plot(log10(plot_res), log10(act_ext), 
+#                                      ylim = c(-10, 10))]
+# datf[like(study_type, "remote"), 
+#      points(log10(plot_res), log10(act_ext), pch = 20, col = "red")]
+# datf[like(study_type, "automated"), 
+#      points(log10(plot_res), log10(act_ext), pch = 20, col = "blue")]
+# lines(aaxis1$logres, aaxis2$logarea[-c(16:17)] )
+# datf[, .N / nrow(datf) * 100, by = st]
 
-datf[, plot(log10(t_btwn_samp), log10(act_dur), pch = 20)]
-datf[which(hdat[[3]] < -1.380211), 
-     points(log10(t_btwn_samp), log10(act_dur), pch = 20, col = "blue")]
-datf[like(study_type, "automated"), 
-     points(log10(t_btwn_samp), log10(act_dur), pch = 20, col = "red")]
+# datf[, plot(log10(t_btwn_samp), log10(act_dur), pch = 20)]
+# datf[which(hdat[[3]] < -1.380211), 
+#      points(log10(t_btwn_samp), log10(act_dur), pch = 20, col = "blue")]
+# datf[like(study_type, "automated"), 
+#      points(log10(t_btwn_samp), log10(act_dur), pch = 20, col = "red")]
 
 # types of observations
 # unique(datf$study_type)
-datf[like(study_type, "field"), .N] / nrow(datf)  # 80% field studies
-datf[like(study_type, "auto"), .N] / nrow(datf) # 12 % automated
-datf[like(study_type, "auto") & log10(t_btwn_samp) < -1.380211, .N] / 
-  length(which(hdat[["int"]] < -1.380211))  # 78 % high frequency obs automated 
-datf[like(study_type, "remote|other"), .N] / nrow(datf) # 7 % remote
-datf[like(study_type, "paleo"), .N] / nrow(datf) * 100 # <1 % paleo
-
+datf[, round(.N / nrow(datf) * 100, 2), by = study_type]
+round(datf[study_type == "automated" & log10(t_btwn_samp) < -1.380211, .N] / 
+        hdat[int < -1.380211, .N] * 100, 2)
 ```
 
 <a href="#top">Back to top</a>
@@ -679,8 +707,8 @@ axis(1, at = taxis1$logdays[-c(5)], labels = tlab1[-c(5)],
      las = 2, tcl = -0.2, cex.axis = cxa)
 axis(2, at = aaxis1$logres[-1], labels = alab1[-1], las = 2, tcl = -0.2, 
      cex.axis = cxa)
-mtext("Sampling interval", 1, cex = cxa, line = ll)
-mtext("Spatial resolution", 2, cex = cxa, line = ll)
+mtext("Interval", 1, cex = cxa, line = ll)
+mtext("Resolution", 2, cex = cxa, line = ll)
 brks <- brkfun(rres3, 0.01, cuts)  # breaks
 aargs <- list(mgp = c(3, 0.25, 0), at = brks$labs, labels = brks$labs, 
               cex.axis = cxa, tcl = -0.1)
@@ -703,8 +731,8 @@ axis(2, at = aaxis2$logarea, labels = alab2, las = 2, cex.axis = cxa,
 brks <- brkfun(rext3, 0.01, cuts)  # breaks
 aargs <- list(mgp = c(3, 0.25, 0), at = brks$labs, labels = brks$labs, 
               cex.axis = cxa, tcl = -0.1)
-mtext("Temporal duration", 1, cex = cxa, line = ll)
-mtext("Spatial extent", 2, cex = cxa, line = ll)
+mtext("Duration", 1, cex = cxa, line = ll)
+mtext("Extent", 2, cex = cxa, line = ll)
 plot(rext3, legend.only = TRUE, axis.args = aargs, legend.width = 1.25,
      legend.shrink = 0.9, col = cols)
 mtext("B", side = 3, line = -1, cex = 0.8, adj = 0.05, col = "white")
@@ -714,8 +742,8 @@ image(sres, col = cols, axes = FALSE, xlab = "", ylab = "")
 axis(1, at = aaxis1$logres, labels = alab1, las = 2, tcl = -0.2, cex.axis = cxa)
 axis(2, at = aaxis2$logarea, labels = alab2, las = 2, tcl = -0.2, 
      cex.axis = cxa)
-mtext("Spatial resolution", 1, cex = cxa, line = ll)
-mtext("Spatial extent", 2, cex = cxa, line = ll)
+mtext("Resolution", 1, cex = cxa, line = ll)
+mtext("Extent", 2, cex = cxa, line = ll)
 brks <- brkfun(sres, 0.01, cuts)  # breaks
 aargs <- list(mgp = c(3, 0.25, 0), at = brks$labs, labels = brks$labs, 
               cex.axis = cxa, tcl = -0.1)
@@ -732,8 +760,8 @@ axis(1, at = taxis1$logdays[-c(5)], labels = tlab1[-c(5)],
      las = 2, tcl = -0.2, cex.axis = cxa)
 axis(2, at = taxis2$logdays[-5], labels = tlab2[-5], las = 2,
      cex.axis = cxa, tcl = -0.2)
-mtext("Sampling interval", 1, cex = cxa, line = ll)
-mtext("Temporal duration", 2, cex = cxa, line = ll)
+mtext("Interval", 1, cex = cxa, line = ll)
+mtext("Duration", 2, cex = cxa, line = ll)
 # brks <- brkfun(tres, 0.02, 100)  # breaks
 brks <- brkfun(tres, 0.01, cuts)  # breaks
 aargs <- list(mgp = c(3, 0.25, 0), at = brks$labs, labels = brks$labs, 
@@ -744,8 +772,21 @@ mtext("D", side = 3, line = -1, cex = 0.8, adj = 0.05, col = "white")
 dev.off()
 
 # image(rres3, col = rev(terrain.colors(100)))
+# image(rext3, col = rev(terrain.colors(100)))
+# datf[, points(log10(eff_dur), log10(eff_ext), pch = 20, cex = 0.5)]
+# datf[like(study_type, "remote"), {
+#   points(log10(eff_dur), log10(eff_ext), pch = 20, cex = 0.5, col = "blue")
+# }]
 # points(resdat3$x, resdat3$y, pch = 20, cex = 0.5)
 # image(sres, col = rev(terrain.colors(100)))
+# datf[, points(log10(plot_res), log10(eff_ext), pch = 20, cex = 0.5)]
+# datf[like(study_type, "remote"), {
+#   points(log10(plot_res), log10(eff_ext), pch = 20, cex = 0.5, col = "blue")
+# }]
+# datf[like(study_type, "field"), {
+#   points(log10(plot_res), log10(eff_ext), pch = 20, cex = 0.5, col = "red")
+#   abline(lm(log10(plot_res) ~ log10(eff_ext)))
+# }]
 # points(spatdat$x, spatdat$y, pch = 20, cex = 0.5)
 ```
 
