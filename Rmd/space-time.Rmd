@@ -782,10 +782,11 @@ dev.off()
 # datf[, points(log10(plot_res), log10(eff_ext), pch = 20, cex = 0.5)]
 # datf[like(study_type, "remote"), {
 #   points(log10(plot_res), log10(eff_ext), pch = 20, cex = 0.5, col = "blue")
+#   abline(lm(log10(eff_ext) ~ log10(plot_res)))
 # }]
 # datf[like(study_type, "field"), {
 #   points(log10(plot_res), log10(eff_ext), pch = 20, cex = 0.5, col = "red")
-#   abline(lm(log10(plot_res) ~ log10(eff_ext)))
+#   abline(lm(log10(eff_ext) ~ log10(plot_res)))
 # }]
 # points(spatdat$x, spatdat$y, pch = 20, cex = 0.5)
 ```
@@ -891,15 +892,16 @@ eint <- aaxis2$logarea
 edif_int <- rbindlist(lapply(hdat_bs2, function(y) {  # y <- hdat_bs2[[2]]
   dd <- copy(y$edb[!is.na(aext)])
   dd[aext < ex[1], aext := ex[1]]  # set to min
-  # dd[, list("int" = findInterval(aext, eint), "dif" = dif)]
+  # dd[eext < ex[1], eext := ex[1]]  # set to min
   dd[, int := findInterval(aext, eint, rightmost.closed = TRUE)]
+  # dd[, int := findInterval(eext, eint, rightmost.closed = TRUE)]
   # dd[, list("dif" = mean(dif, na.rm = TRUE), "N" = .N), by = int][order(int)]
 }))
 ints <- sort(edif_int[, unique(int)])
 ebox <- lapply(ints, function(x) edif_int[int == x, lmisc::box_stats(dif)])
 pctobs <- sapply(ints, function(x) edif_int[int == x, .N])
 ewgt <- pctobs / sum(pctobs)
-# ealphs <- (ewgt - min(ewgt)) / diff(range(ewgt))
+# round(cumsum(ewgt), 2)
 ewgtint <- c(0, 1, 5, 10, 15, 20, 25) / 100  # weight intervals
 ewgttxt <- c("  0", "  1", "  5", seq(10, 25, 5))
 ecols <- findInterval(ewgt, ewgtint)  # corresponding color index
@@ -917,7 +919,8 @@ dints <- sort(ddif_int[, unique(int)])
 tbox <- lapply(dints, function(x) ddif_int[int == x, lmisc::box_stats(dif)])
 pctobs <- sapply(dints, function(x) ddif_int[int == x, .N])
 dwgt <- pctobs / sum(pctobs)
-# dalphs <- (dwgt - min(dwgt)) / diff(range(dwgt))
+# round(cumsum(dwgt), 2)
+
 dwgtint <- c(0, 1, 5, 10, 15, 20, 25, 30) / 100  # weight intervals
 dwgttxt <- c("  0", "  1", "  5", seq(10, 30, 5))
 dcols <- findInterval(dwgt, dwgtint)  
@@ -941,14 +944,15 @@ ylines(yr = c(0, 14), by = 2, col = "grey95")
 for(i in 1:length(ebox)) {
   boxplot_v(bx[i], y = ebox[[i]], n = 1.75, whiskhgt = 1.5, 
             bfill = cols[ecols][i])
+  text(bx[i], ebox[[i]][5] + 0.15, round(ewgt[i] * 100, 1), cex = 0.3)
 } 
 axis(1, at = eint, labels = alab2, las = 2, tcl = -0.2, cex.axis = cxa, 
      mgp = c(3, 0.5, 0))
 axis(2, at = seq(0, 14, 2), las = 2, tcl = -0.2, cex.axis = cxa, 
      mgp = c(3, 0.5, 0))
 mtext("Actual Extent", side = 1, line = 3, cex = 0.9)
-mtext("Difference Between", side = 2, line = 2.1, cex = 0.9)
-mtext("Effective and Actual (Decades)", side = 2, line = 1.4, cex = 0.9)
+mtext("Difference between Extent/Duration", side = 2, line = 2.2, cex = 0.9)
+mtext("and Actual Extent/Duration (Decades)", side = 2, line = 1.4, cex = 0.9)
 lrng <- c(mean(ex), max(ex) - 0.05 * max(ex))
 xs <- seq(lrng[1], lrng[2], by = (diff(lrng)) / (length(cols)))
 rect_shade(xs, y = c(11.5, 12.5), fillcol = cols, linecol = "grey30")
@@ -959,15 +963,16 @@ mtext("A", side = 3, line = -1, cex = 1, adj = 0.05)
 # duration
 bx <- rowMeans(cbind(dint[-length(dint)], dint[-1]))
 bd <- abs(dint[-length(dint)] - dint[-1])
-# cols <- sapply(dalphs, function(x) rgb(1, 0, 0.1, alpha = x))
 cols <- brewer.pal(length(dwgtint) - 1, "Reds")
 plot(tx, c(0, 14), pch = "", xlab = "", ylab = "", xaxt = "n", xaxs = "i",
      mgp = c(3, 0.5, 0), tcl = -0.2, yaxt = "n")
 polygon(c(tx, rev(tx), tx[1]), c(-1, -1, 15, 15, -1), col = "grey90")
 ylines(yr = c(0, 14), by = 2, col = "grey95")
 for(i in 1:length(tbox)) {
-  boxplot_v(bx[i], y = tbox[[i]], n = 0.9, inhgt = bd[i] * 10, whiskhgt = 0.5, 
+  boxplot_v(bx[i], y = tbox[[i]], n = 0.9, inhgt = bd[i] * 10, whiskhgt = 0.75, 
             bfill = cols[dcols][i])
+  text(bx[i], tbox[[i]][5] + 0.15, round(dwgt[i] * 100, 1), cex = 0.3)
+
 } 
 axis(1, at = dint, labels = tlab2[-c(5)], las = 2, tcl = -0.2, cex.axis = cxa, 
      mgp = c(3, 0.5, 0))
