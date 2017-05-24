@@ -17,10 +17,13 @@ library(readxl)
 library(maptools)
 library(RColorBrewer)
 library(viridis)
+# library(zyp)
 
 p_root <- set_base_path("ecoscales")
-p_dat <- full_path(p_root, "external/data/result")
-p_calib <- full_path(p_root, "external/data/calibration")
+p_dat <- fp(p_root, "external/data/result")
+p_calib <- fp(p_root, "external/data/calibration")
+p_fig <- fp(p_root, "paper/figures")
+
 # dat <- as.data.table(read_excel(full_path(p_dat, "merged.xlsx")))
 dat <- as.data.table(read_excel(full_path(p_dat, "mergedffffff.xlsx")))
 # dato <- as.data.table(read_excel(full_path(p_dat, "archive/mergedfff.xlsx")))
@@ -92,9 +95,10 @@ for(i in 1:nrow(kwords)) {
 #           "act_dur", "eff_dur")
 dat2 <- copy(dat[, .(DOI, study_type, plot_res, n_sites, act_ext, eff_ext,
                      samp_dur, t_btwn_samp, act_dur, eff_dur)])
-selind <- 3:ncol(dat2)
+# selind <- 3:ncol(dat2)
+selind <- 4:ncol(dat2)
 for(j in names(dat2)[selind]) set(dat2, j=j, value = as.numeric(dat2[[j]]))
-rnms <- c("DOI", "study_type", "feature", "observer", "plot_res", 
+rnms <- c("DOI", "study_type", "feature", "observer", "plot_res",
           "n_sites", "act_ext", "eff_ext", "samp_dur", "t_btwn_samp",
           "act_dur", "eff_dur")
 calr <- cal[, rnms, with = FALSE]
@@ -1108,6 +1112,204 @@ round(colSums(senst) / nrow(senst) * 100, 1)
 ```
 
 <a href="#top">Back to top</a>
+
+### Study type by year
+
+Calculate types of study by year, as total and percent
+```{r, warning = FALSE, message = FALSE, fig.height=3}
+# One Oecologia study listed as 2004 (by Endnote) was actually 2003 
+# Set it to 2004
+stypes <- copy(dat)  # new dataset out of dat (which retain year info)
+stypes[study_year < 2004, study_year := 2004] 
+
+# bring in study_type from calr set, grabbing year from original cal dt
+calyr <- cal[DOI %in% calr[, unique(DOI)], unique(study_year), by = DOI]
+calyr[, V1 := as.numeric(V1)]
+calyr <- calyr[, list("study_year" = mean(V1, na.rm = TRUE)), by = DOI]
+calyr <- merge(calyr, calr[, list(DOI, study_type)], by = "DOI")
+
+# bind
+stypes <- rbind(stypes[, list(DOI, study_year, study_type)], calyr)
+na_effext <- datf[is.na(eff_ext), unique(DOI)]  # ID NA eff_ext values
+
+# Estimate and plot study type by year
+stypeyr <- stypes[, list(.N, study_type), by = study_year][, {
+  list("tot" = N, "ct" = .N, "prop" = .N / N * 100)
+}, by = .(study_type, study_year)][order(study_year)]
+stypeyr <- stypeyr[, lapply(.SD, mean), .SDcols = c("tot", "ct", "prop"), 
+                   by = .(study_type, study_year)]
+```
+```{r, eval = FALSE}
+obs_types <- c("remote", "field", "auto")
+obs_types2 <- c("Remote sensing", "Field", "Automatic")
+cols <- c("orange", "green4", "blue4")
+png(fp(p_fig, "stype_by_yr.png"), width = 7, height = 2.75, res = 300, 
+    units = "in")
+par(mfrow = c(1, 3), oma = c(0, 3, 0, 0), mar = c(4, 1, 2, 1))
+for(i in 1:3) {  # i <- 1
+  plot(c(2004, 2014), c(0, 100), xlab = "", ylab = "", pch = "")
+  stypeyr[like(study_type, obs_types[i]), {
+    points(study_year, prop, col = cols[i], pch = 20)
+    yr = as.numeric(study_year)
+    slm = lm(prop ~ yr, weights = tot)  # weighted regression
+    slms = summary(slm)
+    abline(slm, col = cols[i])
+    cf = round(coef(slm)[1:2], 4)
+    pf = round(coef(slms)[8], 2)
+    rf = round(slms$adj.r.squared, 2)
+    cfa = paste0(cf[2], "% year")
+    text(x = 2006, y = 100, labels = substitute(x^-1, list(x = cfa)), 
+         cex = 0.9)
+    text(x = 2011.5, y = 100, cex = 0.9,
+         labels = substitute(R^2~"="~x~"; p <"~y, list(x = rf, y = pf)))
+    if(i == 1) mtext("percent", side = 2, line = 2.5, cex = 0.8)
+    if(i == 2) mtext("year", side = 1, line = 2.5, cex = 0.8)
+    mtext(obs_types2[i], side = 3, cex = 0.8)
+  }]
+}
+dev.off()
+```
+
+Extrapolating percentage of studies using remote sensing to 2017
+```{r}
+preds <- stypeyr[like(study_type, "remote"), {
+  slm = lm(prop ~ study_year, weights = tot)
+  predict(slm, newdata = data.frame("study_year" = 2004:2017))
+}]
+names(preds) <- 2004:2017
+```
+
+Percent of remote sensing studies by year
+```{r}
+round(preds, 1)
+```
+
+Average annual percent of studies using remote sensing 2004-2014, and projected increases in this percent through 2017 (2004-2017) 
+```{r}
+# murs2014 <- stypeyr[study_type == "remote", round(mean(prop), 2)]
+murs2014 <- stypeyr[, sum(ct[study_type == "remote"]) / sum(ct) * 100]
+pctinc <- mean(preds) / mean(preds[1:(length(preds) - 3)])
+
+pcttab <- cbind("2014" = murs2014, "pct increase" = (pctinc - 1) * 100,
+                "2017" = murs2014 * pctinc)
+round(pcttab, 1)
+```
+
+```{r}
+types <- datf[, .N, by = study_type]
+rs2017 <- mean(preds)  # avg predicted % using RS through 2004-2017
+rs2014 <- mean(preds[1:(length(preds) - 3)])  # avg predicted % RS 2004-2014
+# rs2017 / rs2014
+
+# translate to N more RS studies would have been selected given those %ages
+rsinc <- rs2017 / rs2014 * types[study_type == "remote", N] - 
+                 types[study_type == "remote", N]  
+
+remote <- datf[study_type == "remote", eff_ext]
+notremote <- datf[study_type != "remote", eff_ext]
+# a <- (length(remote) + rsinc) / (nrow(datf))
+# b <- length(remote) / nrow(datf)
+# a / b
+# ((length(remote) + rsinc) / (length(notremote)) / length(b))
+
+# (rsext * rs2017 + nonrsext * (1 - rs2017)) / 
+#   (rsext * rs2014 + nonrsext * (1 - rs2014))
+
+set.seed(1)
+ext2017 <- unlist(lapply(1:1000, function(x) {  # x = 1
+  ind <- sample(1:length(remote), size = round(rsinc))
+  mean(c(remote, remote[ind], notremote), na.rm = TRUE)
+}))
+
+dec1417 <- log10(mean(ext2017, na.rm = TRUE) / 
+                   datf[, mean(eff_ext, na.rm = TRUE)])
+qtiles1417 <- log10(quantile(ext2017, c(0.025, 0.975), na.rm = TRUE) / 
+                      datf[, mean(eff_ext, na.rm = TRUE)])
+
+pctdiff1417 <- mean(ext2017, na.rm = TRUE) / datf[, mean(eff_ext, na.rm = TRUE)]
+pctqtiles1417 <- quantile(ext2017, c(0.025, 0.975), na.rm = TRUE) / 
+                      datf[, mean(eff_ext, na.rm = TRUE)]
+
+cbind("decade" = round(dec1417, 4), "dec2.5" = round(qtiles1417[1], 4),
+      "dec97.5" = round(qtiles1417[2], 4),
+      "pctdiff" = round((pctdiff1417 - 1) * 100, 1),
+      "pctdiff2.5" = round((pctqtiles1417[1] - 1) * 100, 1), 
+      "pctdiff97.5" = round((pctqtiles1417[2] - 1) * 100, 1))
+```
+
+### Change in dimensions by year
+```{r}
+# Examines and plot trends in dimensions
+doiyr <- rbind(unique(dat[, .(DOI, study_year)]), 
+               unique(cal[, .(DOI, study_year)]))
+doiyr <- doiyr[study_year %in% 2004:2014]
+datf2 <- copy(datf)
+datf2 <- merge(doiyr, datf2, by = "DOI")  # collect year of publication
+# datf2[, N := .N, by = study_year]
+```
+```{r, eval = FALSE}
+vars <- c("plot_res", "eff_ext", "t_btwn_samp", "eff_dur")
+varlabs <- c("Resolution", "Extent", "Interval", "Duration")
+labcols <- c(brewer.pal(8, "Reds")[c(7, 7)], brewer.pal(8, "Blues")[c(7, 7)])
+png(fp(p_fig, "dim_by_yr.png"), width = 7, height = 6, res = 300, 
+    units = "in")
+par(mfrow = c(2, 2), mar = c(1, 3, 1, 1), oma = c(2, 3, 0, 0))
+for(i in 1:length(varlabs)) {  # i <- 1
+  if(i == 3) {
+    DT <- copy(datf2[t_btwn_samp != 0, ])
+  } else {
+    DT <- copy(datf2)
+  }
+  DT[, list(mean(get(vars[i]), na.rm = TRUE), .N), by = study_year][, {
+    dim = log10(V1)
+    yr = as.numeric(study_year)
+    if(i %in% 1:2) rng = c(0, 10)
+    if(i %in% 3:4) rng = c(0, 5)
+    if(i %in% 3:4) {
+      xlabs = seq(2004, 2014, 2)
+    } else {
+      xlabs = rep("", 6)
+    }
+    plot(yr, dim, ylim = rng, xaxt = "n", pch = 20, col = labcols[i], 
+         main = varlabs[i], mgp = c(2, 0.5, 0), tcl = -0.2, ylab = "")
+    axis(1, at = seq(2004, 2014, 2), labels = xlabs, tcl = -0.2, 
+         mgp = c(2, 0.5, 0))
+    slm = lm(dim ~ yr, weights = N)
+    slms = summary(slm)
+    abline(slm, col = labcols[i])
+    cf = round(coef(slm)[1:2], 3)
+    pf = round(coef(slms)[8], 2)
+    rf = round(slms$adj.r.squared, 2)
+    text(x = 2006.25, y = rng[2] * 0.97, cex = 0.9,
+         labels = substitute(x~year^-1, list(x = cf[2])))
+    text(x = 2011.5, y = rng[2] * 0.97, cex = 0.9,
+         labels = substitute(R^2~"="~x~"; p <"~y, list(x = rf, y = pf)))
+    if(i == 1) mtext(expression("log10 m"^2), side = 2, line = 2)
+    if(i == 2) mtext("log10 ha", side = 2, line = 2)
+    if(i %in% 3:4) mtext("log10 days", side = 2, line = 2)
+  }]
+}
+dev.off()
+```
+
+Percent increase in average extent by year
+```{r}
+preds <- datf2[, list(mean(eff_ext, na.rm = TRUE), .N), by = study_year][, {
+  dim = log10(V1)
+  yr = as.numeric(study_year)
+  slm = lm(dim ~ yr, weights = N)
+  predict(slm, newdata = data.frame("yr" = 2004:2017))
+}]
+# preds[14] - preds[13]
+
+# projected percent increase in extent 2014-2017
+pctinc <- mean(preds) / mean(preds[1:(length(preds) - 3)])
+muext2014 <- datf2[, mean(eff_ext, na.rm = TRUE)]
+pcttab <- cbind("2014" = log10(muext2014), "pct increase" = (pctinc - 1) * 100,
+                "2017" = log10(muext2014 * pctinc), 
+                "decade" = log10((pctinc * muext2014) / muext2014))
+round(pcttab, 3)
+```
 
 ### Varying kernel sizes
 ```{r,eval = FALSE}

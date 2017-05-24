@@ -140,7 +140,9 @@ $(document).ready(function () {
 </ul></li>
 <li><a href="#supplemental-analyses"><span class="toc-section-number">1.4</span> Supplemental Analyses</a><ul>
 <li><a href="#sensitivity"><span class="toc-section-number">1.4.1</span> Sensitivity</a></li>
-<li><a href="#varying-kernel-sizes"><span class="toc-section-number">1.4.2</span> Varying kernel sizes</a></li>
+<li><a href="#study-type-by-year"><span class="toc-section-number">1.4.2</span> Study type by year</a></li>
+<li><a href="#change-in-dimensions-by-year"><span class="toc-section-number">1.4.3</span> Change in dimensions by year</a></li>
+<li><a href="#varying-kernel-sizes"><span class="toc-section-number">1.4.4</span> Varying kernel sizes</a></li>
 </ul></li>
 </ul></li>
 </ul>
@@ -154,10 +156,13 @@ library(readxl)
 library(maptools)
 library(RColorBrewer)
 library(viridis)
+# library(zyp)
 
 p_root &lt;- set_base_path(&quot;ecoscales&quot;)
-p_dat &lt;- full_path(p_root, &quot;external/data/result&quot;)
-p_calib &lt;- full_path(p_root, &quot;external/data/calibration&quot;)
+p_dat &lt;- fp(p_root, &quot;external/data/result&quot;)
+p_calib &lt;- fp(p_root, &quot;external/data/calibration&quot;)
+p_fig &lt;- fp(p_root, &quot;paper/figures&quot;)
+
 # dat &lt;- as.data.table(read_excel(full_path(p_dat, &quot;merged.xlsx&quot;)))
 dat &lt;- as.data.table(read_excel(full_path(p_dat, &quot;mergedffffff.xlsx&quot;)))
 # dato &lt;- as.data.table(read_excel(full_path(p_dat, &quot;archive/mergedfff.xlsx&quot;)))
@@ -227,9 +232,10 @@ for(i in 1:nrow(kwords)) {
 #           &quot;act_dur&quot;, &quot;eff_dur&quot;)
 dat2 &lt;- copy(dat[, .(DOI, study_type, plot_res, n_sites, act_ext, eff_ext,
                      samp_dur, t_btwn_samp, act_dur, eff_dur)])
-selind &lt;- 3:ncol(dat2)
+# selind &lt;- 3:ncol(dat2)
+selind &lt;- 4:ncol(dat2)
 for(j in names(dat2)[selind]) set(dat2, j=j, value = as.numeric(dat2[[j]]))
-rnms &lt;- c(&quot;DOI&quot;, &quot;study_type&quot;, &quot;feature&quot;, &quot;observer&quot;, &quot;plot_res&quot;, 
+rnms &lt;- c(&quot;DOI&quot;, &quot;study_type&quot;, &quot;feature&quot;, &quot;observer&quot;, &quot;plot_res&quot;,
           &quot;n_sites&quot;, &quot;act_ext&quot;, &quot;eff_ext&quot;, &quot;samp_dur&quot;, &quot;t_btwn_samp&quot;,
           &quot;act_dur&quot;, &quot;eff_dur&quot;)
 calr &lt;- cal[, rnms, with = FALSE]
@@ -637,7 +643,7 @@ l &lt;- length(hdatst)
 # sum(hdatst[4:5])  # 21% daily up to monthly
 # sum(hdatst[6])  # 19% monthly up to yearly
 # sum(hdatst[7:8]) # 8.2 % yearly to decadal
-hds &lt;- c(&quot;norep&quot;, &quot;&lt;daily&quot;, &quot;&lt;weekly&quot;, &quot;day-mo&quot;, &quot;mo-yr&quot;, &quot;yr-dec&quot;)
+hds &lt;- c(&quot;norep&quot;, &quot;&lt;daily&quot;, &quot;&lt;weekly&quot;,  &quot;day-mo&quot;, &quot;mo-yr&quot;, &quot;yr-dec&quot;)
 inds &lt;- list(l, 1:3, 1:4, 4:5, 6, 7:8)
 sapply(1:length(inds), function(x) {
   v &lt;- round(sum(hdatst[inds[[x]]]), 1)
@@ -817,8 +823,8 @@ axis(1, at = taxis1$logdays[-c(5)], labels = tlab1[-c(5)],
      las = 2, tcl = -0.2, cex.axis = cxa)
 axis(2, at = aaxis1$logres[-1], labels = alab1[-1], las = 2, tcl = -0.2, 
      cex.axis = cxa)
-mtext(&quot;Sampling interval&quot;, 1, cex = cxa, line = ll)
-mtext(&quot;Spatial resolution&quot;, 2, cex = cxa, line = ll)
+mtext(&quot;Interval&quot;, 1, cex = cxa, line = ll)
+mtext(&quot;Resolution&quot;, 2, cex = cxa, line = ll)
 brks &lt;- brkfun(rres3, 0.01, cuts)  # breaks
 aargs &lt;- list(mgp = c(3, 0.25, 0), at = brks$labs, labels = brks$labs, 
               cex.axis = cxa, tcl = -0.1)
@@ -841,8 +847,8 @@ axis(2, at = aaxis2$logarea, labels = alab2, las = 2, cex.axis = cxa,
 brks &lt;- brkfun(rext3, 0.01, cuts)  # breaks
 aargs &lt;- list(mgp = c(3, 0.25, 0), at = brks$labs, labels = brks$labs, 
               cex.axis = cxa, tcl = -0.1)
-mtext(&quot;Temporal duration&quot;, 1, cex = cxa, line = ll)
-mtext(&quot;Spatial extent&quot;, 2, cex = cxa, line = ll)
+mtext(&quot;Duration&quot;, 1, cex = cxa, line = ll)
+mtext(&quot;Extent&quot;, 2, cex = cxa, line = ll)
 plot(rext3, legend.only = TRUE, axis.args = aargs, legend.width = 1.25,
      legend.shrink = 0.9, col = cols)
 mtext(&quot;B&quot;, side = 3, line = -1, cex = 0.8, adj = 0.05, col = &quot;white&quot;)
@@ -852,8 +858,8 @@ image(sres, col = cols, axes = FALSE, xlab = &quot;&quot;, ylab = &quot;&quot;)
 axis(1, at = aaxis1$logres, labels = alab1, las = 2, tcl = -0.2, cex.axis = cxa)
 axis(2, at = aaxis2$logarea, labels = alab2, las = 2, tcl = -0.2, 
      cex.axis = cxa)
-mtext(&quot;Spatial resolution&quot;, 1, cex = cxa, line = ll)
-mtext(&quot;Spatial extent&quot;, 2, cex = cxa, line = ll)
+mtext(&quot;Resolution&quot;, 1, cex = cxa, line = ll)
+mtext(&quot;Extent&quot;, 2, cex = cxa, line = ll)
 brks &lt;- brkfun(sres, 0.01, cuts)  # breaks
 aargs &lt;- list(mgp = c(3, 0.25, 0), at = brks$labs, labels = brks$labs, 
               cex.axis = cxa, tcl = -0.1)
@@ -870,8 +876,8 @@ axis(1, at = taxis1$logdays[-c(5)], labels = tlab1[-c(5)],
      las = 2, tcl = -0.2, cex.axis = cxa)
 axis(2, at = taxis2$logdays[-5], labels = tlab2[-5], las = 2,
      cex.axis = cxa, tcl = -0.2)
-mtext(&quot;Sampling interval&quot;, 1, cex = cxa, line = ll)
-mtext(&quot;Temporal duration&quot;, 2, cex = cxa, line = ll)
+mtext(&quot;Interval&quot;, 1, cex = cxa, line = ll)
+mtext(&quot;Duration&quot;, 2, cex = cxa, line = ll)
 # brks &lt;- brkfun(tres, 0.02, 100)  # breaks
 brks &lt;- brkfun(tres, 0.01, cuts)  # breaks
 aargs &lt;- list(mgp = c(3, 0.25, 0), at = brks$labs, labels = brks$labs, 
@@ -882,8 +888,22 @@ mtext(&quot;D&quot;, side = 3, line = -1, cex = 0.8, adj = 0.05, col = &quot;whi
 dev.off()
 
 # image(rres3, col = rev(terrain.colors(100)))
+# image(rext3, col = rev(terrain.colors(100)))
+# datf[, points(log10(eff_dur), log10(eff_ext), pch = 20, cex = 0.5)]
+# datf[like(study_type, &quot;remote&quot;), {
+#   points(log10(eff_dur), log10(eff_ext), pch = 20, cex = 0.5, col = &quot;blue&quot;)
+# }]
 # points(resdat3$x, resdat3$y, pch = 20, cex = 0.5)
 # image(sres, col = rev(terrain.colors(100)))
+# datf[, points(log10(plot_res), log10(eff_ext), pch = 20, cex = 0.5)]
+# datf[like(study_type, &quot;remote&quot;), {
+#   points(log10(plot_res), log10(eff_ext), pch = 20, cex = 0.5, col = &quot;blue&quot;)
+#   abline(lm(log10(eff_ext) ~ log10(plot_res)))
+# }]
+# datf[like(study_type, &quot;field&quot;), {
+#   points(log10(plot_res), log10(eff_ext), pch = 20, cex = 0.5, col = &quot;red&quot;)
+#   abline(lm(log10(eff_ext) ~ log10(plot_res)))
+# }]
 # points(spatdat$x, spatdat$y, pch = 20, cex = 0.5)</code></pre>
 <p><a href="#top">Back to top</a></p>
 </div>
@@ -986,15 +1006,16 @@ eint &lt;- aaxis2$logarea
 edif_int &lt;- rbindlist(lapply(hdat_bs2, function(y) {  # y &lt;- hdat_bs2[[2]]
   dd &lt;- copy(y$edb[!is.na(aext)])
   dd[aext &lt; ex[1], aext := ex[1]]  # set to min
-  # dd[, list(&quot;int&quot; = findInterval(aext, eint), &quot;dif&quot; = dif)]
+  # dd[eext &lt; ex[1], eext := ex[1]]  # set to min
   dd[, int := findInterval(aext, eint, rightmost.closed = TRUE)]
+  # dd[, int := findInterval(eext, eint, rightmost.closed = TRUE)]
   # dd[, list(&quot;dif&quot; = mean(dif, na.rm = TRUE), &quot;N&quot; = .N), by = int][order(int)]
 }))
 ints &lt;- sort(edif_int[, unique(int)])
 ebox &lt;- lapply(ints, function(x) edif_int[int == x, lmisc::box_stats(dif)])
 pctobs &lt;- sapply(ints, function(x) edif_int[int == x, .N])
 ewgt &lt;- pctobs / sum(pctobs)
-# ealphs &lt;- (ewgt - min(ewgt)) / diff(range(ewgt))
+# round(cumsum(ewgt), 2)
 ewgtint &lt;- c(0, 1, 5, 10, 15, 20, 25) / 100  # weight intervals
 ewgttxt &lt;- c(&quot;  0&quot;, &quot;  1&quot;, &quot;  5&quot;, seq(10, 25, 5))
 ecols &lt;- findInterval(ewgt, ewgtint)  # corresponding color index
@@ -1012,7 +1033,8 @@ dints &lt;- sort(ddif_int[, unique(int)])
 tbox &lt;- lapply(dints, function(x) ddif_int[int == x, lmisc::box_stats(dif)])
 pctobs &lt;- sapply(dints, function(x) ddif_int[int == x, .N])
 dwgt &lt;- pctobs / sum(pctobs)
-# dalphs &lt;- (dwgt - min(dwgt)) / diff(range(dwgt))
+# round(cumsum(dwgt), 2)
+
 dwgtint &lt;- c(0, 1, 5, 10, 15, 20, 25, 30) / 100  # weight intervals
 dwgttxt &lt;- c(&quot;  0&quot;, &quot;  1&quot;, &quot;  5&quot;, seq(10, 30, 5))
 dcols &lt;- findInterval(dwgt, dwgtint)  
@@ -1036,14 +1058,15 @@ ylines(yr = c(0, 14), by = 2, col = &quot;grey95&quot;)
 for(i in 1:length(ebox)) {
   boxplot_v(bx[i], y = ebox[[i]], n = 1.75, whiskhgt = 1.5, 
             bfill = cols[ecols][i])
+  text(bx[i], ebox[[i]][5] + 0.15, round(ewgt[i] * 100, 1), cex = 0.3)
 } 
 axis(1, at = eint, labels = alab2, las = 2, tcl = -0.2, cex.axis = cxa, 
      mgp = c(3, 0.5, 0))
 axis(2, at = seq(0, 14, 2), las = 2, tcl = -0.2, cex.axis = cxa, 
      mgp = c(3, 0.5, 0))
 mtext(&quot;Actual Extent&quot;, side = 1, line = 3, cex = 0.9)
-mtext(&quot;Difference Between&quot;, side = 2, line = 2.1, cex = 0.9)
-mtext(&quot;Effective and Actual (Decades)&quot;, side = 2, line = 1.4, cex = 0.9)
+mtext(&quot;Difference between Extent/Duration&quot;, side = 2, line = 2.2, cex = 0.9)
+mtext(&quot;and Actual Extent/Duration (Decades)&quot;, side = 2, line = 1.4, cex = 0.9)
 lrng &lt;- c(mean(ex), max(ex) - 0.05 * max(ex))
 xs &lt;- seq(lrng[1], lrng[2], by = (diff(lrng)) / (length(cols)))
 rect_shade(xs, y = c(11.5, 12.5), fillcol = cols, linecol = &quot;grey30&quot;)
@@ -1054,15 +1077,16 @@ mtext(&quot;A&quot;, side = 3, line = -1, cex = 1, adj = 0.05)
 # duration
 bx &lt;- rowMeans(cbind(dint[-length(dint)], dint[-1]))
 bd &lt;- abs(dint[-length(dint)] - dint[-1])
-# cols &lt;- sapply(dalphs, function(x) rgb(1, 0, 0.1, alpha = x))
 cols &lt;- brewer.pal(length(dwgtint) - 1, &quot;Reds&quot;)
 plot(tx, c(0, 14), pch = &quot;&quot;, xlab = &quot;&quot;, ylab = &quot;&quot;, xaxt = &quot;n&quot;, xaxs = &quot;i&quot;,
      mgp = c(3, 0.5, 0), tcl = -0.2, yaxt = &quot;n&quot;)
 polygon(c(tx, rev(tx), tx[1]), c(-1, -1, 15, 15, -1), col = &quot;grey90&quot;)
 ylines(yr = c(0, 14), by = 2, col = &quot;grey95&quot;)
 for(i in 1:length(tbox)) {
-  boxplot_v(bx[i], y = tbox[[i]], n = 0.9, inhgt = bd[i] * 10, whiskhgt = 0.5, 
+  boxplot_v(bx[i], y = tbox[[i]], n = 0.9, inhgt = bd[i] * 10, whiskhgt = 0.75, 
             bfill = cols[dcols][i])
+  text(bx[i], tbox[[i]][5] + 0.15, round(dwgt[i] * 100, 1), cex = 0.3)
+
 } 
 axis(1, at = dint, labels = tlab2[-c(5)], las = 2, tcl = -0.2, cex.axis = cxa, 
      mgp = c(3, 0.5, 0))
@@ -1194,11 +1218,194 @@ senst[id, &quot;aext&quot;] &lt;- 1
 # percentage of records that are uncertain
 round(colSums(senst) / nrow(senst) * 100, 1)</code></pre>
 <pre><code>##    res      n   aext   eext  sampd  tbtwn actdur effdur 
-##   62.9   21.1   68.9   40.0   77.7   36.3   82.6   57.7</code></pre>
+##   62.9   21.1   68.9   60.3   77.7   36.3   82.6   64.0</code></pre>
 <p><a href="#top">Back to top</a></p>
 </div>
+<div id="study-type-by-year" class="section level3">
+<h3><span class="header-section-number">1.4.2</span> Study type by year</h3>
+<p>Calculate types of study by year, as total and percent</p>
+<pre class="r"><code># One Oecologia study listed as 2004 (by Endnote) was actually 2003 
+# Set it to 2004
+stypes &lt;- copy(dat)  # new dataset out of dat (which retain year info)
+stypes[study_year &lt; 2004, study_year := 2004] 
+
+# bring in study_type from calr set, grabbing year from original cal dt
+calyr &lt;- cal[DOI %in% calr[, unique(DOI)], unique(study_year), by = DOI]
+calyr[, V1 := as.numeric(V1)]
+calyr &lt;- calyr[, list(&quot;study_year&quot; = mean(V1, na.rm = TRUE)), by = DOI]
+calyr &lt;- merge(calyr, calr[, list(DOI, study_type)], by = &quot;DOI&quot;)
+
+# bind
+stypes &lt;- rbind(stypes[, list(DOI, study_year, study_type)], calyr)
+na_effext &lt;- datf[is.na(eff_ext), unique(DOI)]  # ID NA eff_ext values
+
+# Estimate and plot study type by year
+stypeyr &lt;- stypes[, list(.N, study_type), by = study_year][, {
+  list(&quot;tot&quot; = N, &quot;ct&quot; = .N, &quot;prop&quot; = .N / N * 100)
+}, by = .(study_type, study_year)][order(study_year)]
+stypeyr &lt;- stypeyr[, lapply(.SD, mean), .SDcols = c(&quot;tot&quot;, &quot;ct&quot;, &quot;prop&quot;), 
+                   by = .(study_type, study_year)]</code></pre>
+<pre class="r"><code>obs_types &lt;- c(&quot;remote&quot;, &quot;field&quot;, &quot;auto&quot;)
+obs_types2 &lt;- c(&quot;Remote sensing&quot;, &quot;Field&quot;, &quot;Automatic&quot;)
+cols &lt;- c(&quot;orange&quot;, &quot;green4&quot;, &quot;blue4&quot;)
+png(fp(p_fig, &quot;stype_by_yr.png&quot;), width = 7, height = 2.75, res = 300, 
+    units = &quot;in&quot;)
+par(mfrow = c(1, 3), oma = c(0, 3, 0, 0), mar = c(4, 1, 2, 1))
+for(i in 1:3) {  # i &lt;- 1
+  plot(c(2004, 2014), c(0, 100), xlab = &quot;&quot;, ylab = &quot;&quot;, pch = &quot;&quot;)
+  stypeyr[like(study_type, obs_types[i]), {
+    points(study_year, prop, col = cols[i], pch = 20)
+    yr = as.numeric(study_year)
+    slm = lm(prop ~ yr, weights = tot)  # weighted regression
+    slms = summary(slm)
+    abline(slm, col = cols[i])
+    cf = round(coef(slm)[1:2], 4)
+    pf = round(coef(slms)[8], 2)
+    rf = round(slms$adj.r.squared, 2)
+    cfa = paste0(cf[2], &quot;% year&quot;)
+    text(x = 2006, y = 100, labels = substitute(x^-1, list(x = cfa)), 
+         cex = 0.9)
+    text(x = 2011.5, y = 100, cex = 0.9,
+         labels = substitute(R^2~&quot;=&quot;~x~&quot;; p &lt;&quot;~y, list(x = rf, y = pf)))
+    if(i == 1) mtext(&quot;percent&quot;, side = 2, line = 2.5, cex = 0.8)
+    if(i == 2) mtext(&quot;year&quot;, side = 1, line = 2.5, cex = 0.8)
+    mtext(obs_types2[i], side = 3, cex = 0.8)
+  }]
+}
+dev.off()</code></pre>
+<p>Extrapolating percentage of studies using remote sensing to 2017</p>
+<pre class="r"><code>preds &lt;- stypeyr[like(study_type, &quot;remote&quot;), {
+  slm = lm(prop ~ study_year, weights = tot)
+  predict(slm, newdata = data.frame(&quot;study_year&quot; = 2004:2017))
+}]
+names(preds) &lt;- 2004:2017</code></pre>
+<p>Percent of remote sensing studies by year</p>
+<pre class="r"><code>round(preds, 1)</code></pre>
+<pre><code>## 2004 2005 2006 2007 2008 2009 2010 2011 2012 2013 2014 2015 2016 2017 
+##  2.4  3.7  4.9  6.2  7.5  8.7 10.0 11.3 12.5 13.8 15.0 16.3 17.6 18.8</code></pre>
+<p>Average annual percent of studies using remote sensing 2004-2014, and projected increases in this percent through 2017 (2004-2017)</p>
+<pre class="r"><code># murs2014 &lt;- stypeyr[study_type == &quot;remote&quot;, round(mean(prop), 2)]
+murs2014 &lt;- stypeyr[, sum(ct[study_type == &quot;remote&quot;]) / sum(ct) * 100]
+pctinc &lt;- mean(preds) / mean(preds[1:(length(preds) - 3)])
+
+pcttab &lt;- cbind(&quot;2014&quot; = murs2014, &quot;pct increase&quot; = (pctinc - 1) * 100,
+                &quot;2017&quot; = murs2014 * pctinc)
+round(pcttab, 1)</code></pre>
+<pre><code>##      2014 pct increase 2017
+## [1,]  6.3         21.7  7.7</code></pre>
+<pre class="r"><code>types &lt;- datf[, .N, by = study_type]
+rs2017 &lt;- mean(preds)  # avg predicted % using RS through 2004-2017
+rs2014 &lt;- mean(preds[1:(length(preds) - 3)])  # avg predicted % RS 2004-2014
+# rs2017 / rs2014
+
+# translate to N more RS studies would have been selected given those %ages
+rsinc &lt;- rs2017 / rs2014 * types[study_type == &quot;remote&quot;, N] - 
+                 types[study_type == &quot;remote&quot;, N]  
+
+remote &lt;- datf[study_type == &quot;remote&quot;, eff_ext]
+notremote &lt;- datf[study_type != &quot;remote&quot;, eff_ext]
+# a &lt;- (length(remote) + rsinc) / (nrow(datf))
+# b &lt;- length(remote) / nrow(datf)
+# a / b
+# ((length(remote) + rsinc) / (length(notremote)) / length(b))
+
+# (rsext * rs2017 + nonrsext * (1 - rs2017)) / 
+#   (rsext * rs2014 + nonrsext * (1 - rs2014))
+
+set.seed(1)
+ext2017 &lt;- unlist(lapply(1:1000, function(x) {  # x = 1
+  ind &lt;- sample(1:length(remote), size = round(rsinc))
+  mean(c(remote, remote[ind], notremote), na.rm = TRUE)
+}))
+
+dec1417 &lt;- log10(mean(ext2017, na.rm = TRUE) / 
+                   datf[, mean(eff_ext, na.rm = TRUE)])
+qtiles1417 &lt;- log10(quantile(ext2017, c(0.025, 0.975), na.rm = TRUE) / 
+                      datf[, mean(eff_ext, na.rm = TRUE)])
+
+pctdiff1417 &lt;- mean(ext2017, na.rm = TRUE) / datf[, mean(eff_ext, na.rm = TRUE)]
+pctqtiles1417 &lt;- quantile(ext2017, c(0.025, 0.975), na.rm = TRUE) / 
+                      datf[, mean(eff_ext, na.rm = TRUE)]
+
+cbind(&quot;decade&quot; = round(dec1417, 4), &quot;dec2.5&quot; = round(qtiles1417[1], 4),
+      &quot;dec97.5&quot; = round(qtiles1417[2], 4),
+      &quot;pctdiff&quot; = round((pctdiff1417 - 1) * 100, 1),
+      &quot;pctdiff2.5&quot; = round((pctqtiles1417[1] - 1) * 100, 1), 
+      &quot;pctdiff97.5&quot; = round((pctqtiles1417[2] - 1) * 100, 1))</code></pre>
+<pre><code>##      decade  dec2.5 dec97.5 pctdiff pctdiff2.5 pctdiff97.5
+## 2.5% 0.0697 -0.0058  0.2226    17.4       -1.3          67</code></pre>
+</div>
+<div id="change-in-dimensions-by-year" class="section level3">
+<h3><span class="header-section-number">1.4.3</span> Change in dimensions by year</h3>
+<pre class="r"><code># Examines and plot trends in dimensions
+doiyr &lt;- rbind(unique(dat[, .(DOI, study_year)]), 
+               unique(cal[, .(DOI, study_year)]))
+doiyr &lt;- doiyr[study_year %in% 2004:2014]
+datf2 &lt;- copy(datf)
+datf2 &lt;- merge(doiyr, datf2, by = &quot;DOI&quot;)  # collect year of publication
+# datf2[, N := .N, by = study_year]</code></pre>
+<pre class="r"><code>vars &lt;- c(&quot;plot_res&quot;, &quot;eff_ext&quot;, &quot;t_btwn_samp&quot;, &quot;eff_dur&quot;)
+varlabs &lt;- c(&quot;Resolution&quot;, &quot;Extent&quot;, &quot;Interval&quot;, &quot;Duration&quot;)
+labcols &lt;- c(brewer.pal(8, &quot;Reds&quot;)[c(7, 7)], brewer.pal(8, &quot;Blues&quot;)[c(7, 7)])
+png(fp(p_fig, &quot;dim_by_yr.png&quot;), width = 7, height = 6, res = 300, 
+    units = &quot;in&quot;)
+par(mfrow = c(2, 2), mar = c(1, 3, 1, 1), oma = c(2, 3, 0, 0))
+for(i in 1:length(varlabs)) {  # i &lt;- 1
+  if(i == 3) {
+    DT &lt;- copy(datf2[t_btwn_samp != 0, ])
+  } else {
+    DT &lt;- copy(datf2)
+  }
+  DT[, list(mean(get(vars[i]), na.rm = TRUE), .N), by = study_year][, {
+    dim = log10(V1)
+    yr = as.numeric(study_year)
+    if(i %in% 1:2) rng = c(0, 10)
+    if(i %in% 3:4) rng = c(0, 5)
+    if(i %in% 3:4) {
+      xlabs = seq(2004, 2014, 2)
+    } else {
+      xlabs = rep(&quot;&quot;, 6)
+    }
+    plot(yr, dim, ylim = rng, xaxt = &quot;n&quot;, pch = 20, col = labcols[i], 
+         main = varlabs[i], mgp = c(2, 0.5, 0), tcl = -0.2, ylab = &quot;&quot;)
+    axis(1, at = seq(2004, 2014, 2), labels = xlabs, tcl = -0.2, 
+         mgp = c(2, 0.5, 0))
+    slm = lm(dim ~ yr, weights = N)
+    slms = summary(slm)
+    abline(slm, col = labcols[i])
+    cf = round(coef(slm)[1:2], 3)
+    pf = round(coef(slms)[8], 2)
+    rf = round(slms$adj.r.squared, 2)
+    text(x = 2006.25, y = rng[2] * 0.97, cex = 0.9,
+         labels = substitute(x~year^-1, list(x = cf[2])))
+    text(x = 2011.5, y = rng[2] * 0.97, cex = 0.9,
+         labels = substitute(R^2~&quot;=&quot;~x~&quot;; p &lt;&quot;~y, list(x = rf, y = pf)))
+    if(i == 1) mtext(expression(&quot;log10 m&quot;^2), side = 2, line = 2)
+    if(i == 2) mtext(&quot;log10 ha&quot;, side = 2, line = 2)
+    if(i %in% 3:4) mtext(&quot;log10 days&quot;, side = 2, line = 2)
+  }]
+}
+dev.off()</code></pre>
+<p>Percent increase in average extent by year</p>
+<pre class="r"><code>preds &lt;- datf2[, list(mean(eff_ext, na.rm = TRUE), .N), by = study_year][, {
+  dim = log10(V1)
+  yr = as.numeric(study_year)
+  slm = lm(dim ~ yr, weights = N)
+  predict(slm, newdata = data.frame(&quot;yr&quot; = 2004:2017))
+}]
+# preds[14] - preds[13]
+
+# projected percent increase in extent 2014-2017
+pctinc &lt;- mean(preds) / mean(preds[1:(length(preds) - 3)])
+muext2014 &lt;- datf2[, log10(mean(eff_ext, na.rm = TRUE))]
+pcttab &lt;- cbind(&quot;2014&quot; = muext2014, &quot;pct increase&quot; = (pctinc - 1) * 100,
+                &quot;2017&quot; = muext2014 * pctinc)
+round(pcttab, 1)</code></pre>
+<pre><code>##      2014 pct increase 2017
+## [1,]  8.1          5.5  8.5</code></pre>
+</div>
 <div id="varying-kernel-sizes" class="section level3">
-<h3><span class="header-section-number">1.4.2</span> Varying kernel sizes</h3>
+<h3><span class="header-section-number">1.4.4</span> Varying kernel sizes</h3>
 <pre class="r"><code># redo range variables
 rx &lt;- range(resdat3$x)
 rx &lt;- round(rx / 0.5) * 0.5  # round to nearest 0.5
