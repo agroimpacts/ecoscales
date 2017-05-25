@@ -1388,6 +1388,7 @@ dev.off()
 # plot(ers, box = FALSE, xlim = c(-5, 15), ylim = c(-5, 15), 
 #      xlab = "Study duration - log10(days)", ylab = "Sampled area - log10(ha)")
 # dev.off()
+
 ```
 
 <a href="#top">Back to top</a>

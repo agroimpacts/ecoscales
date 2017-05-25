@@ -15,6 +15,8 @@
 \usepackage{longtable}
 %\usepackage{multicolumn}
 \usepackage[skip=2pt,font=normalsize]{caption}
+\usepackage[LGRgreek]{mathastext}
+\usepackage{multirow}
 
 % The following parameters seem to provide a reasonable page setup.
 
@@ -31,6 +33,10 @@
 \begin{quote} \bf}
 {\end{quote}}
 
+\usepackage{array}
+\newcolumntype{L}[1]{>{\raggedright\let\newline\\\arraybackslash\hspace{0pt}}m{#1}}
+\newcolumntype{C}[1]{>{\centering\let\newline\\\arraybackslash\hspace{0pt}}m{#1}}
+\newcolumntype{R}[1]{>{\raggedleft\let\newline\\\arraybackslash\hspace{0pt}}m{#1}}
 
 % If your reference list includes text notes as well as references,
 % include the following line; otherwise, comment it out.
@@ -205,21 +211,32 @@ For studies that record individual, mobile organisms as the units of observation
 
 \subsubsection*{Calibration and consistency}
 \vspace{-10pt}
-Most studies did not explicitly report values for all four of the assessed scales, and thus interpretation and judgement had to be applied to develop reasonable estimates for their values. The FAQ provided the protocol we followed, and was initially developed following consultation between observers prior to the commencement of review. We conducted an iterative process of calibration to ensure consistency and reliability of estimates. First, we used the calibration set to calculate between-observer variability with respect to paper selection/rejection and the estimation of scales.  Based on this, the lead author reviewed individual records in each observer's calibration set, flagged values where the estimation procedure departed from the protocol, and returned these to observers for re-estimation, without providing an estimate of the actual value. Instead, the relevant section of the protocol was highlighted, and further explanation and clarifying discussion undertaken as needed. Protocol language was adjusted for clarity during this process, and new items added to cover circumstances that had not been addressed by the initial version. The variability measures (see Results) were re-calculated after each iteration.  
+Most studies did not explicitly report values for all the assessed scales, and thus interpretation and judgement had to be applied to develop reasonable estimates for their values. The FAQ provided the protocol we followed, and was initially developed following consultation between observers prior to the commencement of review. We conducted an iterative process of calibration to ensure consistency and reliability of estimates. First, we used the calibration set to calculate between-observer variability with respect to paper selection/rejection and the estimation of scales.  Based on this, the lead author reviewed individual records in each observer's calibration set, flagged values where the estimation procedure departed from the protocol, and returned these to observers for re-estimation, without providing an estimate of the actual value. Instead, the relevant section of the protocol was highlighted, and further explanation and clarifying discussion undertaken as needed. Protocol language was adjusted for clarity during this process, and new items added to cover circumstances that had not been addressed by the initial version. The variability measures (see Results) were re-calculated after each iteration.  
 
 To ensure consistency within the main analysis, the lead author also reviewed each observer's results from their individual draw of papers and flagged values that appeared to deviate from the protocol for re-review by the observer. Re-reviewed values were re-inspected, and in some cases a secondary review of particular papers was undertaken to cross-check the estimated scales.   
 
 \subsubsection*{Accounting for estimation uncertainty}
 \vspace{-10pt}
-Two major sources of uncertainty affected our estimation of observational scales: 1) unclear documentation of observational scales in the reviewed studies, 2) variation between observers in estimating observational scales. We estimated and accounted for these uncertainties in several ways. First, we estimated the degree of between-observer variability based on each observer's results from reviewing the 20-paper calibration set. We calculated how well observers agreed regarding paper inclusion/exclusion, how many extractable observations there were per included paper, and what the coefficient of variation was across all observers' estimates of scale. We also recorded when observations were reported in a study with an unclear or missing scale value. 
+Two major sources of uncertainty affected our estimation of observational scales: 1) unclear documentation of observational scales in the reviewed studies, 2) variation between observers in estimating observational scales. We estimated and accounted for these uncertainties in several ways. First, we calculated the degree of between-observer variability based on each observer's results from reviewing the 20-paper calibration set. We calculated how well observers agreed regarding paper inclusion/exclusion, how many extractable observations there were per included paper, and what the coefficient of variation was across all observers' estimates of scale. We also recorded when observations were reported in any study (calibration set or otherwise) with an unclear or missing scale value. 
 
-We used the between-observer coefficients of variation for each dimension as the basis for randomly perturbing the scale values for each of the 371 observations over 1000 iterations. For each observation at each iteration, we perturbed its scale value in each dimension by randomly selecting a percentage value p that fell between 100 + y and 100 - y, where y was the between-observer coefficient of variation (expressed as a percentage) for a given observational dimension, and multiplying that observation's scale value by that proportion. This perturbed set of observations provided a basis for estimating uncertainty within our extracted set of observational scales. 
+We used the between-observer coefficients of variation for each dimension as the basis for randomly perturbing the scale values for each of the 371 observations over 1000 iterations. For each observation at each iteration, we perturbed its scale value in each dimension by randomly selecting (from a uniform distribution) a percentage value p that fell between 100 + y and 100 - y, where y was the between-observer coefficient of variation (expressed as a percentage) for a given observational dimension, and multiplying that observation's scale value by that proportion. This perturbed set of observations provided a basis for estimating uncertainty within our extracted set of observational scales. 
 
 \subsubsection*{Scale metrics}
 \vspace{-10pt}
-In presenting results (Fig. 1 and 2 in main text), we log-transformed (base 10) the observational scales within each of the 1000 perturbed ensemble members in order to account for the large range in scale values. We calculated histograms for each observational dimension from each of the log-transformed ensemble members, calculating the mean percentage density estimate for each bin across all 1000 histograms, as well as the upper and lower 2.5th percentile values for each bin (Fig. 1 main text).  
+In presenting results (Fig. 1 and 2 in main text), we log-transformed (base 10) the observational scales within each of the 1000 perturbed ensemble members in order to account for the large range in scale values. We calculated histograms for the four primary observational dimensions from each of the log-transformed ensemble members, calculating the mean percentage density estimate for each bin across all 1000 histograms, as well as the upper and lower 2.5th percentile values for each bin (Fig. 1 main text).  
 
-To reveal the densities of observations within two dimensions (Fig. 2 main text), we used the splancs package \cite{rowlingson_splancs:_1993} of R \cite{r_development_core_team_r:_2011} to calculate a kernel density estimate of the log-transformed values across all ensemble members, using a bandwidth of 1 onto a 0.1 resolution image to provide a smoothed result that served to more effectively highlight domains in which ecological observations are concentrated. Bandwidths of varying resolutions were tested on kernel density estimates were tested on kernel density estimates of sampling interval versus plot resolution (see Supplementary Results section).  
+To reveal the densities of observations within two dimensions (Fig. 2 main text), we used the splancs package \cite{rowlingson_splancs:_1993} of R \cite{r_development_core_team_r:_2011} to calculate a kernel density estimate of the log-transformed values across all ensemble members, using a bandwidth of 1 on a 0.1 resolution image to provide a smoothed result that served to more effectively highlight domains in which ecological observations are concentrated. Bandwidths of varying resolutions were tested on kernel density estimates were tested on kernel density estimates of sampling interval versus plot resolution (see Supplementary Results section).  
+
+To compare the differences between actual extent and extent and actual duration and duration (Fig. 3 main text) we calculated the magnitude of difference (decade) between each pair as:
+
+\begin{equation}
+decade = log_{10}(x) - log_{10}(y) = log_{10}\left(\frac{x}{y}\right)
+\end{equation}
+
+\noindent Where x is either extent or duration and y is its actual counterpart. We then evaluated how the magnitudes of difference varied with increasing values of actual extent/duration, using box plots to summarize decades within the same bins used for extent and duration (Fig. 1B and D main text). Decades were calculated for each pair for all bootstrap replicates. The whiskers in the summary box plots (Fig. 3 main text) fall slightly below 0 in some bins, even though extent and duration can never be smaller than their actual value. This is an artifact of the perturbation applied to estimated values, which in some instances caused extent/duration values to fall below their actual value. We retained these discrepancies rather than forcing such cases to zero to avoid biasing the summary statistics. 
+
+\subsubsection*{Trends in methods and scale}
+To assess the degree to which observational methods changed over the course of the 10 years worth of studies we surveyed, we calculated the percentage of observations made using remote sensing, general field methods, and automated \emph{in situ} methods, and fit a linear regression between these percentages and publication year, weighting the regression by the total number of observations in each year.  We performed the same analysis for the four primary dimensions (resolution, extent, interval, and duration) in order to assess whether there were any trends in observational scales.  
 
 \subsection*{Results}
 \vspace{-4pt}
@@ -229,32 +246,34 @@ To reveal the densities of observations within two dimensions (Fig. 2 main text)
 
 We assessed variability and consistency between observers along multiple dimensions. First, we assessed how reliably observers agreed with respect to selecting or rejecting papers for review, using the R's Agreement package \cite{yu_agreement:_2012} to calculate Fleiss' kappa statistic \cite{fleiss_measuring_1971}, which was 0.72 (z = 12.5, p$<$0.000), indicating substantial and significant agreement between observers \cite{landis_measurement_1977}. 
 
-Second, we calculated the intra-class correlation coefficient \cite{bartko_intraclass_1966} to assess agreement between observers regarding the number of ecological observations that could be extracted from each paper (multiple ecological observations were reported in many studies, and we listed observations as separate records if they varied on one or more dimensions).  The coefficient, calculated using the IRR package \cite{gamer_irr:_2012} of R, was 0.70 (F = 15.4, p$<$0.0001, 95\% confidence interval = 0.54 - 0.85)  
+Second, we calculated the intra-class correlation coefficient \cite{bartko_intraclass_1966} to assess agreement between observers regarding the number of ecological observations that could be extracted from each paper (multiple ecological observations were reported in many studies, and we listed observations as separate records if they varied on one or more dimensions).  The coefficient, calculated using the IRR package \cite{gamer_irr:_2012} of R, was 0.71 (F = 15.4, p$<$0.0001, 95\% confidence interval = 0.54 - 0.85)  
 
-Finally, we calculated the coefficient of variation (CV) between observers' estimates of scales for each dimension, first across all six observers' mean scale estimates, and then as the average CV among observers' estimates of each individual record (Table S2). 
+Finally, we calculated the coefficient of variation (CV) between observers' estimates of scales for each dimension, first across all observers' mean scale estimates, and then as the average CV among observers' estimates of each individual record (Table S2). CV values were estimated from all six observers for resolution, actual extent, and interval, from five observers (all but Choi) for duration, and from three observers (Elsen, Estes, and Treuer) for extent. The smaller numbers for duration and extent reflect that initial efforts were focused on estimating resolution, interval, and actual extent and actual duration, thus fewer observers were available to assess extent and extent. 
+
+\subsubsection*{Between-observer coefficient of variation}
+\vspace{-10pt}
+We used the maximum uncertainty values for each dimension from the inter-observer variability analysis (Table S2) to determine the bounds of the random perturbations applied to each record over the 1000 iteration resample.  
 
 \begin{table}[ht]
-\captionsetup{width=0.725\linewidth}
+\captionsetup{width=1\linewidth}
 \caption{Estimates of variability calculated from each observer's estimates of the spatial and temporal scales of ecological observations reported within a common set of the 20 papers used for calibration. Variability is expressed as the coefficient of variation (CV; standard deviation divided by mean multiplied by 100) between each observer's overall mean, and as the mean CV of observers' estimates for individual records. }
 \vspace{-4 pt}
 \begin{center}
-\begin{tabular}{rrrrr}
+\begin{tabular}{rR{1.5cm}R{1.5cm}R{1.5cm}R{1.5cm}R{1.5cm}R{1.5cm}}
 \hline
-& \multicolumn{2}{c}{\textbf{Spatial}} & \multicolumn{2}{c}{\textbf{Temporal}}\\\cline{2-5}
-Value & Resolution & Extent & Interval & Duration \\ 
+& \multicolumn{3}{c}{\textbf{Spatial}} & \multicolumn{3}{c}{\textbf{Temporal}}\\\cline{2-7}
+%Value & Resolution & Extent & \multirow{2}{*}{Actual} & Interval & Duration & Actual Duration \\
+Value & Resolution & Extent & Actual Extent & Interval & Duration & Actual Duration \\
 \hline
-CV of overall mean & 54 & 82 & 54  & 110 \\
-Mean of record-wise CV & 58 & 68 & 99 & 124 \\
+CV of overall mean & 50 & 50 & 75 & 48 & 34 & 109 \\
+Mean of record-wise CV & 57 & 41 & 72 & 104 & 64 & 124 \\
 \hline
 \end{tabular}
 \end{center}
 \label{default}
 \end{table}%
 
-\subsubsection*{Between-observer coefficient of variation}
-\vspace{-10pt}
-We used the maximum uncertainty values for each dimension from the inter-observer variability analysis (Table S2) to determine the bounds of the random perturbations applied to each record over the 1000 iteration resample.  
-  
+ 
 %\begin{figure}[!ht]
 %%\begin{wrapfigure}{c}{1\textwidth}
 %\includegraphics[width=1\textwidth]{figures/res_v_extent_pbstrap2.pdf}
@@ -264,8 +283,9 @@ We used the maximum uncertainty values for each dimension from the inter-observe
 %\end{figure}
 %
 
-\subsubsection*{Trends in observational methods by year}
+\subsubsection*{Trends in observational methods and scales by year}
 \vspace{-10pt}
+Figures S1 and S2 respectively show how the frequency of ecological observing methods and the average scale in each dimensions varies by publication year (2004-2014). 
 
 \begin{figure}[!ht]
 %\begin{wrapfigure}{c}{1\textwidth}
@@ -275,7 +295,7 @@ We used the maximum uncertainty values for each dimension from the inter-observe
 \label{afoto1}
 \end{figure}
 
-\begin{figure}[!ht]
+\begin{figure}[ht]
 %\begin{wrapfigure}{c}{1\textwidth}
 \center{\includegraphics[width=0.8\textwidth]{figures/dim_by_yr.png}}
 \vspace{5 pt}
@@ -284,29 +304,19 @@ We used the maximum uncertainty values for each dimension from the inter-observe
 \end{figure}
 %\clearpage
 
-
-
 \subsubsection*{Choice of bandwidth in kernel density estimation}
 \vspace{-10pt}
-Figure S1 indicates the effect that varying bandwidth has on the appearance of the kernel density estimates. The smallest bandwidth (0.4) tested (Fig. S2 top) shows that the primary observational concentrations described in the main text are evident but harder to discern.  Most difficult to discern is the oblong concentration of observations that in Fig. 1A (main text) is bounded on the lower right at monthly to yearly intervals and 100-1000 m$^2$ resolutions and on the upper left by near-daily to monthly observations and 0.1-10 ha resolutions. With the smaller bandwidth this concentration appears as two separate patches (Fig. S2 top left), but with 0.7 bandwidth applied becomes coherent (Fig. S3 middle left).   
+Figure S3 indicates the effect that varying bandwidth has on the appearance of the kernel density estimates. The smallest bandwidth (0.4) tested (Fig. S3 top) shows that the primary observational concentrations described in the main text are evident, but tend to be devolved into separate concentrations. An example is the oblong concentration of observations that in Fig. 1A (and in the lower left panel in Fig. S3) is bounded on the lower right at monthly to yearly intervals and 100-1000 m$^2$ resolutions and on the upper left by near-daily to monthly observations and 0.1-10 ha resolutions. With the smaller bandwidth this concentration appears as two separate patches (Fig. S2 top left), but with 0.7 bandwidth applied becomes coherent (Fig. S3 middle left).  This increasing separation of points into separate clusters is expected as bandwidth is reduced.  
 
 \begin{figure}[!ht]
 %\begin{wrapfigure}{c}{1\textwidth}
 \includegraphics[width=0.9\textwidth]{figures/res_v_extent_ksize2.pdf}
 \vspace{10 pt}
-\caption{Two-dimensional kernel density estimates of observational densities within the domains defined by sampling interval and spatial resolution (left column) and temporal duration and spatial extent (right column), applied to log-transformed values of each observational dimension. Rows indicate the effects of selecting different bandwidths: 0.4 (top row); 0.7 (middle row); 1 (bottom row). }
+\caption{Two-dimensional kernel density estimates of observational densities within the domains defined by sampling interval and spatial resolution (left column) and duration and extent (right column), applied to log-transformed values of each observational dimension. Rows indicate the effects of selecting different bandwidths: 0.4 (top row); 0.7 (middle row); 1 (bottom row). }
 \label{afoto1}
 \end{figure}
   
-
-
-
-
-
-
 %\subsection*{Rationale}
-
-
 
 %\begin{figure}[!ht]
 %%\begin{wrapfigure}{c}{1\textwidth}
