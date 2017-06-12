@@ -131,10 +131,16 @@ calr[, "feature" := NULL] #c("DOI", "feature") := NULL]
 calr <- merge(calr, calr_type, by = "DOI")
 setcolorder(calr, names(dat2))
 datf <- rbind(cbind("dsrc" = 1, dat2), cbind("dsrc" = 2, calr))
-datf[act_dur > eff_dur]
+
+# drop one calibration study only done by one observer
+datf <- datf[DOI != "10.1016/j.agee.2013.11.021", ]
+
+# DOIs of additional studies pointed to as data sources
 doisup <- c(unique(cal$DOI_data_source), unique(dat$DOI_data_source))
 doisup <- doisup[!is.na(doisup) & doisup != "NA" & doisup != "-"]
 doisup <- unlist(strsplit(doisup, ";"))
+
+
 ```
 
 `r length(unique(datf$DOI))` papers  main analysis
@@ -188,8 +194,21 @@ p <- c(0.58, 0.72, 0.41, 1.05, 1.26, 0.64)  # from calibration.Rmd
 # sets unreplicated observations to arbitrarily large number
 to_infin_byond <- function(tbtwn) ifelse(tbtwn == 0, 365 * 10000, tbtwn)
 
+# randomly reorders two variables, for reassignment in case of physically 
+# unrealistic values
+rvord <- function(a, b) {
+  v <- c(a, b)
+  v <- v[sample(1:2)]
+  v
+}
+
+# function for parse-eval in data.table i
+psr <- function(a) eval(parse(text = a))
+
+
 # bootstrapping function
-resamp_func <- function(dat, vars, p, iter) {
+resamp_func <- function(dat, p, iter) {
+  vars <- c("plot_res", "act_ext", "eff_ext", "t_btwn_samp", "act_dur", "eff_dur")
   bout <- lapply(1:iter, function(x) {  # x <- 1
     if((x / 100) %in% 1:100) print(x)
     if(length(p) < length(var)) stop("p must be length of var", call. = FALSE)
@@ -200,19 +219,23 @@ resamp_func <- function(dat, vars, p, iter) {
     # modifiers
     modvec <- sapply(p, function(y) {
       mv <- runif(nrow(dnew), min = 1 - y, max = 1 + y)
+      mv[mv < 0] <- 0.00000001  # can't have reduction of more than 100%
       mv
     })
-    # plot(dnew[[j]] * modvec[, j], dnew[[j]])
-    
+
     # perturb and set any values < 0 to very small amount
     for(j in 1:ncol(modvec)) set(dnew, j = j, value = dnew[[j]] * modvec[, j])
-    dnew[plot_res <= 0, plot_res := 0.00000001]
-    dnew[act_ext <= 0, act_ext := 0.00000001]
-    dnew[eff_ext <= 0, eff_ext := 0.00000001]
-    dnew[act_dur <= 0, act_dur := 0.00000001]
-    dnew[eff_dur <= 0, eff_dur := 0.00000001]
-    dnew[t_btwn_samp < 0, t_btwn_samp := 0.00000001]
 
+    # correct physically impossible results 
+    dnew[, plot_res := plot_res / 10000]  # set plot_res to ha
+    dnew[plot_res > act_ext, plot_res := act_ext]  # plot_res can't be > act_ext
+    dnew[plot_res > eff_ext, plot_res := eff_ext]  # or eff_ext
+    dnew[act_ext > eff_ext, act_ext := eff_ext] # act_ext can't be > eff_ext
+    dnew[t_btwn_samp > eff_dur, t_btwn_samp := eff_dur]  # int can't be > eff_dur
+    dnew[act_dur > eff_dur, act_dur := eff_dur]  # act_dur can't be > eff_dur
+    dnew[, plot_res := plot_res * 10000]  # set plot_res back to m2
+    
+    # set unreplicated to high value for first figure 
     dnew[, t_btwn_samp := to_infin_byond(t_btwn_samp)]  # set high
     dnew
   })
@@ -220,9 +243,8 @@ resamp_func <- function(dat, vars, p, iter) {
 }
 
 # Run bootstrap
-vars <- c("plot_res", "act_ext", "eff_ext", "t_btwn_samp", "act_dur", "eff_dur")
 set.seed(1)
-bootperturb <- resamp_func(datf, vars = vars, p = p, iter = 1000) # 10% perturb
+bootperturb <- resamp_func(datf, p = p, iter = 1000) 
 # bootperturb2 <- resamp_func(datf, p = p, iter = 1000)  # 10% perturb
 # all(bootperturb[[200]]$plot_res == bootperturb2[[200]]$plot_res)
 # rm(bootperturb2)
@@ -269,8 +291,8 @@ taxis1 <- data.table(taxis1)
 setnames(taxis1, names(taxis1), "days")
 taxis1[, logdays := log10(days)]
 
-tlab2 <- c(expression(NULL<="second"), "minute", "hour", "day", "week", "month",
-           "year","decade", "century", "millenium", "10 KA")  
+tlab2 <- c(expression(NULL<="second"), "minute", "hour", "day", "week", 
+           "month","year","decade", "century", "millenium", "10 KA")  
 taxis2 <- cbind.data.frame(c(1 / (24 * 60 * 60), 1 / (24 * 60), 1 / 24, 1, 7, 
                              30, 365, 365 * 10, 365 * 100, 365 * 1000, 
                              365 * 10000))
@@ -285,7 +307,7 @@ taxis2[, logdays := log10(days)]
 # plot resolution
 alab1 <- c(expression(paste(NULL<="0.01 cm"^2)), expression("0.1 cm"^2), 
            expression("1 cm"^2), expression("10 cm"^2),
-           expression("100 cm"^2), expression("1000 cm"^2), 
+           expression("0.01 m"^2), expression("0.1 m"^2), 
            expression("1 m"^2), expression("10 m"^2),
            expression("100 m"^2), expression("1000 m"^2), 
            "1 ha", "10 ha", "100 ha", "1000 ha", 
@@ -397,8 +419,7 @@ hdat_bsdt <- lapply(1:length(vs), function(x) { # x <- 1
 
 ### Bootstrapped histograms (now main figure)
 qtf <- function(x) c(mean(x), quantile(x, probs = c(0.025, 0.975))) # quant f
-xlabs <- c("Spatial resolution", "Spatial extent", "Sampling interval", 
-           "Temporal duration")
+xlabs <- c("Resolution", "Extent", "Interval", "Duration")
 # axes <- list("aax1" = aaxis1$logres, "aax2" = c(-6, aaxis2$logarea), 
 #              "tax1" = taxis1$logdays, "tax2" = taxis2$logdays)
 axes2 <- list("aax1" = aaxis1$logres, "aax2" = aaxis2$logarea, 
@@ -485,11 +506,6 @@ load(fp(p_dat, "derived/dimbreaks.rda"))
 ```
 ```{r}
 # res
-# sum(hdatst[4:6])  # 53 % between 10cm^2 and 1 m^2
-# sum(hdatst[1:6])  #  67% < 1m^2
-# sum(hdatst[7:10]) # 24 % between 1 m^2 and 1 ha
-# sum(hdatst[11:(l)]) # 9 % 1-10000 ha
-# dat[plot_res >= 10000^2]
 hdatst <- hdatstat_bt$res$mu
 l <- length(hdatst)
 hds <- c("10cm^2 - 1 m^2", "<1m^2", "1 m^2-1 ha", "1-10000 ha")
@@ -508,16 +524,6 @@ sapply(1:length(inds), function(x) {
 # hdatst <- hdatstat[[2]]$density
 hdatst <- hdatstat_bt$ext$mu
 l <- length(hdatst)
-# sum(hdatst[1:2])  # 36 % < 1 m^2
-# sum(hdatst[1:6])  # 82% < 1 ha
-# sum(hdatst[1:7])  # 86% < 10 ha
-# sum(hdatst[1:8])  # 90 % < 100 ha
-# sum(hdatst[1:9])  # 92 % < 1000 ha
-# sum(hdatst[8:9])  # 6 % 10-1000 ha
-# sum(hdatst[8:l])  # 14% > 10 ha
-# sum(hdatst[10:l]) # 8.2 % covered an area > 1000 ha
-# sum(hdatst[12:l]) # 5.1 % covered an area > 100,000 ha
-# sum(hdatst[13:l]) # 3.9 % covered an area > 1,000,000 ha
 hds <- c("<1 ha", "<10 ha", "<100 ha", "<1000ha", "10-1K ha", ">10ha", "1K-1MK",
          ">1Kha", ">100Kha", ">1Mha")
 inds <- list(1:6, 1:7, 1:8, 1:9, 8:9, 8:l, 10:12, 10:l, 12:l, 13:l)
@@ -531,12 +537,6 @@ sapply(1:length(inds), function(x) {
 # hdatst <- hdatstat[[3]]$density
 hdatst <- hdatstat_bt$int$mu
 l <- length(hdatst)
-# sum(hdatst[l])  # 36% are once-offs
-# sum(hdatst[1:3])  # 15 % < daily
-# sum(hdatst[1:4])  # 25 % < weekly
-# sum(hdatst[4:5])  # 21% daily up to monthly
-# sum(hdatst[6])  # 19% monthly up to yearly
-# sum(hdatst[7:8]) # 8.2 % yearly to decadal
 hds <- c("norep", "<daily", "<weekly",  "day-mo", "mo-yr", "yr-dec")
 inds <- list(l, 1:3, 1:4, 4:5, 6, 7:8)
 sapply(1:length(inds), function(x) {
@@ -549,11 +549,6 @@ sapply(1:length(inds), function(x) {
 # hdatst <- hdatstat[[4]]$density
 hdatst <- hdatstat_bt$dur$mu
 l <- length(hdatst)
-# sum(hdatst[1:3])  # 71 % up to 1 day
-# sum(hdatst[4:5])  # 17% covered between 1 day and 1 month
-# sum(hdatst[6])  # 7.3% covered between 1 month and 1 year
-# # sum(hdatstat[[4]]$density[4:6])  # 26% covered between 1 day and 1 year
-# sum(hdatst[7:10]) # 4.5% year to century
 hds <- c("<=daily", "day-mo", "mo-yr", "yr-dec", "yr-cent")
 inds <- list(1:3, 4:5, 6, 7, 8:10)
 sapply(1:length(inds), function(x) {
@@ -634,18 +629,23 @@ tempdat <- data.table(x = log10(to_infin_byond(kdat$t_btwn_samp)),
                       y = log10(kdat$eff_dur))#kdat$act_dur))
 # tt <- data.table(x = log10(kdat$t_btwn_samp), y = log10(kdat$eff_dur))
 # range(tt$x - tempdat$x)
+# tempdat[x != log10(365 * 10000)]
 tempdat <- tempdat[!is.na(x) & !is.na(y)] # cut out null values
 tempdat <- tempdat[round(x, 8) != 6.56229286, ]  # remove one-time observations
+
+tempdat[x > y, .N] / tempdat[, .N]
+
 # tempdat$n <- rep(1, nrow(tempdat))
 tempdat[, n := 1]
 tx <- range(tempdat$x)
 tx <- round(rx / 0.5) * 0.5  # round to nearest 0.5
-#tx[2] <- 6.56
-tx[2] <- 5.57
+tx[2] <- 6.6  # just above 10 KA
+# tx[2] <- 5.56
 tempdat[x < rx[1], x := rx[1]]
 tempdat[x > rx[2], x := rx[2]]
 ty <- range(taxis2$logdays)
-ty <- c(floor(ty[1]), 5.56)#ceiling(ex[2]))
+# ty <- c(floor(ty[1]), 5.56)#ceiling(ex[2]))
+ty <- c(floor(ty[1]), 6.6)  # just above 10 KA
 tempdat[y < ty[1], y := ty[1]]
 tempdat[y > ty[2], y := ty[2]]
 coordinates(tempdat) <- ~x + y
@@ -760,10 +760,12 @@ mtext("C", side = 3, line = -1, cex = 0.8, adj = 0.05, col = "white")
 
 # temporal
 image(tres, axes = FALSE, xlab = "", ylab = "", col = cols)
-axis(1, at = taxis1$logdays[-c(5)], labels = tlab1[-c(5)], 
-     las = 2, tcl = -0.2, cex.axis = cxa)
-axis(2, at = taxis2$logdays[-5], labels = tlab2[-5], las = 2,
-     cex.axis = cxa, tcl = -0.2)
+for(i in 1:2) {  # using taxis2 values for both axes because same
+  axis(i, at = taxis2$logdays[-5], labels = tlab2[-5], las = 2,
+       cex.axis = cxa, tcl = -0.2)
+}
+# axis(1, at = taxis1$logdays[-c(5)], labels = tlab1[-c(5)], 
+#      las = 2, tcl = -0.2, cex.axis = cxa)
 mtext("Interval", 1, cex = cxa, line = ll)
 mtext("Duration", 2, cex = cxa, line = ll)
 # brks <- brkfun(tres, 0.02, 100)  # breaks
@@ -793,6 +795,14 @@ dev.off()
 #   abline(lm(log10(eff_ext) ~ log10(plot_res)))
 # }]
 # points(spatdat$x, spatdat$y, pch = 20, cex = 0.5)
+
+# bootp_dt[!t_btwn_samp == 365 * 10000, {
+#   mean(t_btwn_samp[eff_dur > 30 & eff_dur < 365])
+# }]
+# bootp_dt[!t_btwn_samp == 365 * 10000, {
+#   mean(t_btwn_samp[eff_dur > 365 & eff_dur <= (365 * 10)])
+# }]
+
 ```
 
 <a href="#top">Back to top</a>
@@ -962,7 +972,7 @@ xs <- seq(lrng[1], lrng[2], by = (diff(lrng)) / (length(cols)))
 rect_shade(xs, y = c(11.5, 12.5), fillcol = cols, linecol = "grey30")
 text(xs, rep(10.5, length(xs)), ewgttxt, srt = 90, col = "grey30")
 text(mean(xs), 13, "% of observations", col = "grey30")
-mtext("A", side = 3, line = -1, cex = 1, adj = 0.05)
+mtext("A", side = 3, line = -1, cex = 1, adj = 0.02)
 
 # duration
 bx <- rowMeans(cbind(dint[-length(dint)], dint[-1]))
@@ -988,7 +998,7 @@ xs <- seq(lrng[1], lrng[2], by = (diff(lrng)) / (length(cols)))
 rect_shade(xs, y = c(11.5, 12.5), fillcol = cols, linecol = "grey30")
 text(xs, rep(10.5, length(xs)), dwgttxt, srt = 90, col = "grey30")
 text(mean(xs), 13, "% of observations", col = "grey30")
-mtext("B", side = 3, line = -1, cex = 1, adj = 0.05)
+mtext("B", side = 3, line = -1, cex = 1, adj = 0.02)
 dev.off()
 
 # Kernel density version
@@ -1079,8 +1089,7 @@ for(i in 1:nrow(corrtab)) {
 sens2[is.na(sens2)] <- "none"
 sensl2 <- lapply(1:length(sens2), function(x) strsplit(sens2[x], ";")[[1]])
 # unique(unlist(sensl))
-unique(unlist(sensl2))
-
+# unique(unlist(sensl2))
 
 # create a sensitivity table
 senst <- do.call(cbind.data.frame, lapply(svars, function(x) {
@@ -1312,7 +1321,7 @@ round(pcttab, 3)
 ```
 
 ### Varying kernel sizes
-```{r,eval = FALSE}
+```{r, eval = FALSE}
 # redo range variables
 rx <- range(resdat3$x)
 rx <- round(rx / 0.5) * 0.5  # round to nearest 0.5
@@ -1388,6 +1397,12 @@ dev.off()
 # plot(ers, box = FALSE, xlim = c(-5, 15), ylim = c(-5, 15), 
 #      xlab = "Study duration - log10(days)", ylab = "Sampled area - log10(ha)")
 # dev.off()
+
+datf[t_btwn_samp != 0, plot(log10(t_btwn_samp), log10(eff_ext))]
+datf[, plot(log10(plot_res), log10(eff_dur))]
+datf[, plot(log10(eff_dur), log10(eff_ext))]
+datf[t_btwn_samp == 0, points(log10(eff_dur), log10(eff_ext), col = "red")]
+datf[t_btwn_samp == 0 & log10(eff_dur) > 4]
 
 ```
 
