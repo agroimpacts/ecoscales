@@ -196,41 +196,18 @@ for(i in 1:nrow(kwords)) {
 }
 # cbind(tst, dat[, study_type])
 
-# dat[st == 5, .N] / nrow(dat)
-
 kwords &lt;- cbind(c(&quot;field&quot;, &quot;direct&quot;, &quot;paleo&quot;, &quot;remote&quot;, &quot;automated&quot;, &quot;other&quot;),
                 c(&quot;field&quot;, &quot;field&quot;, &quot;paleo&quot;, &quot;remote&quot;, &quot;automated&quot;, &quot;other&quot;))
 cal[, study_type := tolower(study_type)]
 # tst &lt;- cal[, study_type]
 for(i in 1:nrow(kwords)) {
   cal[like(study_type, kwords[i, 1]), study_type := kwords[i, 2]]
-}
-# cbind(tst, cal[, study_type])
-
-# unique(dat$DOI)
-# a &lt;- unique(dato$DOI)
-# b &lt;- unique(dat$DOI)
-# notin &lt;- sort(a)[!sort(a) %in% sort(b)]
-# dato[DOI %in% notin, 1:5, with = FALSE]
-# dat[observer == &quot;Ahmed&quot; &amp; journal == &quot;Oecologia&quot;]
-# unique(cal$DOI) %in% unique(dat$DOI)
-# match(cal$DOI, dat$DOI)
-# match(dat$DOI, cal$DOI)
-# dat[dat$DOI %in% cal$DOI, DOI]
-# dat[cal$DOI %in% dat$DOI, ]
-# cal[DOI == dat[cal$DOI %in% dat$DOI, DOI][11]]
-# dat[DOI == dat[cal$DOI %in% dat$DOI, DOI][7]]
-# dat[observer == &quot;Treuer&quot;, unique(DOI)]  # 19</code></pre>
+}</code></pre>
 <div id="data-prep" class="section level2">
 <h2><span class="header-section-number">1.1</span> Data prep</h2>
 <div id="merge-full-and-calibration-datasets" class="section level3">
 <h3><span class="header-section-number">1.1.1</span> Merge full and calibration datasets</h3>
-<pre class="r"><code># dat2 &lt;- copy(dat[, .(st, DOI, study_type, plot_res, n_sites, act_ext, eff_ext,
-#                      samp_dur, t_btwn_samp, act_dur, eff_dur)])
-# rnms &lt;- c(&quot;st&quot;, &quot;DOI&quot;, &quot;study_type&quot;, &quot;feature&quot;, &quot;observer&quot;, &quot;plot_res&quot;, 
-#           &quot;n_sites&quot;, &quot;act_ext&quot;, &quot;eff_ext&quot;, &quot;samp_dur&quot;, &quot;t_btwn_samp&quot;,
-#           &quot;act_dur&quot;, &quot;eff_dur&quot;)
-dat2 &lt;- copy(dat[, .(DOI, study_type, plot_res, n_sites, act_ext, eff_ext,
+<pre class="r"><code>dat2 &lt;- copy(dat[, .(DOI, study_type, plot_res, n_sites, act_ext, eff_ext,
                      samp_dur, t_btwn_samp, act_dur, eff_dur)])
 # selind &lt;- 3:ncol(dat2)
 selind &lt;- 4:ncol(dat2)
@@ -268,15 +245,19 @@ calr[, &quot;feature&quot; := NULL] #c(&quot;DOI&quot;, &quot;feature&quot;) := 
 calr &lt;- merge(calr, calr_type, by = &quot;DOI&quot;)
 setcolorder(calr, names(dat2))
 datf &lt;- rbind(cbind(&quot;dsrc&quot; = 1, dat2), cbind(&quot;dsrc&quot; = 2, calr))
-datf[act_dur &gt; eff_dur]
+
+# drop one calibration study only done by one observer
+datf &lt;- datf[DOI != &quot;10.1016/j.agee.2013.11.021&quot;, ]
+
+# DOIs of additional studies pointed to as data sources
 doisup &lt;- c(unique(cal$DOI_data_source), unique(dat$DOI_data_source))
 doisup &lt;- doisup[!is.na(doisup) &amp; doisup != &quot;NA&quot; &amp; doisup != &quot;-&quot;]
 doisup &lt;- unlist(strsplit(doisup, &quot;;&quot;))</code></pre>
-<p>134 papers main analysis</p>
+<p>133 papers main analysis</p>
 <p>348 papers main analysis (adding in Tim’s rejected number separately)</p>
 <p>0.8108486 % of all papers since 2004</p>
 <p>62 additional papers or other publications tracked down</p>
-<p>379 records (ecological observations)</p>
+<p>378 records (ecological observations)</p>
 <p><a href="#top">Back to top</a></p>
 </div>
 <div id="adjustmentsfixes" class="section level3">
@@ -612,7 +593,7 @@ sapply(1:length(inds), function(x) {
   v
 })</code></pre>
 <pre><code>## 10cm^2 - 1 m^2          &lt;1m^2     1 m^2-1 ha     1-10000 ha 
-##           52.7           66.6           24.2            9.2</code></pre>
+##           52.8           66.8           24.1            9.2</code></pre>
 <pre class="r"><code># length(which(hdat$res &gt;= -3 &amp; hdat$res &lt;= 0)) / length(hdat$res)
 # length(which(hdat$res &lt;= 4)) / length(hdat$res)
 # sum(hdatstat[[1]]$counts[4:6]) / sum(hdatstat[[1]]$counts)
@@ -621,18 +602,18 @@ sapply(1:length(inds), function(x) {
 # hdatst &lt;- hdatstat[[2]]$density
 hdatst &lt;- hdatstat_bt$ext$mu
 l &lt;- length(hdatst)
-hds &lt;- c(&quot;&lt;1 ha&quot;, &quot;&lt;10 ha&quot;, &quot;&lt;100 ha&quot;, &quot;&lt;1000ha&quot;, &quot;10-1K ha&quot;, &quot;&gt;10ha&quot;, &quot;1K-1MK&quot;,
-         &quot;&gt;1Kha&quot;, &quot;&gt;100Kha&quot;, &quot;&gt;1Mha&quot;)
-inds &lt;- list(1:6, 1:7, 1:8, 1:9, 8:9, 8:l, 10:12, 10:l, 12:l, 13:l)
+hds &lt;- c(&quot;&lt;1 ha&quot;, &quot;&lt;10 ha&quot;, &quot;&lt;100 ha&quot;, &quot;&lt;1000ha&quot;, &quot;&lt;10Kha&quot;, &quot;10-1k ha&quot;, &quot;1k-10k&quot;,  
+         &quot;10k-100k&quot;, &quot;100k-1Mk&quot;, &quot;&gt;1Kha&quot;, &quot;&gt;100Kha&quot;, &quot;&gt;1Mha&quot;)
+inds &lt;- list(1:6, 1:7, 1:8, 1:9, 1:10, 8:9, 10, 11, 12, 10:l, 12:l, 13:l)
 sapply(1:length(inds), function(x) {
   v &lt;- round(sum(hdatst[inds[[x]]]), 1)
   names(v) &lt;- hds[x]
   v
 })</code></pre>
-<pre><code>##    &lt;1 ha   &lt;10 ha  &lt;100 ha  &lt;1000ha 10-1K ha    &gt;10ha   1K-1MK    &gt;1Kha 
-##     11.3     19.1     30.9     42.0     22.9     80.9     42.4     58.0 
-##  &gt;100Kha    &gt;1Mha 
-##     27.4     15.6</code></pre>
+<pre><code>##    &lt;1 ha   &lt;10 ha  &lt;100 ha  &lt;1000ha   &lt;10Kha 10-1k ha   1k-10k 10k-100k 
+##     11.3     19.1     30.9     42.0     53.4     22.9     11.4     19.2 
+## 100k-1Mk    &gt;1Kha  &gt;100Kha    &gt;1Mha 
+##     11.8     58.0     27.4     15.6</code></pre>
 <pre class="r"><code># interval
 # hdatst &lt;- hdatstat[[3]]$density
 hdatst &lt;- hdatstat_bt$int$mu
@@ -645,7 +626,7 @@ sapply(1:length(inds), function(x) {
   v
 })</code></pre>
 <pre><code>##   norep  &lt;daily &lt;weekly  day-mo   mo-yr  yr-dec 
-##    37.2    16.8    26.1    20.1    18.0     7.7</code></pre>
+##    37.0    16.8    26.1    20.2    18.1     7.7</code></pre>
 <pre class="r"><code># duration
 # hdatst &lt;- hdatstat[[4]]$density
 hdatst &lt;- hdatstat_bt$dur$mu
@@ -658,7 +639,7 @@ sapply(1:length(inds), function(x) {
   v
 })</code></pre>
 <pre><code>## &lt;=daily  day-mo   mo-yr  yr-dec yr-cent 
-##    31.0     9.9    22.9    26.6     9.7</code></pre>
+##    31.1     9.9    23.1    26.7     9.2</code></pre>
 <pre class="r"><code># datf[, plot(log10(n_sites), log10(plot_res))]
 # dat[like(study_type, &quot;field&quot;), plot(log10(n_sites), log10(plot_res))]
 # datf[like(study_type, &quot;field&quot;), plot(log10(plot_res), log10(act_ext), 
@@ -680,9 +661,9 @@ sapply(1:length(inds), function(x) {
 # unique(datf$study_type)
 datf[, round(.N / nrow(datf) * 100, 2), by = study_type]</code></pre>
 <pre><code>##    study_type    V1
-## 1:      field 79.95
-## 2:  automated 12.40
-## 3:     remote  6.33
+## 1:      field 79.89
+## 2:  automated 12.43
+## 3:     remote  6.35
 ## 4:      other  0.53
 ## 5:      paleo  0.79</code></pre>
 <pre class="r"><code>round(datf[study_type == &quot;automated&quot; &amp; log10(t_btwn_samp) &lt; -1.380211, .N] / 
@@ -881,78 +862,56 @@ aargs &lt;- list(mgp = c(3, 0.25, 0), at = brks$labs, labels = brks$labs,
 plot(tres, legend.only = TRUE, axis.args = aargs, legend.width = 1.25,
      legend.shrink = 0.9, col = cols)
 mtext(&quot;D&quot;, side = 3, line = -1, cex = 0.8, adj = 0.05, col = &quot;white&quot;)
-dev.off()
-
-# image(rres3, col = rev(terrain.colors(100)))
-# image(rext3, col = rev(terrain.colors(100)))
-# datf[, points(log10(eff_dur), log10(eff_ext), pch = 20, cex = 0.5)]
-# datf[like(study_type, &quot;remote&quot;), {
-#   points(log10(eff_dur), log10(eff_ext), pch = 20, cex = 0.5, col = &quot;blue&quot;)
-# }]
-# points(resdat3$x, resdat3$y, pch = 20, cex = 0.5)
-# image(sres, col = rev(terrain.colors(100)))
-# datf[, points(log10(plot_res), log10(eff_ext), pch = 20, cex = 0.5)]
-# datf[like(study_type, &quot;remote&quot;), {
-#   points(log10(plot_res), log10(eff_ext), pch = 20, cex = 0.5, col = &quot;blue&quot;)
-#   abline(lm(log10(eff_ext) ~ log10(plot_res)))
-# }]
-# datf[like(study_type, &quot;field&quot;), {
-#   points(log10(plot_res), log10(eff_ext), pch = 20, cex = 0.5, col = &quot;red&quot;)
-#   abline(lm(log10(eff_ext) ~ log10(plot_res)))
-# }]
-# points(spatdat$x, spatdat$y, pch = 20, cex = 0.5)
-
-# bootp_dt[!t_btwn_samp == 365 * 10000, {
-#   mean(t_btwn_samp[eff_dur &gt; 30 &amp; eff_dur &lt; 365])
-# }]
-# bootp_dt[!t_btwn_samp == 365 * 10000, {
-#   mean(t_btwn_samp[eff_dur &gt; 365 &amp; eff_dur &lt;= (365 * 10)])
-# }]</code></pre>
+dev.off()</code></pre>
 <p><a href="#top">Back to top</a></p>
 </div>
 <div id="figure-3" class="section level3">
 <h3><span class="header-section-number">1.3.4</span> Figure 3</h3>
 <pre class="r"><code># actual versus effective duration
-kdat &lt;- bootp_dt  # bootstrap
-# tempdat2 &lt;- data.table(x = log10(kdat$act_dur), y = log10(kdat$eff_dur))
-tempdat2 &lt;- data.table(x = log10(kdat$eff_dur), y = log10(kdat$act_dur))
-dinds &lt;- kdat[, which(t_btwn_samp == 365 * 10000)]  # drop unreplicated obs
-tempdat2 &lt;- tempdat2[-dinds, ]
-tempdat2 &lt;- tempdat2[!is.na(x) &amp; !is.na(y)] # cut out null values
-tempdat2[, n := 1]  # set up count column
-tx &lt;- range(taxis2$logdays)
-tx &lt;- c(floor(ex[1]), 5.56) ### should this be 5.57?  #ceiling(ex[2]))
-tempdat2[x &lt; tx[1], x := tx[1]]
-tempdat2[x &gt; tx[2], x := tx[2]]
-ty &lt;- range(taxis2$logdays)
-ty &lt;- c(floor(ex[1]), 5.56) ### should this be 5.57?  #ceiling(ex[2]))
-tempdat2[y &lt; tx[1], y := tx[1]]
-tempdat2[y &gt; tx[2], y := tx[2]]
-coordinates(tempdat2) &lt;- ~x + y
+# kdat &lt;- bootp_dt  # bootstrap
+# # tempdat2 &lt;- data.table(x = log10(kdat$act_dur), y = log10(kdat$eff_dur))
+# tempdat2 &lt;- data.table(x = log10(kdat$eff_dur), y = log10(kdat$act_dur))
+# dinds &lt;- kdat[, which(t_btwn_samp == 365 * 10000)]  # drop unreplicated obs
+# tempdat2 &lt;- tempdat2[-dinds, ]
+# tempdat2 &lt;- tempdat2[!is.na(x) &amp; !is.na(y)] # cut out null values
+# tempdat2[, n := 1]  # set up count column
+# tx &lt;- range(taxis2$logdays)
+# tx &lt;- c(floor(ex[1]), 5.56) ### should this be 5.57?  #ceiling(ex[2]))
+# tempdat2[x &lt; tx[1], x := tx[1]]
+# tempdat2[x &gt; tx[2], x := tx[2]]
+# ty &lt;- range(taxis2$logdays)
+# ty &lt;- c(floor(ex[1]), 5.56) ### should this be 5.57?  #ceiling(ex[2]))
+# tempdat2[y &lt; tx[1], y := tx[1]]
+# tempdat2[y &gt; tx[2], y := tx[2]]
+# coordinates(tempdat2) &lt;- ~x + y
+# 
+# # extent
+# # extdat4 &lt;- data.table(x = log10(kdat$act_ext), y = log10(kdat$eff_ext))
+# extdat4 &lt;- data.table(x = log10(kdat$eff_ext), y = log10(kdat$act_ext))
+# extdat4 &lt;- extdat4[!is.na(x) &amp; !is.na(y)] # cut out null values
+# extdat4[, n := 1]  # set up count column
+# ex &lt;- range(aaxis2$logarea)
+# extdat4[x &lt; ex[1], x := ex[1]]
+# extdat4[x &gt; ex[2], x := ex[2]]
+# ey &lt;- range(aaxis2$logarea)
+# extdat4[y &lt; ey[1], y := ey[1]]
+# extdat4[y &gt; ey[2], y := ey[2]]
+# coordinates(extdat4) &lt;- ~x + y
+# 
+# # densities
+# # temporal 
+# tres2 &lt;- kdensity(tx[1], tx[2], ty[1], ty[2], 0.1, tempdat2, 1)
+# tres2 &lt;- (tres2 / cellStats(tres2, sum)) * 100
+# 
+# # extent
+# rext4 &lt;- kdensity(ex[1], ex[2], ey[1], ey[2], 0.1, extdat4, 1)
+# rext4 &lt;- (rext4 / cellStats(rext4, sum)) * 100
+# 
+# # cxa = 0.7
 
-# extent
-# extdat4 &lt;- data.table(x = log10(kdat$act_ext), y = log10(kdat$eff_ext))
-extdat4 &lt;- data.table(x = log10(kdat$eff_ext), y = log10(kdat$act_ext))
-extdat4 &lt;- extdat4[!is.na(x) &amp; !is.na(y)] # cut out null values
-extdat4[, n := 1]  # set up count column
+# plot params
 ex &lt;- range(aaxis2$logarea)
-extdat4[x &lt; ex[1], x := ex[1]]
-extdat4[x &gt; ex[2], x := ex[2]]
 ey &lt;- range(aaxis2$logarea)
-extdat4[y &lt; ey[1], y := ey[1]]
-extdat4[y &gt; ey[2], y := ey[2]]
-coordinates(extdat4) &lt;- ~x + y
-
-# densities
-# temporal 
-tres2 &lt;- kdensity(tx[1], tx[2], ty[1], ty[2], 0.1, tempdat2, 1)
-tres2 &lt;- (tres2 / cellStats(tres2, sum)) * 100
-
-# extent
-rext4 &lt;- kdensity(ex[1], ex[2], ey[1], ey[2], 0.1, extdat4, 1)
-rext4 &lt;- (rext4 / cellStats(rext4, sum)) * 100
-
-# cxa = 0.7
 ll &lt;- 3.5
 cxa = 0.7
 stps &lt;- sapply(c(3, 4), function(x) which(kdat$st == x))  # IDs rs/auto/paleo
@@ -961,19 +920,19 @@ cexs &lt;- c(0.4, 0.6)
 cuts &lt;- 40
 bump &lt;- 3
 cols &lt;- inferno(cuts + bump)[-c(2:(bump + 1))]
-# plot(1:cuts, col = cols, pch = 20)
-
-# par(mfrow = c(1, 2))
-# datf[, {
-#   # sel = which()
-#   eext = log10(eff_ext)
-#   aext = log10(act_ext)
-#   edur = log10(eff_dur[t_btwn_samp != 365 * 10000])
-#   adur = log10(act_dur[t_btwn_samp != 365 * 10000])
-#   plot(aext, eext - aext)
-#   plot(adur, edur - adur)
-#   length(edur)
-# }]
+# # plot(1:cuts, col = cols, pch = 20)
+# 
+# # par(mfrow = c(1, 2))
+# # datf[, {
+# #   # sel = which()
+# #   eext = log10(eff_ext)
+# #   aext = log10(act_ext)
+# #   edur = log10(eff_dur[t_btwn_samp != 365 * 10000])
+# #   adur = log10(act_dur[t_btwn_samp != 365 * 10000])
+# #   plot(aext, eext - aext)
+# #   plot(adur, edur - adur)
+# #   length(edur)
+# # }]
 
 # Difference in effective versus actual extent/duration against actual ext/dur
 hdat_bs2 &lt;- lapply(1:length(bootperturb), function(x) {  # x &lt;- 1
@@ -993,15 +952,6 @@ hdat_bs2 &lt;- lapply(1:length(bootperturb), function(x) {  # x &lt;- 1
   return(list(&quot;edb&quot; = edb, &quot;tdb&quot; = tdb, #&quot;elm&quot; = elm, &quot;tlm&quot; = tlm, 
               &quot;Ns&quot; = c(edb[, .N], tdb[, .N])))
 })
-
-# check number of drops due to eff &lt; act
-# hdat_bs2_ns &lt;- do.call(rbind, lapply(hdat_bs2, function(x) x$Ns))
-# summary(bootperturb[[1]][, .N] - hdat_bs2_ns[, 1])
-# summary(bootperturb[[1]][t_btwn_samp != 365 * 10000, .N] - hdat_bs2_ns[, 2])
-
-# extract regression coefficients
-# hdat_bs2_elm &lt;- do.call(rbind, lapply(hdat_bs2, function(x) coef(x$elm)[, 1]))
-# hdat_bs2_tlm &lt;- do.call(rbind, lapply(hdat_bs2, function(x) coef(x$tlm)[, 1]))
 
 # calculate box statistics
 # Extent differences
@@ -1104,43 +1054,43 @@ text(mean(xs), 13, &quot;% of observations&quot;, col = &quot;grey30&quot;)
 mtext(&quot;B&quot;, side = 3, line = -1, cex = 1, adj = 0.02)
 dev.off()
 
-# Kernel density version
-pdf(&quot;paper/figures/act_v_eff.pdf&quot;, width = 7, height = 3)
-par(mfrow = c(1, 2), mar = c(4.5, 4.5, 0.3, 3), oma = c(0, 0, 0.2, 1), 
-    mgp = c(2, 0.25, 0))
-
-mtl &lt;- 3
-# spatial extents
-image(rext4, axes = FALSE, xlab = &quot;&quot;, ylab = &quot;&quot;, col = cols)
-axis(1, at = aaxis2$logarea, labels = alab2, las = 2,
-     cex.axis = cxa, tcl = -0.2)
-axis(2, at = aaxis2$logarea, labels = alab2, las = 2, cex.axis = cxa,
-     tcl = -0.2)
-brks &lt;- brkfun(rext4, 0.01, cuts)  # breaks
-aargs &lt;- list(mgp = c(3, 0.25, 0), at = brks$labs, labels = brks$labs, 
-              cex.axis = cxa, tcl = -0.1)
-mtext(&quot;Actual extent&quot;, 2, cex = cxa, line = mtl)
-mtext(&quot;Effective extent&quot;, 1, cex = cxa, line = mtl)
-plot(rext4, legend.only = TRUE, axis.args = aargs, legend.width = 1.25,
-     legend.shrink = 0.9, col = cols)
-mtext(&quot;A&quot;, side = 3, line = -1, cex = 0.8, adj = 0.05, col = &quot;white&quot;)
-
-# temporal extents
-image(tres2, axes = FALSE, xlab = &quot;&quot;, ylab = &quot;&quot;, col = cols)
-axis(1, at = taxis1$logdays[-c(5)], labels = tlab1[-c(5)], 
-     las = 2, tcl = -0.2, cex.axis = cxa)
-axis(2, at = taxis1$logdays[-c(5)], labels = tlab1[-c(5)], las = 2, tcl = -0.2, 
-     cex.axis = cxa)
-mtext(&quot;Actual duration&quot;, 2, cex = cxa, line = mtl)
-mtext(&quot;Effective duration&quot;, 1, cex = cxa, line = mtl)
-brks &lt;- brkfun(tres2, 0.01, cuts)  # breaks
-aargs &lt;- list(mgp = c(3, 0.25, 0), at = brks$labs, labels = brks$labs, 
-              cex.axis = cxa, tcl = -0.1)
-plot(tres2, legend.only = TRUE, axis.args = aargs, legend.width = 1.25,
-     legend.shrink = 0.9, col = cols)
-     #col = rev(terrain.colors(cuts)))
-mtext(&quot;B&quot;, side = 3, line = -1, cex = 0.8, adj = 0.05, col = &quot;white&quot;)
-dev.off()</code></pre>
+# # Kernel density version
+# pdf(&quot;paper/figures/act_v_eff.pdf&quot;, width = 7, height = 3)
+# par(mfrow = c(1, 2), mar = c(4.5, 4.5, 0.3, 3), oma = c(0, 0, 0.2, 1), 
+#     mgp = c(2, 0.25, 0))
+# 
+# mtl &lt;- 3
+# # spatial extents
+# image(rext4, axes = FALSE, xlab = &quot;&quot;, ylab = &quot;&quot;, col = cols)
+# axis(1, at = aaxis2$logarea, labels = alab2, las = 2,
+#      cex.axis = cxa, tcl = -0.2)
+# axis(2, at = aaxis2$logarea, labels = alab2, las = 2, cex.axis = cxa,
+#      tcl = -0.2)
+# brks &lt;- brkfun(rext4, 0.01, cuts)  # breaks
+# aargs &lt;- list(mgp = c(3, 0.25, 0), at = brks$labs, labels = brks$labs, 
+#               cex.axis = cxa, tcl = -0.1)
+# mtext(&quot;Actual extent&quot;, 2, cex = cxa, line = mtl)
+# mtext(&quot;Effective extent&quot;, 1, cex = cxa, line = mtl)
+# plot(rext4, legend.only = TRUE, axis.args = aargs, legend.width = 1.25,
+#      legend.shrink = 0.9, col = cols)
+# mtext(&quot;A&quot;, side = 3, line = -1, cex = 0.8, adj = 0.05, col = &quot;white&quot;)
+# 
+# # temporal extents
+# image(tres2, axes = FALSE, xlab = &quot;&quot;, ylab = &quot;&quot;, col = cols)
+# axis(1, at = taxis1$logdays[-c(5)], labels = tlab1[-c(5)], 
+#      las = 2, tcl = -0.2, cex.axis = cxa)
+# axis(2, at = taxis1$logdays[-c(5)], labels = tlab1[-c(5)], las = 2, tcl = -0.2, 
+#      cex.axis = cxa)
+# mtext(&quot;Actual duration&quot;, 2, cex = cxa, line = mtl)
+# mtext(&quot;Effective duration&quot;, 1, cex = cxa, line = mtl)
+# brks &lt;- brkfun(tres2, 0.01, cuts)  # breaks
+# aargs &lt;- list(mgp = c(3, 0.25, 0), at = brks$labs, labels = brks$labs, 
+#               cex.axis = cxa, tcl = -0.1)
+# plot(tres2, legend.only = TRUE, axis.args = aargs, legend.width = 1.25,
+#      legend.shrink = 0.9, col = cols)
+#      #col = rev(terrain.colors(cuts)))
+# mtext(&quot;B&quot;, side = 3, line = -1, cex = 0.8, adj = 0.05, col = &quot;white&quot;)
+# dev.off()</code></pre>
 </div>
 </div>
 <div id="supplemental-analyses" class="section level2">
@@ -1404,7 +1354,7 @@ pcttab &lt;- cbind(&quot;2014&quot; = log10(muext2014), &quot;pct increase&quot;
                 &quot;decade&quot; = log10((pctinc * muext2014) / muext2014))
 round(pcttab, 3)</code></pre>
 <pre><code>##      2014 pct increase  2017 decade
-## [1,] 8.06        5.518 8.083  0.023</code></pre>
+## [1,] 8.06        5.514 8.083  0.023</code></pre>
 </div>
 <div id="varying-kernel-sizes" class="section level3">
 <h3><span class="header-section-number">1.4.4</span> Varying kernel sizes</h3>
@@ -1482,7 +1432,13 @@ dev.off()
 #      ylab = &quot;Plot resolution - log10(m^2)&quot;)
 # plot(ers, box = FALSE, xlim = c(-5, 15), ylim = c(-5, 15), 
 #      xlab = &quot;Study duration - log10(days)&quot;, ylab = &quot;Sampled area - log10(ha)&quot;)
-# dev.off()</code></pre>
+# dev.off()
+
+datf[t_btwn_samp != 0, plot(log10(t_btwn_samp), log10(eff_ext))]
+datf[, plot(log10(plot_res), log10(eff_dur))]
+datf[, plot(log10(eff_dur), log10(eff_ext))]
+datf[t_btwn_samp == 0, points(log10(eff_dur), log10(eff_ext), col = &quot;red&quot;)]
+datf[t_btwn_samp == 0 &amp; log10(eff_dur) &gt; 4]</code></pre>
 <p><a href="#top">Back to top</a></p>
 </div>
 </div>

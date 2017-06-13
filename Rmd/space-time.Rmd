@@ -57,8 +57,6 @@ for(i in 1:nrow(kwords)) {
 }
 # cbind(tst, dat[, study_type])
 
-# dat[st == 5, .N] / nrow(dat)
-
 kwords <- cbind(c("field", "direct", "paleo", "remote", "automated", "other"),
                 c("field", "field", "paleo", "remote", "automated", "other"))
 cal[, study_type := tolower(study_type)]
@@ -66,33 +64,12 @@ cal[, study_type := tolower(study_type)]
 for(i in 1:nrow(kwords)) {
   cal[like(study_type, kwords[i, 1]), study_type := kwords[i, 2]]
 }
-# cbind(tst, cal[, study_type])
-
-# unique(dat$DOI)
-# a <- unique(dato$DOI)
-# b <- unique(dat$DOI)
-# notin <- sort(a)[!sort(a) %in% sort(b)]
-# dato[DOI %in% notin, 1:5, with = FALSE]
-# dat[observer == "Ahmed" & journal == "Oecologia"]
-# unique(cal$DOI) %in% unique(dat$DOI)
-# match(cal$DOI, dat$DOI)
-# match(dat$DOI, cal$DOI)
-# dat[dat$DOI %in% cal$DOI, DOI]
-# dat[cal$DOI %in% dat$DOI, ]
-# cal[DOI == dat[cal$DOI %in% dat$DOI, DOI][11]]
-# dat[DOI == dat[cal$DOI %in% dat$DOI, DOI][7]]
-# dat[observer == "Treuer", unique(DOI)]  # 19
 
 ```
 
 ## Data prep
 ### Merge full and calibration datasets
 ```{r, message=FALSE, warning=FALSE, results='hide'}
-# dat2 <- copy(dat[, .(st, DOI, study_type, plot_res, n_sites, act_ext, eff_ext,
-#                      samp_dur, t_btwn_samp, act_dur, eff_dur)])
-# rnms <- c("st", "DOI", "study_type", "feature", "observer", "plot_res", 
-#           "n_sites", "act_ext", "eff_ext", "samp_dur", "t_btwn_samp",
-#           "act_dur", "eff_dur")
 dat2 <- copy(dat[, .(DOI, study_type, plot_res, n_sites, act_ext, eff_ext,
                      samp_dur, t_btwn_samp, act_dur, eff_dur)])
 # selind <- 3:ncol(dat2)
@@ -524,9 +501,9 @@ sapply(1:length(inds), function(x) {
 # hdatst <- hdatstat[[2]]$density
 hdatst <- hdatstat_bt$ext$mu
 l <- length(hdatst)
-hds <- c("<1 ha", "<10 ha", "<100 ha", "<1000ha", "10-1K ha", ">10ha", "1K-1MK",
-         ">1Kha", ">100Kha", ">1Mha")
-inds <- list(1:6, 1:7, 1:8, 1:9, 8:9, 8:l, 10:12, 10:l, 12:l, 13:l)
+hds <- c("<1 ha", "<10 ha", "<100 ha", "<1000ha", "<10Kha", "10-1k ha", "1k-10k",  
+         "10k-100k", "100k-1Mk", ">1Kha", ">100Kha", ">1Mha")
+inds <- list(1:6, 1:7, 1:8, 1:9, 1:10, 8:9, 10, 11, 12, 10:l, 12:l, 13:l)
 sapply(1:length(inds), function(x) {
   v <- round(sum(hdatst[inds[[x]]]), 1)
   names(v) <- hds[x]
@@ -596,17 +573,17 @@ resdat3 <- data.table(x = log10(to_infin_byond(kdat$t_btwn_samp)),
 resdat3 <- resdat3[round(x, 8) != 6.56229286]  # remove one-time observations
 resdat3[, n := 1]  # set up count column
 # resdat3$n <- rep(1, nrow(resdat3))
-rx <- range(resdat3$x)
-rx <- round(rx / 0.5) * 0.5  # round to nearest 0.5
-rx[1] <- -5  # set min interval to less than second
+ilim <- range(resdat3$x)
+ilim <- round(ilim / 0.5) * 0.5  # round to nearest 0.5
+ilim[1] <- -5  # set min interval to less than second
 #rx[2] <- 6.56
-rx[2] <- 5.57  # set max interval to millenium
-resdat3[x < rx[1], x := rx[1]]
-resdat3[x > rx[2], x := rx[2]]
-ry <- range(aaxis1$logres)
-ry[1] <- -5  # set limits to 0.01 cm^2
-resdat3[y < ry[1], y := ry[1]]
-resdat3[y > ry[2], y := ry[2]]
+ilim[2] <- 5.57  # set max interval to millenium
+resdat3[x < ilim[1], x := ilim[1]]
+resdat3[x > ilim[2], x := ilim[2]]
+rlim <- range(aaxis1$logres)
+rlim[1] <- -5  # set limits to 0.01 cm^2
+resdat3[y < rlim[1], y := rlim[1]]
+resdat3[y > rlim[2], y := rlim[2]]
 coordinates(resdat3) <- ~x + y
 
 # extent
@@ -615,70 +592,93 @@ extdat3 <- data.table(x = log10(kdat$eff_dur),#log10(kdat$act_dur),
 extdat3 <- extdat3[!is.na(x) & !is.na(y)] # cut out null values
 # extdat3$n <- rep(1, nrow(extdat3))
 extdat3[, n := 1]  # set up count column
-ex <- range(taxis2$logdays)
-ex <- c(floor(ex[1]), 5.56) ### should this be 5.57?  #ceiling(ex[2]))
-extdat3[x < ex[1], x := ex[1]]
-extdat3[x > ex[2], x := ex[2]]
-ey <- range(aaxis2$logarea)
-extdat3[y < ey[1], y := ey[1]]
-extdat3[y > ey[2], y := ey[2]]
+dlim <- range(taxis2$logdays)
+dlim <- c(floor(dlim[1]), 5.56) ### should this be 5.57?  #ceiling(ex[2]))
+extdat3[x < dlim[1], x := dlim[1]]
+extdat3[x > dlim[2], x := dlim[2]]
+elim <- range(aaxis2$logarea)
+extdat3[y < elim[1], y := elim[1]]
+extdat3[y > elim[2], y := elim[2]]
 coordinates(extdat3) <- ~x + y
 
-# temporal framing
+# temporal framing (interval-duration)
 tempdat <- data.table(x = log10(to_infin_byond(kdat$t_btwn_samp)), 
                       y = log10(kdat$eff_dur))#kdat$act_dur))
-# tt <- data.table(x = log10(kdat$t_btwn_samp), y = log10(kdat$eff_dur))
-# range(tt$x - tempdat$x)
-# tempdat[x != log10(365 * 10000)]
 tempdat <- tempdat[!is.na(x) & !is.na(y)] # cut out null values
 tempdat <- tempdat[round(x, 8) != 6.56229286, ]  # remove one-time observations
 
-tempdat[x > y, .N] / tempdat[, .N]
-
 # tempdat$n <- rep(1, nrow(tempdat))
 tempdat[, n := 1]
-tx <- range(tempdat$x)
-tx <- round(rx / 0.5) * 0.5  # round to nearest 0.5
-tx[2] <- 6.6  # just above 10 KA
-# tx[2] <- 5.56
-tempdat[x < rx[1], x := rx[1]]
-tempdat[x > rx[2], x := rx[2]]
-ty <- range(taxis2$logdays)
+# tx <- range(tempdat$x)
+# tx <- round(rx / 0.5) * 0.5  # round to nearest 0.5
+tempdat[x < ilim[1], x := ilim[1]]
+tempdat[x > ilim[2], x := ilim[2]]
+dlimty <- range(taxis2$logdays)
 # ty <- c(floor(ty[1]), 5.56)#ceiling(ex[2]))
-ty <- c(floor(ty[1]), 6.6)  # just above 10 KA
-tempdat[y < ty[1], y := ty[1]]
-tempdat[y > ty[2], y := ty[2]]
+# ty <- c(floor(ty[1]), 6.6)  # just above 10 KA
+tempdat[y < elim[1], y := elim[1]]
+tempdat[y > elim[2], y := elim[2]]
 coordinates(tempdat) <- ~x + y
 
-# spatial framing
+# spatial framing (res-extent)
 spatdat <- data.table(x = log10(kdat$plot_res), y = log10(kdat$eff_ext))#act_ext))
 spatdat <- spatdat[!is.na(x) & !is.na(y)] # cut out null values
 # spatdat$n <- rep(1, nrow(spatdat))
 spatdat[, n := 1]
-sx <- range(aaxis1$logres)
+# sx <- range(aaxis1$logres)
 sx[1] <- -5  # set limits to 0.01 cm^2
-spatdat[x < sx[1], y := sx[1]]
-spatdat[x > sx[2], y := sx[2]]
-sy <- range(aaxis2$logarea)
-spatdat[y < sy[1], y := sy[1]]
-spatdat[y > sy[2], y := sy[2]]
+spatdat[x < rlim[1], y := rlim[1]]
+spatdat[x > rlim[2], y := rlim[2]]
+# sy <- range(aaxis2$logarea)
+spatdat[y < elim[1], y := elim[1]]
+spatdat[y > elim[2], y := elim[2]]
 coordinates(spatdat) <- ~x + y
 
+# # interval-extent
+# iextdat <- data.table(x = log10(kdat$t_btwn_samp), y = log10(kdat$eff_ext))
+# iextdat <- iextdat[!is.na(x) & !is.na(y)] # cut out null values
+# iextdat <- iextdat[round(x, 8) != 6.56229286, ]  # remove one-time observations
+# iextdat[, n := 1]
+# iextdat[x < ilim[1], x := ilim[1]]
+# iextdat[x > ilim[2], x := ilim[2]]
+# iextdat[y < elim[1], y := elim[1]]
+# iextdat[y > elim[2], y := elim[2]]
+# coordinates(iextdat) <- ~x + y
+# 
+# # resolution-duration
+# rdurdat <- data.table(x = log10(kdat$eff_dur), y = log10(kdat$plot_res))
+# rdurdat <- rdurdat[!is.na(x) & !is.na(y)] # cut out null values
+# rdurdat[, n := 1]
+# rdurdat[x < dlim[1], x := dlim[1]]
+# rdurdat[x > dlim[2], x := dlim[2]]
+# rdurdat[y < rlim[1], y := rlim[1]]
+# rdurdat[y > rlim[2], y := rlim[2]]
+# coordinates(rdurdat) <- ~x + y
+
 # densities
-# resolution
-rres3 <- kdensity(rx[1], rx[2], ry[1], ry[2], 0.1, resdat3, 1)
+# interval-resolution
+rres3 <- kdensity(ilim[1], ilim[2], rlim[1], rlim[2], 0.1, resdat3, 1)
 rres3 <- (rres3 / cellStats(rres3, sum)) * 100
 
-# extent
-rext3 <- kdensity(ex[1], ex[2], ey[1], ey[2], 0.1, extdat3, 1)
+# duration-extent
+rext3 <- kdensity(dlim[1], dlim[2], elim[1], elim[2], 0.1, extdat3, 1)
 rext3 <- (rext3 / cellStats(rext3, sum)) * 100
 
-# temporal
-tres <- kdensity(tx[1], tx[2], ty[1], ty[2], 0.1, tempdat, 1)
+# interval-duration
+tres <- kdensity(ilim[1], ilim[2], dlim[1], dlim[2], 0.1, tempdat, 1)
 tres <- (tres / cellStats(tres, sum)) * 100
-# spatial
-sres <- kdensity(sx[1], sx[2], sy[1], sy[2], 0.1, spatdat, 1)
+
+# resolution-extent
+sres <- kdensity(rlim[1], rlim[2], elim[1], elim[2], 0.1, spatdat, 1)
 sres <- (sres / cellStats(sres, sum)) * 100
+
+# # interval-extent
+# iext <- kdensity(ilim[1], ilim[2], elim[1], elim[2], 0.1, iextdat, 1)
+# iext <- (iext / cellStats(iext, sum)) * 100
+# 
+# # resolution-duration
+# rdur <- kdensity(dlim[1], dlim[2], rlim[1], rlim[2], 0.1, rdurdat, 1)
+# rdur <- (rdur / cellStats(rdur, sum)) * 100
 
 brkfun <- function(ext, ival, n) {
   rng <- range(ext[is.finite(ext)])
@@ -764,8 +764,6 @@ for(i in 1:2) {  # using taxis2 values for both axes because same
   axis(i, at = taxis2$logdays[-5], labels = tlab2[-5], las = 2,
        cex.axis = cxa, tcl = -0.2)
 }
-# axis(1, at = taxis1$logdays[-c(5)], labels = tlab1[-c(5)], 
-#      las = 2, tcl = -0.2, cex.axis = cxa)
 mtext("Interval", 1, cex = cxa, line = ll)
 mtext("Duration", 2, cex = cxa, line = ll)
 # brks <- brkfun(tres, 0.02, 100)  # breaks
@@ -777,31 +775,10 @@ plot(tres, legend.only = TRUE, axis.args = aargs, legend.width = 1.25,
 mtext("D", side = 3, line = -1, cex = 0.8, adj = 0.05, col = "white")
 dev.off()
 
-# image(rres3, col = rev(terrain.colors(100)))
-# image(rext3, col = rev(terrain.colors(100)))
-# datf[, points(log10(eff_dur), log10(eff_ext), pch = 20, cex = 0.5)]
-# datf[like(study_type, "remote"), {
-#   points(log10(eff_dur), log10(eff_ext), pch = 20, cex = 0.5, col = "blue")
-# }]
-# points(resdat3$x, resdat3$y, pch = 20, cex = 0.5)
-# image(sres, col = rev(terrain.colors(100)))
-# datf[, points(log10(plot_res), log10(eff_ext), pch = 20, cex = 0.5)]
-# datf[like(study_type, "remote"), {
-#   points(log10(plot_res), log10(eff_ext), pch = 20, cex = 0.5, col = "blue")
-#   abline(lm(log10(eff_ext) ~ log10(plot_res)))
-# }]
-# datf[like(study_type, "field"), {
-#   points(log10(plot_res), log10(eff_ext), pch = 20, cex = 0.5, col = "red")
-#   abline(lm(log10(eff_ext) ~ log10(plot_res)))
-# }]
-# points(spatdat$x, spatdat$y, pch = 20, cex = 0.5)
+# image(rdur, axes = FALSE, xlab = "", ylab = "", col = cols)
+# plot(rdur, legend.only = TRUE, axis.args = aargs, legend.width = 1.25,
+#      legend.shrink = 0.9, col = cols)
 
-# bootp_dt[!t_btwn_samp == 365 * 10000, {
-#   mean(t_btwn_samp[eff_dur > 30 & eff_dur < 365])
-# }]
-# bootp_dt[!t_btwn_samp == 365 * 10000, {
-#   mean(t_btwn_samp[eff_dur > 365 & eff_dur <= (365 * 10)])
-# }]
 
 ```
 
@@ -810,46 +787,50 @@ dev.off()
 ### Figure 3
 ```{r, eval=FALSE}
 # actual versus effective duration
-kdat <- bootp_dt  # bootstrap
-# tempdat2 <- data.table(x = log10(kdat$act_dur), y = log10(kdat$eff_dur))
-tempdat2 <- data.table(x = log10(kdat$eff_dur), y = log10(kdat$act_dur))
-dinds <- kdat[, which(t_btwn_samp == 365 * 10000)]  # drop unreplicated obs
-tempdat2 <- tempdat2[-dinds, ]
-tempdat2 <- tempdat2[!is.na(x) & !is.na(y)] # cut out null values
-tempdat2[, n := 1]  # set up count column
-tx <- range(taxis2$logdays)
-tx <- c(floor(ex[1]), 5.56) ### should this be 5.57?  #ceiling(ex[2]))
-tempdat2[x < tx[1], x := tx[1]]
-tempdat2[x > tx[2], x := tx[2]]
-ty <- range(taxis2$logdays)
-ty <- c(floor(ex[1]), 5.56) ### should this be 5.57?  #ceiling(ex[2]))
-tempdat2[y < tx[1], y := tx[1]]
-tempdat2[y > tx[2], y := tx[2]]
-coordinates(tempdat2) <- ~x + y
+# kdat <- bootp_dt  # bootstrap
+# # tempdat2 <- data.table(x = log10(kdat$act_dur), y = log10(kdat$eff_dur))
+# tempdat2 <- data.table(x = log10(kdat$eff_dur), y = log10(kdat$act_dur))
+# dinds <- kdat[, which(t_btwn_samp == 365 * 10000)]  # drop unreplicated obs
+# tempdat2 <- tempdat2[-dinds, ]
+# tempdat2 <- tempdat2[!is.na(x) & !is.na(y)] # cut out null values
+# tempdat2[, n := 1]  # set up count column
+# tx <- range(taxis2$logdays)
+# tx <- c(floor(ex[1]), 5.56) ### should this be 5.57?  #ceiling(ex[2]))
+# tempdat2[x < tx[1], x := tx[1]]
+# tempdat2[x > tx[2], x := tx[2]]
+# ty <- range(taxis2$logdays)
+# ty <- c(floor(ex[1]), 5.56) ### should this be 5.57?  #ceiling(ex[2]))
+# tempdat2[y < tx[1], y := tx[1]]
+# tempdat2[y > tx[2], y := tx[2]]
+# coordinates(tempdat2) <- ~x + y
+# 
+# # extent
+# # extdat4 <- data.table(x = log10(kdat$act_ext), y = log10(kdat$eff_ext))
+# extdat4 <- data.table(x = log10(kdat$eff_ext), y = log10(kdat$act_ext))
+# extdat4 <- extdat4[!is.na(x) & !is.na(y)] # cut out null values
+# extdat4[, n := 1]  # set up count column
+# ex <- range(aaxis2$logarea)
+# extdat4[x < ex[1], x := ex[1]]
+# extdat4[x > ex[2], x := ex[2]]
+# ey <- range(aaxis2$logarea)
+# extdat4[y < ey[1], y := ey[1]]
+# extdat4[y > ey[2], y := ey[2]]
+# coordinates(extdat4) <- ~x + y
+# 
+# # densities
+# # temporal 
+# tres2 <- kdensity(tx[1], tx[2], ty[1], ty[2], 0.1, tempdat2, 1)
+# tres2 <- (tres2 / cellStats(tres2, sum)) * 100
+# 
+# # extent
+# rext4 <- kdensity(ex[1], ex[2], ey[1], ey[2], 0.1, extdat4, 1)
+# rext4 <- (rext4 / cellStats(rext4, sum)) * 100
+# 
+# # cxa = 0.7
 
-# extent
-# extdat4 <- data.table(x = log10(kdat$act_ext), y = log10(kdat$eff_ext))
-extdat4 <- data.table(x = log10(kdat$eff_ext), y = log10(kdat$act_ext))
-extdat4 <- extdat4[!is.na(x) & !is.na(y)] # cut out null values
-extdat4[, n := 1]  # set up count column
+# plot params
 ex <- range(aaxis2$logarea)
-extdat4[x < ex[1], x := ex[1]]
-extdat4[x > ex[2], x := ex[2]]
 ey <- range(aaxis2$logarea)
-extdat4[y < ey[1], y := ey[1]]
-extdat4[y > ey[2], y := ey[2]]
-coordinates(extdat4) <- ~x + y
-
-# densities
-# temporal 
-tres2 <- kdensity(tx[1], tx[2], ty[1], ty[2], 0.1, tempdat2, 1)
-tres2 <- (tres2 / cellStats(tres2, sum)) * 100
-
-# extent
-rext4 <- kdensity(ex[1], ex[2], ey[1], ey[2], 0.1, extdat4, 1)
-rext4 <- (rext4 / cellStats(rext4, sum)) * 100
-
-# cxa = 0.7
 ll <- 3.5
 cxa = 0.7
 stps <- sapply(c(3, 4), function(x) which(kdat$st == x))  # IDs rs/auto/paleo
@@ -858,19 +839,19 @@ cexs <- c(0.4, 0.6)
 cuts <- 40
 bump <- 3
 cols <- inferno(cuts + bump)[-c(2:(bump + 1))]
-# plot(1:cuts, col = cols, pch = 20)
-
-# par(mfrow = c(1, 2))
-# datf[, {
-#   # sel = which()
-#   eext = log10(eff_ext)
-#   aext = log10(act_ext)
-#   edur = log10(eff_dur[t_btwn_samp != 365 * 10000])
-#   adur = log10(act_dur[t_btwn_samp != 365 * 10000])
-#   plot(aext, eext - aext)
-#   plot(adur, edur - adur)
-#   length(edur)
-# }]
+# # plot(1:cuts, col = cols, pch = 20)
+# 
+# # par(mfrow = c(1, 2))
+# # datf[, {
+# #   # sel = which()
+# #   eext = log10(eff_ext)
+# #   aext = log10(act_ext)
+# #   edur = log10(eff_dur[t_btwn_samp != 365 * 10000])
+# #   adur = log10(act_dur[t_btwn_samp != 365 * 10000])
+# #   plot(aext, eext - aext)
+# #   plot(adur, edur - adur)
+# #   length(edur)
+# # }]
 
 # Difference in effective versus actual extent/duration against actual ext/dur
 hdat_bs2 <- lapply(1:length(bootperturb), function(x) {  # x <- 1
@@ -890,15 +871,6 @@ hdat_bs2 <- lapply(1:length(bootperturb), function(x) {  # x <- 1
   return(list("edb" = edb, "tdb" = tdb, #"elm" = elm, "tlm" = tlm, 
               "Ns" = c(edb[, .N], tdb[, .N])))
 })
-
-# check number of drops due to eff < act
-# hdat_bs2_ns <- do.call(rbind, lapply(hdat_bs2, function(x) x$Ns))
-# summary(bootperturb[[1]][, .N] - hdat_bs2_ns[, 1])
-# summary(bootperturb[[1]][t_btwn_samp != 365 * 10000, .N] - hdat_bs2_ns[, 2])
-
-# extract regression coefficients
-# hdat_bs2_elm <- do.call(rbind, lapply(hdat_bs2, function(x) coef(x$elm)[, 1]))
-# hdat_bs2_tlm <- do.call(rbind, lapply(hdat_bs2, function(x) coef(x$tlm)[, 1]))
 
 # calculate box statistics
 # Extent differences
@@ -1001,45 +973,43 @@ text(mean(xs), 13, "% of observations", col = "grey30")
 mtext("B", side = 3, line = -1, cex = 1, adj = 0.02)
 dev.off()
 
-# Kernel density version
-pdf("paper/figures/act_v_eff.pdf", width = 7, height = 3)
-par(mfrow = c(1, 2), mar = c(4.5, 4.5, 0.3, 3), oma = c(0, 0, 0.2, 1), 
-    mgp = c(2, 0.25, 0))
-
-mtl <- 3
-# spatial extents
-image(rext4, axes = FALSE, xlab = "", ylab = "", col = cols)
-axis(1, at = aaxis2$logarea, labels = alab2, las = 2,
-     cex.axis = cxa, tcl = -0.2)
-axis(2, at = aaxis2$logarea, labels = alab2, las = 2, cex.axis = cxa,
-     tcl = -0.2)
-brks <- brkfun(rext4, 0.01, cuts)  # breaks
-aargs <- list(mgp = c(3, 0.25, 0), at = brks$labs, labels = brks$labs, 
-              cex.axis = cxa, tcl = -0.1)
-mtext("Actual extent", 2, cex = cxa, line = mtl)
-mtext("Effective extent", 1, cex = cxa, line = mtl)
-plot(rext4, legend.only = TRUE, axis.args = aargs, legend.width = 1.25,
-     legend.shrink = 0.9, col = cols)
-mtext("A", side = 3, line = -1, cex = 0.8, adj = 0.05, col = "white")
-
-# temporal extents
-image(tres2, axes = FALSE, xlab = "", ylab = "", col = cols)
-axis(1, at = taxis1$logdays[-c(5)], labels = tlab1[-c(5)], 
-     las = 2, tcl = -0.2, cex.axis = cxa)
-axis(2, at = taxis1$logdays[-c(5)], labels = tlab1[-c(5)], las = 2, tcl = -0.2, 
-     cex.axis = cxa)
-mtext("Actual duration", 2, cex = cxa, line = mtl)
-mtext("Effective duration", 1, cex = cxa, line = mtl)
-brks <- brkfun(tres2, 0.01, cuts)  # breaks
-aargs <- list(mgp = c(3, 0.25, 0), at = brks$labs, labels = brks$labs, 
-              cex.axis = cxa, tcl = -0.1)
-plot(tres2, legend.only = TRUE, axis.args = aargs, legend.width = 1.25,
-     legend.shrink = 0.9, col = cols)
-     #col = rev(terrain.colors(cuts)))
-mtext("B", side = 3, line = -1, cex = 0.8, adj = 0.05, col = "white")
-dev.off()
-
-
+# # Kernel density version
+# pdf("paper/figures/act_v_eff.pdf", width = 7, height = 3)
+# par(mfrow = c(1, 2), mar = c(4.5, 4.5, 0.3, 3), oma = c(0, 0, 0.2, 1), 
+#     mgp = c(2, 0.25, 0))
+# 
+# mtl <- 3
+# # spatial extents
+# image(rext4, axes = FALSE, xlab = "", ylab = "", col = cols)
+# axis(1, at = aaxis2$logarea, labels = alab2, las = 2,
+#      cex.axis = cxa, tcl = -0.2)
+# axis(2, at = aaxis2$logarea, labels = alab2, las = 2, cex.axis = cxa,
+#      tcl = -0.2)
+# brks <- brkfun(rext4, 0.01, cuts)  # breaks
+# aargs <- list(mgp = c(3, 0.25, 0), at = brks$labs, labels = brks$labs, 
+#               cex.axis = cxa, tcl = -0.1)
+# mtext("Actual extent", 2, cex = cxa, line = mtl)
+# mtext("Effective extent", 1, cex = cxa, line = mtl)
+# plot(rext4, legend.only = TRUE, axis.args = aargs, legend.width = 1.25,
+#      legend.shrink = 0.9, col = cols)
+# mtext("A", side = 3, line = -1, cex = 0.8, adj = 0.05, col = "white")
+# 
+# # temporal extents
+# image(tres2, axes = FALSE, xlab = "", ylab = "", col = cols)
+# axis(1, at = taxis1$logdays[-c(5)], labels = tlab1[-c(5)], 
+#      las = 2, tcl = -0.2, cex.axis = cxa)
+# axis(2, at = taxis1$logdays[-c(5)], labels = tlab1[-c(5)], las = 2, tcl = -0.2, 
+#      cex.axis = cxa)
+# mtext("Actual duration", 2, cex = cxa, line = mtl)
+# mtext("Effective duration", 1, cex = cxa, line = mtl)
+# brks <- brkfun(tres2, 0.01, cuts)  # breaks
+# aargs <- list(mgp = c(3, 0.25, 0), at = brks$labs, labels = brks$labs, 
+#               cex.axis = cxa, tcl = -0.1)
+# plot(tres2, legend.only = TRUE, axis.args = aargs, legend.width = 1.25,
+#      legend.shrink = 0.9, col = cols)
+#      #col = rev(terrain.colors(cuts)))
+# mtext("B", side = 3, line = -1, cex = 0.8, adj = 0.05, col = "white")
+# dev.off()
 ```
 
 ## Supplemental Analyses
@@ -1376,27 +1346,8 @@ for(i in 1:3) {  # i <- 3
   plot(x$ext, legend.only = TRUE, axis.args = aargs, legend.width = 1.25,
        legend.shrink = 0.9, col = cols)#breaks = brks2, 
 }
-# # par(xpd = NA)
-# for(j in c("in", "dev", "ndc", "nfc", "npc", "nic")) {
-#   xx <- grconvertX(0.5, from = "user", to = j)
-#   ii <- c(0.4, 0.6, 0.8, 1)
-#   yy <- c(0.95, 0.75, 0.5, 0.25)
-#   # yy <- c(-1, -5, -10, -20)
-#   for(i in 1:length(ii)) {
-#     y <- grconvertY(yy[i], from = "user", to = j)
-#     text(x = xx, y = y, labels = paste("kernel =", ii[i]))
-#     # par(xpd = NA)
-#     # mtext(text = paste("kernel =", ii[i]), side = 3, line = yy[i])
-#   }
-# }
 dev.off()
 
-# plot(rrs, xlim = c(-5, 15), ylim = c(-5, 15), 
-#      xlab = "Sample interval - log10(days)", 
-#      ylab = "Plot resolution - log10(m^2)")
-# plot(ers, box = FALSE, xlim = c(-5, 15), ylim = c(-5, 15), 
-#      xlab = "Study duration - log10(days)", ylab = "Sampled area - log10(ha)")
-# dev.off()
 
 datf[t_btwn_samp != 0, plot(log10(t_btwn_samp), log10(eff_ext))]
 datf[, plot(log10(plot_res), log10(eff_dur))]
