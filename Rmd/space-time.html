@@ -363,12 +363,8 @@ tdt[, tlog := log10(time)]
 
 # labels for temporal axes
 # return interval
-tlab1 &lt;- c(expression(paste(NULL&lt;=&quot;second&quot;^-1)), expression(&quot;minute&quot;^-1),
-           expression(&quot;hour&quot;^-1), expression(&quot;day&quot;^-1), 
-           expression(&quot;week&quot;^-1), expression(&quot;month&quot;^-1),            
-           expression(&quot;year&quot;^-1), expression(&quot;decade&quot;^-1),
-           expression(&quot;century&quot;^-1), 
-           expression(&quot;millenium&quot;^-1), &quot;unreplicated&quot;)# expression(infinity))
+tlab1 &lt;- c(&quot;second&quot;, &quot;minute&quot;, &quot;hour&quot;, &quot;day&quot;, &quot;week&quot;, &quot;month&quot;, &quot;year&quot;, &quot;decade&quot;,
+           &quot;century&quot;, &quot;millenium&quot;, &quot;unreplicated&quot;)
 taxis1 &lt;- cbind.data.frame( 
   c(1 / (24 * 60 * 60), 1 / (24 * 60), 1 / 24, 1, 7, 30, 365, 365 * 10, 
     365 * 100, 365 * 1000, 365 * 10000))
@@ -376,8 +372,8 @@ taxis1 &lt;- data.table(taxis1)
 setnames(taxis1, names(taxis1), &quot;days&quot;)
 taxis1[, logdays := log10(days)]
 
-tlab2 &lt;- c(expression(NULL&lt;=&quot;second&quot;), &quot;minute&quot;, &quot;hour&quot;, &quot;day&quot;, &quot;week&quot;, 
-           &quot;month&quot;,&quot;year&quot;,&quot;decade&quot;, &quot;century&quot;, &quot;millenium&quot;, &quot;10 KA&quot;)  
+tlab2 &lt;- c(&quot;second&quot;, &quot;minute&quot;, &quot;hour&quot;, &quot;day&quot;, &quot;week&quot;, 
+           &quot;month&quot;,&quot;year&quot;,&quot;decade&quot;, &quot;century&quot;, &quot;millennium&quot;, &quot;10 KA&quot;)  
 taxis2 &lt;- cbind.data.frame(c(1 / (24 * 60 * 60), 1 / (24 * 60), 1 / 24, 1, 7, 
                              30, 365, 365 * 10, 365 * 100, 365 * 1000, 
                              365 * 10000))
@@ -1480,14 +1476,7 @@ for(i in 1:3) {  # i &lt;- 3
   plot(x$ext, legend.only = TRUE, axis.args = aargs, legend.width = 1.25,
        legend.shrink = 0.9, col = cols)#breaks = brks2, 
 }
-dev.off()
-
-
-datf[t_btwn_samp != 0, plot(log10(t_btwn_samp), log10(eff_ext))]
-datf[, plot(log10(plot_res), log10(eff_dur))]
-datf[, plot(log10(eff_dur), log10(eff_ext))]
-datf[t_btwn_samp == 0, points(log10(eff_dur), log10(eff_ext), col = &quot;red&quot;)]
-datf[t_btwn_samp == 0 &amp; log10(eff_dur) &gt; 4]</code></pre>
+dev.off()</code></pre>
 <p><a href="#top">Back to top</a></p>
 </div>
 </div>
