@@ -1,0 +1,114 @@
+---
+title: "Random Selection of Journal Titles"
+output: 
+  rmarkdown::html_vignette:
+vignette: >
+  %\VignetteIndexEntry{Random Selection of Journal Titles}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+# Select papers
+
+Organization and random selection of titles from literature review. 
+
+```{r, eval=FALSE}
+library(lmisc)
+library(data.table)
+p_root <- fp(proj_root(proj.dir = "ecoscales"), "ecoscales")
+# p_data <- fp(p_root, "external/data/draws")
+
+# Read in downloaded citations and merge
+batch1 <- read.csv(system.file("extdata", "top30_from1982_set1.csv", 
+                               package = "ecoscales"))
+# batch1 <- read.csv(full_path(p_data, "top30_from1982_set1.csv"))
+batch2 <- read.csv(system.file("extdata", "top30_from1982_set2.csv",
+                               package = "ecoscales"))  
+# batch2 <- read.csv(full_path(p_data, "top30_from1982_set2.csv"))
+articles <- rbind(batch1, batch2) 
+
+# Shuffle full list 
+set.seed(234)
+draw <- sample(1:nrow(articles), size = nrow(articles), replace = FALSE)
+article.shuffle <- articles[draw, ]
+
+# 10-year list\set.seed(234)
+articles.2004 <- articles[articles$Year >=2004, ]
+
+set.seed(234)
+draw <- sample(1:nrow(articles.2004), size = nrow(articles.2004), 
+               replace = FALSE)
+article.2004.shuffle <- articles.2004[draw, ]
+
+# draw subsets for each reviewer - note: as long as drawsize and random seed are the same, new reviewers can 
+# be appended to the group without affecting the draw for existing reviewers
+reviewers <- c("Chang", "Treuer", "Socolar", "Daskin", "Elsen", "Estes", 
+               "Choi", "Margulies", "JChang", "Ahmed")
+nauth <- length(reviewers)
+#drawsize <- (round(nrow(articles.2004) * 0.025 / nauth) * nauth) / nauth  # number divisible by 
+drawsize <- 400
+set.seed(432)
+sset <- sample(1:nrow(article.2004.shuffle), size = drawsize * nauth, 
+               replace = FALSE)
+inds <- seq(1, length(sset) + 1, by = length(sset) / nauth)
+ind.mat <- cbind(inds[-length(inds)], 
+                 c(inds[-c(1, length(inds))] - 1, length(sset)))
+
+# New calibration set randomly selected (note, run on earlier version of random draw taken before Elsen, 
+# so to replicate use commented out drawsize and remove Elsen from reviewers before re-running)
+# article.2004.shuffle.red <- article.2004.shuffle[-sset, ]
+# set.seed(124)
+# cal.set <- article.2004.shuffle.red[sample(1:nrow(article.2004.shuffle.red), size = 20, replace = FALSE), ]
+# # which(rownames(cal.set) %in% rownames(article.2004.shuffle[sset, ]))  # 0
+# write.csv(cal.set, file = "new_calibration_set.csv")
+
+# Then draw sets for each reviewer
+fnames <- full_path(p_data, paste(reviewers, "2004_draw3.csv", sep = "_"))
+sel.set <- vector("list", length = length(fnames))
+names(sel.set) <- reviewers
+for(i in 1:nrow(ind.mat)) {
+  sel.set[[i]] <- article.2004.shuffle[sset[ind.mat[i, 1]:ind.mat[i, 2]], ]
+  write.csv(sel.set[[i]], file = fnames[i])
+}
+
+# check that rownames aren't duplicated
+sel.set[[1]][1:10, ]
+for(i in 1:(length(sel.set) - 1)) {
+   print(any(sel.set[[i]]$Title == sel.set[[i + 1]]$Title))
+}
+
+fn_old <- dir(p_data, 
+              pattern = paste0("^", 
+                               paste(reviewers[1:6], "draw2.csv", 
+                                     sep = ".*.", collapse = "|")))
+fn_old <- fn_old[sapply(reviewers[1:6], function(x) grep(x, fn_old))]
+fn_new <- dir(p_data, 
+              pattern = paste0("^", 
+                               paste(reviewers[1:6], "draw3.csv", 
+                                     sep = ".*.", collapse = "|")))
+fn_new <- fn_new[sapply(reviewers[1:6], function(x) grep(x, fn_new))]
+
+# comparing draw2 and draw3
+for(i in 1:length(fn_old)) {
+  old <- read.csv(full_path(p_data, fn_old[i]))
+  neww <- read.csv(full_path(p_data, fn_new[i]))
+  print(which(!old$Title %in% neww$Title))
+}  # only last record of old set is not in new set (b/c bad indexing)
+
+# comparing draw2 titles in sequence
+for(i in 1:(length(fn_old) - 1)) {
+  old <- read.csv(full_path(p_data, fn_old[i]))
+  oldp1 <- read.csv(full_path(p_data, fn_old[i + 1]))
+  print(paste("common title", which(old$Title %in% oldp1$Title)))
+  print(which(old$X %in% oldp1$X))
+}  # overlap between last of preceding and 1st of next (and if no title)
+
+fnames_newall <- dir(p_data, pattern = "draw3.csv")
+for(i in 1:(length(fn_new) - 1)) {
+  neww <- read.csv(full_path(p_data, fn_new[i]))
+  newp1 <- read.csv(full_path(p_data, fn_new[i + 1]))
+  print(which(neww$X %in% newp1$X))
+  print(which(neww$Title %in% newp1$Title))
+}  # no duplicate names in new file sets (unless title is untitled) 
+
+```

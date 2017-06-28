@@ -27,4 +27,3 @@ Raster of density values
 \description{
 Creates a raster from kernel density
 }
-
