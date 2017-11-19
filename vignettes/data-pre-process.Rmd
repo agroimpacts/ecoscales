@@ -1,0 +1,287 @@
+---
+title: "Pre-processing of Scale Data"
+output: 
+  rmarkdown::html_vignette:
+    toc: yes
+    number_sections: true
+    toc_depth: 3
+vignette: >
+  %\VignetteIndexEntry{Scale Data Pre-processing}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+
+---
+
+# Overview
+
+The data are pre-processed as follows: 
+
+1. Clean and combine the calibration and main scale review datasets. 
+2. Resample and perturb the combined data to account for the between-observer uncertainties in the extraction/definition of scales. 
+
+# Data pre-processing
+## Clean and combine
+
+Datasets: 
+
+- `dat`:  Main results--scales extracted from sets of papers reviewed separately by each observer
+- `cal`: Calibration dataset
+- `full`: All results, including DOIs of papers excluded from study by observers, with the exception of DOIs excluded by Treuer (the number of excluded papers is added to subsequent of total DOIs reviewed)
+
+```{r, message = FALSE, warning=FALSE, results='hold'}
+library(ecoscales)
+library(readxl)
+library(RColorBrewer)
+library(viridis)
+
+f <- system.file("extdata/main-results.xlsx", package = "ecoscales")
+dat <- data.table(read_excel(f))
+f <- system.file("extdata/calibration-set.xlsx", package ="ecoscales")
+cal <- data.table(read_excel(f))
+f <- system.file("extdata/all-results-notreuer.xlsx", package ="ecoscales")
+full <- data.table(read_excel(f))  # all results including excluded 
+
+# clean up DOIs
+setnames(dat, "DOI/title", "DOI")
+dat[, DOI := gsub("DOI:|doi:|DOI: |doi: |DOI ", "", DOI)]
+dat[, DOI := gsub("\\s", "", DOI)]  # remove DOI and whitespace
+cal[, DOI := gsub("\\s", "", DOI)]  # remove DOI and whitespace
+full <- gsub("DOI:|doi:|DOI: |doi: |DOI ", "", full$DOI)
+full <- gsub("\\s", "", full)  # remove DOI and whitespace
+
+# subset main results and define study type
+dat <- dat[, names(dat)[1:22], with = FALSE]
+dat[, study_type := tolower(study_type)]
+kwords <- cbind(c("field", "paleo", "remote", "automated", "other"), 
+                c("field", "paleo", "remote", "automated", "other"))
+for(i in 1:nrow(kwords)) {
+  dat[like(study_type, kwords[i, 1]), study_type := kwords[i, 2]]
+}
+
+# read in calibration results and define study type
+kwords <- cbind(c("field", "direct", "paleo", "remote", "automated", "other"),
+                c("field", "field", "paleo", "remote", "automated", "other"))
+cal[, study_type := tolower(study_type)]
+for(i in 1:nrow(kwords)) {
+  cal[like(study_type, kwords[i, 1]), study_type := kwords[i, 2]]
+}
+
+```
+
+## Merge full and calibration datasets
+```{r, message=FALSE, warning=FALSE, results='hide'}
+dat2 <- copy(dat[, .(DOI, study_type, plot_res, n_sites, act_ext, eff_ext,
+                     samp_dur, t_btwn_samp, act_dur, eff_dur)])
+selind <- 4:ncol(dat2)
+for(j in names(dat2)[selind]) set(dat2, j=j, value = as.numeric(dat2[[j]]))
+rnms <- c("DOI", "study_type", "feature", "observer", "plot_res",
+          "n_sites", "act_ext", "eff_ext", "samp_dur", "t_btwn_samp",
+          "act_dur", "eff_dur")
+calr <- cal[, rnms, with = FALSE]
+selind <- c(3, 5:length(rnms))
+for(j in names(calr)[selind]) set(calr, j=j, value = as.numeric(calr[[j]]))
+
+# select down to columns of interest
+calr_type <- calr[feature != 99, { 
+  list(unique(study_type[!is.na(study_type)]))
+}, by = .(DOI, feature)][, list("study_type" = unique(V1)), by = DOI]
+calr <- calr[feature != 99, {
+  lapply(.SD, function(x) mean(x, na.rm = TRUE))
+},  by = .(DOI, feature), .SDcols = rnms[c(5:ncol(calr))]]
+
+# combine full and calibration
+calr[, samp_dur := NA]
+calr[, "feature" := NULL] 
+calr <- merge(calr, calr_type, by = "DOI")
+setcolorder(calr, names(dat2))
+datf <- rbind(cbind("dsrc" = 1, dat2), cbind("dsrc" = 2, calr))
+
+# drop one calibration study only done by one observer
+datf <- datf[DOI != "10.1016/j.agee.2013.11.021", ]
+
+# DOIs of additional studies pointed to as data sources
+doisup <- c(unique(cal$DOI_data_source), unique(dat$DOI_data_source))
+doisup <- doisup[!is.na(doisup) & doisup != "NA" & doisup != "-"]
+doisup <- unlist(strsplit(doisup, ";"))
+```
+
+`r length(unique(datf$DOI))` papers in main analysis
+
+`r length(unique(full)) + (57 - 19)` papers main analysis (adding in Tim's rejected number separately)
+
+`r (length(unique(full)) + (57 - 19)) / 42918 * 100` % of all papers since 2004
+
+`r length(unique(doisup))` additional papers or other publications tracked down
+
+`r nrow(datf)` records (ecological observations)
+
+<a href="#top">Back to top</a>
+
+## Further adjustments/fixes
+1. One could argue that if `samp_dur != act_dur` and `t_btwn_samp == 0`, set `act_dur == samp_dur`, but in a small number of cases there is a good reason to have to `act_dur != samp_dur` (e.g. DOI 10.1890/08-0611.1 when farmers were asked about their seasonal management practices--time period of interview was clearly != to information being collected))
+2. Prior to scaling the data in log10 space, we need to make one adjustment. Time between samples has many 0 values because many observations are simply one-offs.  Set these to an arbitrarily large value which will represent clear separation on axis from high frequency studies. A function is defined here for this purpose, and will be applied after bootstrapping is done. 
+
+```{r, message=FALSE, warning=FALSE, results='hide'}
+# apply fixes (mostly to account for observer omissions)
+# 1. if samp_dur != act_dur and t_btwn_samp == 0, set 
+#    act_dur == samp_dur
+names(datf)
+datf[t_btwn_samp == 0 & (act_dur != samp_dur), ]  
+dat[t_btwn_samp == 0 & (act_dur != samp_dur), c(1, 3:4, 9:15), with = FALSE]  
+# function to set t_btwn_samp to 365 * 100000 to indicate once-off studies 
+# when t_btwn_samp == 0.  
+dat[act_dur < 1 & t_btwn_samp > 1000, ]
+dat[act_dur > 1 & t_btwn_samp == 0, c(1, 3:4, 9:15), with = FALSE]
+```
+
+<a href="#top">Back to top</a>
+
+# Resampling and rescaling
+## Resampling with uncertainties
+
+Defined by the per variable CV based on uncertainty between observers. Here we are just going to use apply the variability to each variable for every observation (previous incarnation used uncertainty on just the variables listed as uncertain, with recalculation of dependent variables (`act_dur`, `act_ext`) made after pertubation [see commit prior to second or third commit on 4 April for code]).
+
+```{r, eval=FALSE}
+p <- c(0.58, 0.72, 0.50, 1.05, 1.26, 0.64)  # from calibration.Rmd
+
+# Functions for bootstrapping with uncertainties
+# sets unreplicated observations to arbitrarily large number
+to_infin_byond <- function(tbtwn) ifelse(tbtwn == 0, 365 * 10000, tbtwn)
+
+# randomly reorders two variables, for reassignment in case of physically 
+# unrealistic values
+rvord <- function(a, b) {
+  v <- c(a, b)
+  v <- v[sample(1:2)]
+  v
+}
+
+# function for parse-eval in data.table i
+psr <- function(a) eval(parse(text = a))
+
+# bootstrapping function
+resamp_func <- function(dat, p, iter) {
+  vars <- c("plot_res", "act_ext", "eff_ext", "t_btwn_samp", "act_dur", 
+            "eff_dur")
+  bout <- lapply(1:iter, function(x) {  # x <- 1
+    if((x / 100) %in% 1:100) print(x)
+    if(length(p) < length(var)) stop("p must be length of var", call. = FALSE)
+    dnew <- copy(dat[, vars, with = FALSE])
+    # modifiers
+    modvec <- sapply(p, function(y) {
+      mv <- runif(nrow(dnew), min = 1 - y, max = 1 + y)
+      mv[mv < 0] <- 0.00000001  # can't have reduction of more than 100%
+      mv
+    })
+
+    # perturb and set any values < 0 to very small amount
+    for(j in 1:ncol(modvec)) set(dnew, j = j, value = dnew[[j]] * modvec[, j])
+
+    # correct physically impossible results 
+    dnew[, plot_res := plot_res / 10000]  # set plot_res to ha
+    dnew[plot_res > act_ext, plot_res := act_ext]  # plot_res can't be > act_ext
+    dnew[plot_res > eff_ext, plot_res := eff_ext]  # or eff_ext
+    dnew[act_ext > eff_ext, act_ext := eff_ext] # act_ext can't be > eff_ext
+    dnew[t_btwn_samp > eff_dur, t_btwn_samp := eff_dur]  # int can't be > eff_dur
+    dnew[act_dur > eff_dur, act_dur := eff_dur]  # act_dur can't be > eff_dur
+    dnew[, plot_res := plot_res * 10000]  # set plot_res back to m2
+    
+    # set unreplicated to high value for first figure 
+    dnew[, t_btwn_samp := to_infin_byond(t_btwn_samp)]  # set high
+    cbind("type" = dat[, study_type], dnew)
+  })
+  return(bout)
+}
+
+# Run bootstrap
+set.seed(1)
+bootperturb <- resamp_func(datf, p = p, iter = 1000)
+```
+
+```{r, echo = FALSE, eval=FALSE}
+# check
+par(mfrow = c(2, 3))
+for(i in sample(1:1000, 6)) {
+  plot(datf[, eff_ext], datf[, eff_ext] - bootperturb[[i]][, eff_ext], 
+       pch = 20)
+}
+dev.off()
+```
+
+<a href="#top">Back to top</a>
+
+## Scaling in log10 space
+```{r, eval = FALSE}
+i <- 0.0000001
+j <- rep(0, 16)
+for(k in 1:length(j)) {
+  i <- i * 10
+  j[k] <- i
+}
+
+# temporal scales
+tdt <- data.table("scaleval" = j, "time" = j)
+tdt[, tlog := log10(time)]
+
+# labels for temporal axes
+# return interval
+tlab1 <- c("second", "minute", "hour", "day", "week", "month", "year", "decade",
+           "century", "millenium", "unreplicated")
+taxis1 <- cbind.data.frame( 
+  c(1 / (24 * 60 * 60), 1 / (24 * 60), 1 / 24, 1, 7, 30, 365, 365 * 10, 
+    365 * 100, 365 * 1000, 365 * 10000))
+taxis1 <- data.table(taxis1)
+setnames(taxis1, names(taxis1), "days")
+taxis1[, logdays := log10(days)]
+
+tlab2 <- c("second", "minute", "hour", "day", "week", 
+           "month","year","decade", "century", "millennium", "10 KA")  
+taxis2 <- cbind.data.frame(c(1 / (24 * 60 * 60), 1 / (24 * 60), 1 / 24, 1, 7, 
+                             30, 365, 365 * 10, 365 * 100, 365 * 1000, 
+                             365 * 10000))
+taxis2 <- data.table(taxis2)
+setnames(taxis2, names(taxis2), c("days"))
+taxis2[, logdays := log10(days)]
+
+# plot resolution
+alab1 <- c(expression(paste(NULL<="0.01 cm"^2)), expression("0.1 cm"^2), 
+           expression("1 cm"^2), expression("10 cm"^2),
+           expression("0.01 m"^2), expression("0.1 m"^2), 
+           expression("1 m"^2), expression("10 m"^2),
+           expression("100 m"^2), expression("1000 m"^2), 
+           "1 ha", "10 ha", "100 ha", "1000 ha", 
+           expression(paste(NULL>="10000 ha")))
+
+aaxis1 <- cbind.data.frame(c(0.000001, 0.00001, 0.0001, 0.001, 0.01, 0.1,
+                             1^2, 10, 10^2, 10^3, 10^4, 10^5, 10^6, 10^7, 10^8))
+aaxis1 <- data.table(aaxis1)
+setnames(aaxis1, names(aaxis1), "res")
+aaxis1[, logres := log10(res)]
+
+# effective extent
+alab2 <- c(expression(paste(NULL<="0.01 m"^2)), expression(paste("0.1 m"^2)), 
+           expression("1 m"^2), expression("10 m"^2), 
+           expression("100 m"^2), expression("1000 m"^2), expression("1 ha"),
+           expression("10 ha"), expression("100 ha"), expression("1000 ha"), 
+           expression(paste(10^4 , " ha")), expression(paste(10^5 , " ha")), 
+           expression(paste(10^6 , " ha")), expression(paste(10^7 , " ha")), 
+           expression(paste(10^8 , " ha")), expression(paste(10^9 , " ha")), 
+           expression(paste(10^10 , " ha")))
+
+aaxis2 <- cbind.data.frame(
+  c(0.01 / 10000, 0.1 / 10000, 1 / 10000, 10 / 10000, 100 / 10000, 1000 / 10000,
+    1, 10, 10^2, 10^3, 10^4, 10^5, 10^6, 10^7, 10^8, 10^9, 10^10))
+aaxis2 <- data.table(aaxis2)
+setnames(aaxis2, names(aaxis2), "area")
+aaxis2[, logarea := log10(area)]
+```
+
+# Save outputs
+
+For lazy load
+```{r, eval = FALSE}
+save(aaxis1, aaxis2, taxis1, taxis2, alab1, alab2, tlab1, tlab2, 
+     file = "data/dimbreaks.rda")
+save(datf, file = "data/datf.rda")
+save(bootperturb, file = "data/bootperturb.rda")
+```

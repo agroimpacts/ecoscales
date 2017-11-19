@@ -1,5 +1,5 @@
 ---
-title: "Calibration Set"
+title: "Analysis of Calibration Dataset"
 output: 
   rmarkdown::html_vignette:
     toc: yes
@@ -7,7 +7,7 @@ output:
     toc_depth: 3
     fig_caption: true
 vignette: >
-  %\VignetteIndexEntry{Main Analyses}
+  %\VignetteIndexEntry{Analysis of Calibration Data}
   %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
 
