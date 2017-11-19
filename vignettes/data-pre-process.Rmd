@@ -19,6 +19,8 @@ The data are pre-processed as follows:
 1. Clean and combine the calibration and main scale review datasets. 
 2. Resample and perturb the combined data to account for the between-observer uncertainties in the extraction/definition of scales. 
 
+Look-up tables for subsequent re-scaling and plotting in log10 space are also created. 
+
 # Data pre-processing
 ## Clean and combine
 
@@ -139,59 +141,10 @@ dat[act_dur > 1 & t_btwn_samp == 0, c(1, 3:4, 9:15), with = FALSE]
 # Resampling and rescaling
 ## Resampling with uncertainties
 
-Defined by the per variable CV based on uncertainty between observers. Here we are just going to use apply the variability to each variable for every observation (previous incarnation used uncertainty on just the variables listed as uncertain, with recalculation of dependent variables (`act_dur`, `act_ext`) made after pertubation [see commit prior to second or third commit on 4 April for code]).
+Defined by the per variable CV based on uncertainty between observers. Here we are just going to apply the variability to each variable for every observation (previous incarnation used uncertainty on just the variables listed as uncertain, with recalculation of dependent variables (`act_dur`, `act_ext`) made after pertubation [see commit prior to second or third commit on 4 April for code]). We use a custom function `resamp_func` to perform the resampling. It draws on another function `to_infinity_beyond` to set the interval of unreplicated samples to `r 365 * 10000` days. 
 
 ```{r, eval=FALSE}
 p <- c(0.58, 0.72, 0.50, 1.05, 1.26, 0.64)  # from calibration.Rmd
-
-# Functions for bootstrapping with uncertainties
-# sets unreplicated observations to arbitrarily large number
-to_infin_byond <- function(tbtwn) ifelse(tbtwn == 0, 365 * 10000, tbtwn)
-
-# randomly reorders two variables, for reassignment in case of physically 
-# unrealistic values
-rvord <- function(a, b) {
-  v <- c(a, b)
-  v <- v[sample(1:2)]
-  v
-}
-
-# function for parse-eval in data.table i
-psr <- function(a) eval(parse(text = a))
-
-# bootstrapping function
-resamp_func <- function(dat, p, iter) {
-  vars <- c("plot_res", "act_ext", "eff_ext", "t_btwn_samp", "act_dur", 
-            "eff_dur")
-  bout <- lapply(1:iter, function(x) {  # x <- 1
-    if((x / 100) %in% 1:100) print(x)
-    if(length(p) < length(var)) stop("p must be length of var", call. = FALSE)
-    dnew <- copy(dat[, vars, with = FALSE])
-    # modifiers
-    modvec <- sapply(p, function(y) {
-      mv <- runif(nrow(dnew), min = 1 - y, max = 1 + y)
-      mv[mv < 0] <- 0.00000001  # can't have reduction of more than 100%
-      mv
-    })
-
-    # perturb and set any values < 0 to very small amount
-    for(j in 1:ncol(modvec)) set(dnew, j = j, value = dnew[[j]] * modvec[, j])
-
-    # correct physically impossible results 
-    dnew[, plot_res := plot_res / 10000]  # set plot_res to ha
-    dnew[plot_res > act_ext, plot_res := act_ext]  # plot_res can't be > act_ext
-    dnew[plot_res > eff_ext, plot_res := eff_ext]  # or eff_ext
-    dnew[act_ext > eff_ext, act_ext := eff_ext] # act_ext can't be > eff_ext
-    dnew[t_btwn_samp > eff_dur, t_btwn_samp := eff_dur]  # int can't be > eff_dur
-    dnew[act_dur > eff_dur, act_dur := eff_dur]  # act_dur can't be > eff_dur
-    dnew[, plot_res := plot_res * 10000]  # set plot_res back to m2
-    
-    # set unreplicated to high value for first figure 
-    dnew[, t_btwn_samp := to_infin_byond(t_btwn_samp)]  # set high
-    cbind("type" = dat[, study_type], dnew)
-  })
-  return(bout)
-}
 
 # Run bootstrap
 set.seed(1)
@@ -210,7 +163,10 @@ dev.off()
 
 <a href="#top">Back to top</a>
 
-## Scaling in log10 space
+## Look-up tables for log10 space
+
+For subsequent re-scaling and plotting.
+
 ```{r, eval = FALSE}
 i <- 0.0000001
 j <- rep(0, 16)

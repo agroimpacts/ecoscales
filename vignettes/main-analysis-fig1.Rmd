@@ -1,0 +1,228 @@
+---
+title: "Main Analyses - Figure 1"
+output: 
+  rmarkdown::html_vignette:
+    toc: yes
+    number_sections: true
+    toc_depth: 3
+vignette: >
+  %\VignetteIndexEntry{Main Analyses - Figure 1}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, fig.align = 'center', fig.height = 4, 
+                      fig.width = 5)
+```
+
+# Overview
+
+The resampled full dataset created in the [Data Pre-processing vignette](data-pre-process.html) are used to create histograms of scale in each of the 4 assessed dimensions
+
+# Histograms
+```{r, eval = FALSE}
+library(ecoscales)
+data(datf)
+
+# length(which(datf$study_type %in% c("remote", "other"))) / nrow(datf)
+datf[t_btwn_samp == 0, .N] / datf[, .N]  # 37% of samples are once-offs
+datf[act_dur == samp_dur, .N] / nrow(datf)
+datf[(act_dur == samp_dur) & t_btwn_samp != 0]
+datf[(act_dur != samp_dur) & t_btwn_samp == 0]
+
+hdat <- cbind("res" = log10(datf$plot_res), "aext" = log10(datf$act_ext),
+              "ext" = log10(datf$eff_ext), 
+              "int" = log10(to_infin_byond(datf$t_btwn_samp)), 
+              "adur" = log10(datf$act_dur), "dur" = log10(datf$eff_dur))
+# NA data checks
+# hdat[is.na(rowSums(hdat)), ]
+# dat[DOI %in% datf[which(is.na(rowSums(hdat))), DOI], ]
+# dat[DOI %in% datf[which(is.na(hdat[, 6])), DOI]]
+# dat[DOI %in% datf[which(is.na(hdat[, 3])), DOI]]
+# calr[DOI %in% datf[which(is.na(hdat[, 3])), DOI] & is.na(eff_ext)]
+
+hdat <- data.table(hdat)
+
+# set bounds for histograms
+# first set variable limits
+vlr <- range(aaxis1$logres)  # for resolution
+vle <- range(aaxis2$logarea)  # for extent
+
+# then apply limits to main (unperturbed) set of variables
+hdat[res < vlr[1], res := vlr[1]]  # set min res to 0.01 cm"^2 
+hdat[res > vlr[2], res := vlr[2]]  # set max res to 10000 ha 
+hdat[ext < vle[1], ext := vle[1]]  # set minimum extent -6 (0.01 m2) 
+hdat[ext > vle[2], ext := vle[2]]  # set maximum extent 10 (10^10 ha)
+# hdat[aext < vle[1], aext := vle[1]]  # set minimum extent -6 (0.01 m2) 
+# hdat[aext > vle[2], aext := vle[2]]  # set maximum extent 10 (10^10 ha)
+
+
+# histograms from bootstrap
+brksl <- list(aaxis1$logres, aaxis2$logarea, taxis1$logdays, taxis2$logdays)  
+
+# Assign bootstrapped values to bins, making necessary adjustments as needed 
+vs <- c("res", "ext", "int", "dur")
+hdat_bs <- lapply(1:length(bootperturb), function(x) {  # x <- 1
+  print(x)
+  DT <- bootperturb[[x]]
+  hdb <- cbind("res" = log10(DT$plot_res), "ext" = log10(DT$eff_ext), 
+               "int" = log10(to_infin_byond(DT$t_btwn_samp)), 
+               "dur" = log10(DT$eff_dur))
+  hdb <- data.table(hdb)
+  hdb[res < vlr[1], res := vlr[1]]  # set min res to 0.01 cm"^2 
+  hdb[res > vlr[2], res := vlr[2]]  # set max res to 10000 ha 
+  # hdb[, lapply(.SD, range, na.rm = TRUE)]
+  hdb[ext < vle[1], ext := vle[1]]  # set minimum extent -6 (0.01 m2)
+  hdb[ext > vle[2], ext := vle[2]]  # set maximum extent 10 (10^10 ha)
+  hists <- lapply(1:length(vs), function(y) {  # y <- 2
+    #print(y)
+    hdbv <- hdb[[vs[y]]]
+    hbrks <- brksl[[y]]
+    hdbv[hdbv < hbrks[1]] <- hbrks[1]
+    hdbv[hdbv > hbrks[length(hbrks)]] <- hbrks[length(hbrks)]
+    h <- hist(hdbv, breaks = hbrks, plot = FALSE)
+    h$density <- h$counts / sum(h$counts) * 100
+    h
+  })
+})
+
+# convert density values for each dimension to data.tables
+hdat_bsdt <- lapply(1:length(vs), function(x) { # x <- 1
+  mat <- do.call(rbind, lapply(1:length(hdat_bs), function(y) {
+    hdat_bs[[y]][[x]]$density
+  }))
+  DT <- data.table(mat)
+})
+
+### Bootstrapped histograms (now main figure)
+qtf <- function(x) c(mean(x), quantile(x, probs = c(0.025, 0.975))) # quant f
+xlabs <- c("Resolution", "Extent", "Interval", "Duration")
+# axes <- list("aax1" = aaxis1$logres, "aax2" = c(-6, aaxis2$logarea), 
+#              "tax1" = taxis1$logdays, "tax2" = taxis2$logdays)
+axes2 <- list("aax1" = aaxis1$logres, "aax2" = aaxis2$logarea, 
+              "tax1" = c(taxis2$logdays[-c(10:11)],
+                         mean(taxis2$logdays[c(10:11)])), 
+              "tax2" = taxis2$logdays)
+axlabs <- list(alab1, alab2, tlab1[-10], tlab2)
+mga <- -0.34
+sfigl <- -1.2
+cxa <- 0.8
+cxl <- 0.9
+reds <- brewer.pal(9, name = "Reds")
+blues <- brewer.pal(9, name = "Blues")
+# plot(1:2, pch = 20, col = blues[c(4, 6)])
+yl <- 35
+cols <- c(reds[c(4, 6)], blues[c(4, 6)])
+
+# calculate mean, 2.5th, 97.5th
+hdatstat_bt <- lapply(1:length(hdat_bsdt), function(x) {
+  h <- hdat_bsdt[[x]][, lapply(.SD, qtf)]
+  hmu <- unlist(h[1, ])
+  h2 <- unlist(h[2, ])
+  h98 <- unlist(h[3, ])
+  list("mu" = hmu, "p2" = h2, "p98" = h98)
+})
+names(hdatstat_bt) <- vs
+
+# pdf("paper/figures/hists_bs.pdf", width = 5, height = 5)
+png("paper/figures/hists_bs.png", width = 5, height = 5, res = 600, 
+    units = "in")
+par(mfrow = c(2, 2), mar = c(4.5, 1, 1, 1), oma = c(2, 3, 0, 0))
+
+for(i in 1:length(hdatstat_bt)) {  # i <- 1
+  hvals <- hdatstat_bt[[i]]
+  axv <- brksl[[i]]
+  mids <- sapply(2:length(axv), function(x) mean(c(axv[x], axv[x - 1])))
+
+    # base plot
+  yl <- ifelse(i %in% c(1, 2), 25, 40) 
+  plot(c(axv[1], axv[length(axv)]), c(0, yl), ylab = "", las = 2, 
+         xaxt = "n", xlab = xlabs[i], ylim = c(0, yl), main = "", 
+         col = cols[i], cex.lab = cxl, pch = "", bty = "l", axes = FALSE)
+  
+  # create polygons to mimic histograms of varying width
+  sapply(2:length(axv), function(x) {  # x <- 2
+    px <- axv[c(x - 1, x)]
+    pxs <- c(rep(px[1], 2), rep(px[2], 2), px[1])
+    pys <- c(0, rep(hvals$mu[[x - 1]], 2), 0, 0)
+    polygon(pxs, pys, col = cols[i])
+  })
+  axis(1, at = axes2[[i]], labels = axlabs[[i]], las = 2, 
+       cex.axis = cxa, tcl = -0.2, mgp = c(2, 0.25, mga))
+  axis(2, las = 2, cex.axis = cxa, tcl = -0.2, mgp = c(2, 0.25, mga))
+  if(i %in% c(1, 3)) {
+    mtext("Percent of observations", side = 2, line = 1.5, cex = 0.8)
+  }
+  mtext(LETTERS[i], side = 3, line = sfigl, cex = 0.8, adj = 0.05)
+
+  # confidence intervals
+  points(mids, hvals$p2, pch = "-", cex = 1, col = "grey40")
+  points(mids, hvals$p98, pch = "-", cex = 1, col = "grey40")
+
+}
+dev.off()
+```
+```{r, echo = FALSE, eval = FALSE}
+save(hdat, hdatstat_bt, file = "data/hdatstat.rda")
+```
+
+Statistics associated with Figure 1: percentage of observations falling within different scale ranges, and associated with different observational methods
+```{r, echo = FALSE}
+data("hdatstat")
+data("dimbreaks")
+```
+```{r, eval = FALSE}
+# res
+hdatst <- hdatstat_bt$res$mu
+l <- length(hdatst)
+hds <- c("10cm^2 - 1 m^2", "<1m^2", "1 m^2-1 ha", "1-10000 ha")
+inds <- list(4:6, 1:6, 7:10, 11:l)
+sapply(1:length(inds), function(x) {
+  v <- round(sum(hdatst[inds[[x]]]), 1)
+  names(v) <- hds[x]
+  v
+})
+
+# extent
+# hdatst <- hdatstat[[2]]$density
+hdatst <- hdatstat_bt$ext$mu
+l <- length(hdatst)
+hds <- c("<1 ha", "<10 ha", "<100 ha", "<1000ha", "<10Kha", "10-1k ha", 
+         "1k-10k", "10k-100k", "100k-1Mk", ">1Kha", ">100Kha", ">1Mha")
+inds <- list(1:6, 1:7, 1:8, 1:9, 1:10, 8:9, 10, 11, 12, 10:l, 12:l, 13:l)
+sapply(1:length(inds), function(x) {
+  v <- round(sum(hdatst[inds[[x]]]), 1)
+  names(v) <- hds[x]
+  v
+})
+
+# interval
+# hdatst <- hdatstat[[3]]$density
+hdatst <- hdatstat_bt$int$mu
+l <- length(hdatst)
+hds <- c("norep", "<daily", "<weekly", "<minute", "min-hour", 
+         "hr-day", "day-wk", "wk-mo", "mo-yr", "yr-dec", "dec-cen", "cen-mil")
+inds <- list(l, 1:3, 1:4, 1, 2, 3, 4, 5, 6, 7, 8, 9)
+sapply(1:length(inds), function(x) {
+  v <- round(sum(hdatst[inds[[x]]]), 1)
+  names(v) <- hds[x]
+  v
+})
+
+# duration
+# hdatst <- hdatstat[[4]]$density
+hdatst <- hdatstat_bt$dur$mu
+l <- length(hdatst)
+hds <- c("<=daily", "day-mo", "mo-yr", "yr-dec", "dec-cent")
+inds <- list(1:3, 4:5, 6, 7, 8:10)
+sapply(1:length(inds), function(x) {
+  v <- round(sum(hdatst[inds[[x]]]), 1)
+  names(v) <- hds[x]
+  v
+})
+```
+
+<a href="#top">Back to top</a>
+
