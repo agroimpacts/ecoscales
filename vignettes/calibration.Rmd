@@ -20,8 +20,6 @@ library(readxl)
 library(Agreement)
 library(irr)
 
-p_root <- set_base_path("ecoscales")
-p_dat <- fp(p_root, "external/data/calibration")
 ```
 
 ```{r, eval=FALSE, echo = FALSE}
@@ -82,7 +80,7 @@ icc(ratings = doisum[, 2:7, with = FALSE], model = "twoway")
 
 ```
 
-```{r, warning = FALSE, fig.cap="Figure 1: Number of records extracted by each rater (observer) for each of the 20 papers in the calibration set.", fig.width=6}
+```{r, warning = FALSE, fig.cap="Figure 1: Number of records extracted by each rater (observer) for each of the 20 papers in the calibration set.", fig.width=6, fig.height = 4}
 doimat <- t(doisum[, -1, with = FALSE])
 cols <- RColorBrewer::brewer.pal(n = 6, "Paired")#[c(3:1, 4:6)]
 cxs <- seq(3, 0.8, length.out = 6)

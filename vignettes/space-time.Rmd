@@ -12,25 +12,31 @@ vignette: >
 
 ---
 
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, fig.align = 'center', fig.height = 4, 
+                      fig.width = 5, cache = TRUE)
+```
+
 # Data prep
 ```{r, message = FALSE, warning=FALSE, results='hold'}
 library(ecoscales)
 library(readxl)
-library(maptools)
+# library(maptools)
 library(RColorBrewer)
 library(viridis)
 
-p_root <- set_base_path("ecoscales")
-p_dat <- fp(p_root, "external/data/result")
-# p_calib <- fp(p_root, "external/data/calibration")
-p_fig <- fp(p_root, "paper/figures")
-p_til <- fp(p_root, "external/data/misc")
+p_root <- "ecoscales"
+p_dat <- "../external/data/result/"
+p_fig <- paste0(p_root, "paper/figures")
+p_til <- paste0(p_root, "external/data/misc")
 
-datfile <- system.file("extdata", "main-results.xlsx", package = "ecoscales")
-calfile <- system.file("extdata", "calibration-set.xlsx", package ="ecoscales")
+datfile <- system.file("extdata/main-results.xlsx", package = "ecoscales")
+calfile <- system.file("extdata/calibration-set.xlsx", package ="ecoscales")
+allresfile <- system.file("extdata/all-results-notreuer.xlsx", 
+                          package ="ecoscales")
 dat <- data.table(read_excel(datfile))
 cal <- data.table(read_excel(calfile))
-full <- data.table(read_excel(fp(p_dat, "full_no_treuer_toss.xlsx")))
+full <- data.table(read_excel(allresfile))
 
 # clean up DOIs
 setnames(dat, "DOI/title", "DOI")
@@ -153,7 +159,8 @@ psr <- function(a) eval(parse(text = a))
 
 # bootstrapping function
 resamp_func <- function(dat, p, iter) {
-  vars <- c("plot_res", "act_ext", "eff_ext", "t_btwn_samp", "act_dur", "eff_dur")
+  vars <- c("plot_res", "act_ext", "eff_ext", "t_btwn_samp", "act_dur", 
+            "eff_dur")
   bout <- lapply(1:iter, function(x) {  # x <- 1
     if((x / 100) %in% 1:100) print(x)
     if(length(p) < length(var)) stop("p must be length of var", call. = FALSE)
@@ -272,7 +279,7 @@ aaxis2[, logarea := log10(area)]
 ```
 ```{r, eval = FALSE, echo = FALSE}
 save(aaxis1, aaxis2, taxis1, taxis2, alab1, alab2, tlab1, tlab2, 
-     file = fp(p_dat, "derived/dimbreaks.rda"))
+     file = "data/dimbreaks.rda")
 ```
 
 <a href="#top">Back to top</a>
@@ -419,13 +426,13 @@ for(i in 1:length(hdatstat_bt)) {  # i <- 1
 dev.off()
 ```
 ```{r, echo = FALSE, eval = FALSE}
-save(hdat, hdatstat_bt, file = fp(p_dat, "derived/hdatstat.rda"))
+save(hdat, hdatstat_bt, file = "data/hdatstat.rda")
 ```
 
 Statistics associated with Figure 1: percentage of observations falling within different scale ranges, and associated with different observational methods
 ```{r, echo = FALSE}
-load(fp(p_dat, "derived/hdatstat.rda"))
-load(fp(p_dat, "derived/dimbreaks.rda"))
+data("hdatstat")
+data("dimbreaks")
 ```
 ```{r}
 # res
@@ -443,8 +450,8 @@ sapply(1:length(inds), function(x) {
 # hdatst <- hdatstat[[2]]$density
 hdatst <- hdatstat_bt$ext$mu
 l <- length(hdatst)
-hds <- c("<1 ha", "<10 ha", "<100 ha", "<1000ha", "<10Kha", "10-1k ha", "1k-10k",  
-         "10k-100k", "100k-1Mk", ">1Kha", ">100Kha", ">1Mha")
+hds <- c("<1 ha", "<10 ha", "<100 ha", "<1000ha", "<10Kha", "10-1k ha", 
+         "1k-10k", "10k-100k", "100k-1Mk", ">1Kha", ">100Kha", ">1Mha")
 inds <- list(1:6, 1:7, 1:8, 1:9, 1:10, 8:9, 10, 11, 12, 10:l, 12:l, 13:l)
 sapply(1:length(inds), function(x) {
   v <- round(sum(hdatst[inds[[x]]]), 1)
@@ -481,6 +488,9 @@ sapply(1:length(inds), function(x) {
 <a href="#top">Back to top</a>
 
 ### Figure 2 
+
+1. 2A should 
+
 ```{r, eval = FALSE}
 bootp_dt <- rbindlist(bootperturb)
 
@@ -681,7 +691,7 @@ dev.off()
 # plot(rdur, legend.only = TRUE, axis.args = aargs, legend.width = 1.25,
 #      legend.shrink = 0.9, col = cols)
 
-save(bootp_dt, file = fp(p_dat, "derived/bootresults.rda"))
+save(bootp_dt, file = "data/bootresults.rda")
 ```
 
 <a href="#top">Back to top</a>
@@ -1107,14 +1117,15 @@ round(pcttab, 3)
 ### Scales in earlier studies
 #### Duration from Tilman, 1989
 ```{r, echo=FALSE}
-load(fp(p_dat, "derived/bootresults.rda"))
+data("bootresults")
 ```
 ```{r}
 std <- function(x) (x - min(x)) / diff(range(x))
 
 # Tilman (1989), Figure 6.1 (visually interpreted)
 # Data extracted from figure using http://arohatgi.info/WebPlotDigitizer/app/
-tilman <- fread(fp(p_til, "tilman1989.csv"))
+f <- system.file("extdata/tilman1989.csv", package = "ecoscales")
+tilman <- fread(f)
 
 # Find n and proportion of non-experimental observations per year
 # find mean/median value of data > 100 years in our observed data
@@ -1202,7 +1213,8 @@ q80 <- function(x) quantile(x, 0.8, na.rm = TRUE)
 q90 <- function(x) quantile(x, 0.9, na.rm = TRUE)
 q95 <- function(x) quantile(x, 0.95, na.rm = TRUE)
 
-kareiva <- fread(fp(p_til, "kareiva_anderson1989.csv"))
+f <- system.file("extdata/kareiva_anderson1989.csv", package = "ecoscales")
+kareiva <- fread(f)
 a <- kareiva[, {
   list("med" = median(res^2), "mean" = mean(res^2), "80" = q80(res^2), 
        "90" = q90(res^2), "95" = q95(res^2))
@@ -1218,7 +1230,8 @@ cbind(study, round(rbind(a, b), 2))
 #### Porter et al (2005)
 Interval
 ```{r}
-porter <- fread(fp(p_til, "porter.csv"))
+f <- system.file("extdata/porter.csv", package = "ecoscales")
+porter <- fread(f)
 porter <- porter[sample == 1]
 porter[, ext := ext^2 / 10000]
 
