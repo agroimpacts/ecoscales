@@ -21,10 +21,13 @@ knitr::opts_chunk$set(echo = TRUE, fig.align = 'center', fig.height = 4,
 
 The resampled full dataset created in the [Data Pre-processing vignette](data-pre-process.html) are used to create histograms of scale in each of the 4 assessed dimensions
 
-# Histograms
+# Analyses
+## Histograms
 ```{r, eval = FALSE}
 library(ecoscales)
 data(datf)
+data(dimbreaks)
+data(bootperturb)
 
 # length(which(datf$study_type %in% c("remote", "other"))) / nrow(datf)
 datf[t_btwn_samp == 0, .N] / datf[, .N]  # 37% of samples are once-offs
@@ -58,7 +61,6 @@ hdat[ext > vle[2], ext := vle[2]]  # set maximum extent 10 (10^10 ha)
 # hdat[aext < vle[1], aext := vle[1]]  # set minimum extent -6 (0.01 m2) 
 # hdat[aext > vle[2], aext := vle[2]]  # set maximum extent 10 (10^10 ha)
 
-
 # histograms from bootstrap
 brksl <- list(aaxis1$logres, aaxis2$logarea, taxis1$logdays, taxis2$logdays)  
 
@@ -66,26 +68,36 @@ brksl <- list(aaxis1$logres, aaxis2$logarea, taxis1$logdays, taxis2$logdays)
 vs <- c("res", "ext", "int", "dur")
 hdat_bs <- lapply(1:length(bootperturb), function(x) {  # x <- 1
   print(x)
-  DT <- bootperturb[[x]]
-  hdb <- cbind("res" = log10(DT$plot_res), "ext" = log10(DT$eff_ext), 
-               "int" = log10(to_infin_byond(DT$t_btwn_samp)), 
-               "dur" = log10(DT$eff_dur))
-  hdb <- data.table(hdb)
+  DT <- copy(bootperturb[[x]])
+  hdb <- DT[, list("type" = type, "res" = log10(plot_res), 
+                   "ext" = log10(eff_ext), "int" = log10(t_btwn_samp), 
+                   "dur" = log10(eff_dur))]
   hdb[res < vlr[1], res := vlr[1]]  # set min res to 0.01 cm"^2 
   hdb[res > vlr[2], res := vlr[2]]  # set max res to 10000 ha 
   # hdb[, lapply(.SD, range, na.rm = TRUE)]
   hdb[ext < vle[1], ext := vle[1]]  # set minimum extent -6 (0.01 m2)
   hdb[ext > vle[2], ext := vle[2]]  # set maximum extent 10 (10^10 ha)
-  hists <- lapply(1:length(vs), function(y) {  # y <- 2
-    #print(y)
-    hdbv <- hdb[[vs[y]]]
-    hbrks <- brksl[[y]]
-    hdbv[hdbv < hbrks[1]] <- hbrks[1]
-    hdbv[hdbv > hbrks[length(hbrks)]] <- hbrks[length(hbrks)]
-    h <- hist(hdbv, breaks = hbrks, plot = FALSE)
-    h$density <- h$counts / sum(h$counts) * 100
-    h
+  
+  types <- c("field|automated|remote|other|paleo", "field", "automated",
+             "remote|other", "paleo")
+  histso <- lapply(1:length(types), function(k) {  # k <- 5
+    dat <- hdb[like(type, types[k])]
+    hists <- lapply(1:length(vs), function(y) {  # y <- 2
+      #print(y)
+      datv <- dat[[vs[y]]]
+      hbrks <- brksl[[y]]
+      datv[datv < hbrks[1]] <- hbrks[1]
+      datv[datv > hbrks[length(hbrks)]] <- hbrks[length(hbrks)]
+      h <- hist(datv, breaks = hbrks, plot = FALSE)
+      # h$density <- h$counts / sum(h$counts) * 100
+      h$density <- h$counts / 378 * 100
+      h
+    })
+    names(hists) <- vs
+    hists
   })
+  names(histso) <- c("all", "field", "automated", "remote", "paleo")
+  histso
 })
 
 # convert density values for each dimension to data.tables
@@ -96,9 +108,124 @@ hdat_bsdt <- lapply(1:length(vs), function(x) { # x <- 1
   DT <- data.table(mat)
 })
 
-### Bootstrapped histograms (now main figure)
+# Reduce dataset to just density values
+typenms <- c("all", "field", "automated", "remote", "paleo")
+hdat_bsdt <- lapply(typenms, function(j) { # j <- "field"
+  hdat_bsi <- lapply(1:length(vs), function(k) { # k <- 1
+    mat <- do.call(rbind, lapply(1:length(hdat_bs), function(i) {  # i <- 1
+      hdat_bs[[i]][[j]][[k]]$density
+    }))
+    DT <- data.table(mat)
+  })
+  names(hdat_bsi) <- vs
+  hdat_bsi
+})
+names(hdat_bsdt) <- typenms
+
+# And calculate mean, 2.5th, 97.5th from observations
 qtf <- function(x) c(mean(x), quantile(x, probs = c(0.025, 0.975))) # quant f
+hdatstat_bt <- lapply(1:length(hdat_bsdt), function(x) {
+  hdatstat_bti <- lapply(1:length(vs), function(y) {
+    h <- hdat_bsdt[[x]][[y]][, lapply(.SD, qtf)]
+    hmu <- unlist(h[1, ])
+    h2 <- unlist(h[2, ])
+    h98 <- unlist(h[3, ])
+    list("mu" = hmu, "p2" = h2, "p98" = h98)
+  })
+  names(hdatstat_bti) <- vs
+  hdatstat_bti
+})
+names(hdatstat_bt) <- typenms
+```
+
+## Figure 1 v1
+
+```{r}
 xlabs <- c("Resolution", "Extent", "Interval", "Duration")
+ylabs <- c("All", "Field", "Automated", "Remote", "Paleo")
+# axes <- list("aax1" = aaxis1$logres, "aax2" = c(-6, aaxis2$logarea), 
+#              "tax1" = taxis1$logdays, "tax2" = taxis2$logdays)
+axes2 <- list("aax1" = aaxis1$logres, "aax2" = aaxis2$logarea, 
+              "tax1" = c(taxis2$logdays[-c(10:11)],
+                         mean(taxis2$logdays[c(10:11)])), 
+              "tax2" = taxis2$logdays)
+axlabs <- list(alab1, alab2, tlab1[-10], tlab2)
+mga <- -0.5
+sfigl <- -1.2
+cxa <- 1.3#0.8
+cxl <- 1.3#0.9
+reds <- brewer.pal(9, name = "Reds")
+blues <- brewer.pal(9, name = "Blues")
+# plot(1:2, pch = 20, col = blues[c(4, 6)])
+yl <- c(40, 40, 6, 6, 6)
+cols <- c(reds[c(4, 6)], blues[c(4, 6)])
+
+# pdf("paper/figures/hists_bs.pdf", width = 5, height = 5)
+png("vignettes/figures/fig1.png", width = 9, height = 11, res = 600, 
+    units = "in")
+par(mfrow = c(5, 4), mar = c(1, 0.25, 0.25, 0), oma = c(5, 5, 1, 1))
+for(i in 1:length(hdatstat_bt)) {  # i <- 5
+  for(j in 1:length(vs)) {  # j <- 1
+    hvals <- hdatstat_bt[[i]][[j]]
+    axv <- brksl[[j]]
+    mids <- sapply(2:length(axv), function(x) mean(c(axv[x], axv[x - 1])))
+    
+    # base plot
+    # yl <- ifelse(i %in% c(1, 2), 25, 40) 
+    plot(c(axv[1], axv[length(axv)]), c(0, yl[i]), ylab = "", las = 2, 
+         xaxt = "n", xlab = "", ylim = c(0, yl[i]), main = "", 
+         col = cols[i], cex.lab = cxl, pch = "", bty = "l", axes = FALSE)
+    
+    # create polygons to mimic histograms of varying width
+    sapply(2:length(axv), function(x) {  # x <- 2
+      px <- axv[c(x - 1, x)]
+      pxs <- c(rep(px[1], 2), rep(px[2], 2), px[1])
+      pys <- c(0, rep(hvals$mu[[x - 1]], 2), 0, 0)
+      polygon(pxs, pys, col = cols[j])
+    })
+    if(i == 5) {
+      axis(1, at = axes2[[j]], labels = axlabs[[j]], las = 2, 
+           cex.axis = cxa, tcl = -0.2, mgp = c(2, 0.5, mga))
+    } 
+    if(i %in% 1:4) {
+      axis(1, at = axes2[[j]], labels = rep("", length(axes2[[j]])), las = 2, 
+           cex.axis = cxa, tcl = -0.2, mgp = c(2, 0.5, mga))
+    }
+    if(j == 1) {
+      axis(2, las = 2, cex.axis = cxa, tcl = -0.2, mgp = c(2, 0.5, mga))
+      mtext(ylabs[i], side = 2, line = 3.25, cex = cxa)
+    }
+    smaxcol <- brewer.pal(11, "Oranges")[6]
+    if(j == 1) {
+      axis(2, at = c(0, 6), labels = c("", 6), las = 2, col.ticks = smaxcol,
+           col.axis = smaxcol, col = smaxcol, cex.axis = cxa, tcl = -0.2, 
+           mgp = c(2, 0.5, mga))
+    }
+    if(j == 1 & i %in% 3:5) {
+      axis(2, las = 2, cex.axis = cxa, tcl = -0.2, mgp = c(2, 0.5, mga), 
+           col.ticks = smaxcol, col.axis = smaxcol, col = smaxcol)
+    }
+    if(i == 1) mtext(xlabs[j], side = 3, line = -0.25, cex = cxa)
+    if(i == 3 & j == 1) {
+      mtext(expression(italic("Percent of observations")), side = 2, line = 1.5,
+            cex = 1)
+    }
+    # mtext(LETTERS[i], side = 3, line = sfigl, cex = 0.8, adj = 0.05)
+    
+    # confidence intervals
+    points(mids, hvals$p2, pch = "-", cex = 1.5, col = "grey40")
+    points(mids, hvals$p98, pch = "-", cex = 1.5, col = "grey40")
+    
+  }
+}
+dev.off()
+```
+
+## Figure 1 v2
+
+```{r}
+xlabs <- c("Resolution", "Extent", "Interval", "Duration")
+ylabs <- c("All", "Field", "Automated", "Remote", "Paleo")
 # axes <- list("aax1" = aaxis1$logres, "aax2" = c(-6, aaxis2$logarea), 
 #              "tax1" = taxis1$logdays, "tax2" = taxis2$logdays)
 axes2 <- list("aax1" = aaxis1$logres, "aax2" = aaxis2$logarea, 
@@ -111,46 +238,50 @@ sfigl <- -1.2
 cxa <- 0.8
 cxl <- 0.9
 reds <- brewer.pal(9, name = "Reds")
+oranges <- brewer.pal(9, name = "Oranges")
 blues <- brewer.pal(9, name = "Blues")
+purples <- brewer.pal(9, name = "Purples")
 # plot(1:2, pch = 20, col = blues[c(4, 6)])
 yl <- 35
-cols <- c(reds[c(4, 6)], blues[c(4, 6)])
+# cols <- c(reds[c(4, 6)], blues[c(4, 6)])
+cols <- list(reds[c(9, 7, 5, 3)], oranges[c(9, 7, 5, 3)], 
+             blues[c(9, 7, 5, 3)], purples[c(9, 7, 5, 3)])
 
-# calculate mean, 2.5th, 97.5th
-hdatstat_bt <- lapply(1:length(hdat_bsdt), function(x) {
-  h <- hdat_bsdt[[x]][, lapply(.SD, qtf)]
-  hmu <- unlist(h[1, ])
-  h2 <- unlist(h[2, ])
-  h98 <- unlist(h[3, ])
-  list("mu" = hmu, "p2" = h2, "p98" = h98)
+hdatstat_stbar <- lapply(vs, function(x) {
+  do.call(rbind, lapply(rev(typenms[-1]), function(y) {
+    hdatstat_bt[[y]][[x]]$mu
+  }))
 })
-names(hdatstat_bt) <- vs
+names(hdatstat_stbar) <- vs
 
 # pdf("paper/figures/hists_bs.pdf", width = 5, height = 5)
-png("paper/figures/hists_bs.png", width = 5, height = 5, res = 600, 
+png("vignettes/figures/fig1-2.png", width = 5, height = 5, res = 600, 
     units = "in")
-par(mfrow = c(2, 2), mar = c(4.5, 1, 1, 1), oma = c(2, 3, 0, 0))
-
-for(i in 1:length(hdatstat_bt)) {  # i <- 1
-  hvals <- hdatstat_bt[[i]]
+par(mfrow = c(2, 2), mar = c(4.5, 1, 2, 1), oma = c(2, 3, 0, 2))
+for(i in 1:length(vs)) {  # i <- 3
+  hvals <- hdatstat_stbar[[i]]
+  hconf <- hdatstat_bt$all[[i]]
   axv <- brksl[[i]]
   mids <- sapply(2:length(axv), function(x) mean(c(axv[x], axv[x - 1])))
-
-    # base plot
-  yl <- ifelse(i %in% c(1, 2), 25, 40) 
-  plot(c(axv[1], axv[length(axv)]), c(0, yl), ylab = "", las = 2, 
-         xaxt = "n", xlab = xlabs[i], ylim = c(0, yl), main = "", 
-         col = cols[i], cex.lab = cxl, pch = "", bty = "l", axes = FALSE)
   
-  # create polygons to mimic histograms of varying width
-  sapply(2:length(axv), function(x) {  # x <- 2
-    px <- axv[c(x - 1, x)]
-    pxs <- c(rep(px[1], 2), rep(px[2], 2), px[1])
-    pys <- c(0, rep(hvals$mu[[x - 1]], 2), 0, 0)
-    polygon(pxs, pys, col = cols[i])
-  })
-  axis(1, at = axes2[[i]], labels = axlabs[[i]], las = 2, 
-       cex.axis = cxa, tcl = -0.2, mgp = c(2, 0.25, mga))
+  axvw <- axv[-1] - axv[-length(axv)]  # bar widths
+  if(i %in% c(1:2, 4)) {
+    xaxp <- cumsum(c(0, axvw))  # x axis positions
+  } else if(i == 3) {
+    xaxp <- cumsum(c(0, axvw[-length(axvw)]))  # x axis positions
+    xaxp[length(xaxp)] <- xaxp[length(xaxp)] + axvw[length(axvw)] / 2
+  }
+
+  # base plot
+  yl <- ifelse(i %in% c(1, 2), 25, 40) 
+  b <- barplot(hvals, width = axvw, space = c(0, 0), col = cols[[i]], 
+               yaxt = "n", ylim = c(0, yl), border = cols[[i]], 
+               axisnames = FALSE)
+  barplot(hconf$mu, width = axvw, space = c(0, 0), col = "transparent", 
+          ylim = c(0, yl), axisnames = FALSE, add = TRUE, yaxt = "n",  
+          border = "grey40")
+  axis(1, at = xaxp, labels = axlabs[[i]], las = 2, 
+       cex.axis = cxa, tcl = -0.2, mgp = c(2, 0.25, 0))
   axis(2, las = 2, cex.axis = cxa, tcl = -0.2, mgp = c(2, 0.25, mga))
   if(i %in% c(1, 3)) {
     mtext("Percent of observations", side = 2, line = 1.5, cex = 0.8)
@@ -158,12 +289,26 @@ for(i in 1:length(hdatstat_bt)) {  # i <- 1
   mtext(LETTERS[i], side = 3, line = sfigl, cex = 0.8, adj = 0.05)
 
   # confidence intervals
-  points(mids, hvals$p2, pch = "-", cex = 1, col = "grey40")
-  points(mids, hvals$p98, pch = "-", cex = 1, col = "grey40")
+  points(b, hconf$p2, pch = "-", cex = 1, col = "grey40")
+  points(b, hconf$p98, pch = "-", cex = 1, col = "grey40")
 
+  if(i == 4) {
+    yy <- 57
+    legend(x = -2, y = yy, x.intersp = 0.5, y.intersp = 0.6, xpd = NA, 
+           legend = c("Field", "Automated", "Remote", "Paleo"), cex = 1,
+           fill = rev(cols[[4]]), bty = "n")
+    rind <- 3:1
+    for(j in 1:length(rind)) {
+      legend(x = -2 - j * 0.75, y = yy, legend = rep("", 4), 
+             y.intersp = 0.6, xpd = NA, cex = 1,  
+             fill = rev(cols[[rind[j]]]), bty = "n", pt.cex = 4)
+    }
+  }  
 }
 dev.off()
 ```
+
+
 ```{r, echo = FALSE, eval = FALSE}
 save(hdat, hdatstat_bt, file = "data/hdatstat.rda")
 ```
