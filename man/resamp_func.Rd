@@ -20,3 +20,8 @@ List of data.table equal to length iter
 Randomly perturbs scale values within specified uncertainty 
 bounds
 }
+\examples{
+data(datf)
+set.seed(1)
+bootperturb <- resamp_func(datf, p = p, iter = 1000)
+}

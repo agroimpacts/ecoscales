@@ -22,62 +22,37 @@ knitr::opts_chunk$set(echo = TRUE, fig.align = 'center', fig.height = 4,
 The resampled full dataset created in the [Data Pre-processing vignette](data-pre-process.html) are used to create histograms of scale in each of the 4 assessed dimensions
 
 # Analyses
-## Histograms
-```{r, eval = FALSE}
+
+## Data and libraries
+```{r}
 library(ecoscales)
-data(datf)
-data(dimbreaks)
-data(bootperturb)
+data("datf")
+data("dimbreaks")
+data("bootperturb")
+```
 
-# length(which(datf$study_type %in% c("remote", "other"))) / nrow(datf)
-datf[t_btwn_samp == 0, .N] / datf[, .N]  # 37% of samples are once-offs
-datf[act_dur == samp_dur, .N] / nrow(datf)
-datf[(act_dur == samp_dur) & t_btwn_samp != 0]
-datf[(act_dur != samp_dur) & t_btwn_samp == 0]
 
-hdat <- cbind("res" = log10(datf$plot_res), "aext" = log10(datf$act_ext),
-              "ext" = log10(datf$eff_ext), 
-              "int" = log10(to_infin_byond(datf$t_btwn_samp)), 
-              "adur" = log10(datf$act_dur), "dur" = log10(datf$eff_dur))
-# NA data checks
-# hdat[is.na(rowSums(hdat)), ]
-# dat[DOI %in% datf[which(is.na(rowSums(hdat))), DOI], ]
-# dat[DOI %in% datf[which(is.na(hdat[, 6])), DOI]]
-# dat[DOI %in% datf[which(is.na(hdat[, 3])), DOI]]
-# calr[DOI %in% datf[which(is.na(hdat[, 3])), DOI] & is.na(eff_ext)]
+## Histograms
 
-hdat <- data.table(hdat)
-
-# set bounds for histograms
-# first set variable limits
-vlr <- range(aaxis1$logres)  # for resolution
-vle <- range(aaxis2$logarea)  # for extent
-
-# then apply limits to main (unperturbed) set of variables
-hdat[res < vlr[1], res := vlr[1]]  # set min res to 0.01 cm"^2 
-hdat[res > vlr[2], res := vlr[2]]  # set max res to 10000 ha 
-hdat[ext < vle[1], ext := vle[1]]  # set minimum extent -6 (0.01 m2) 
-hdat[ext > vle[2], ext := vle[2]]  # set maximum extent 10 (10^10 ha)
-# hdat[aext < vle[1], aext := vle[1]]  # set minimum extent -6 (0.01 m2) 
-# hdat[aext > vle[2], aext := vle[2]]  # set maximum extent 10 (10^10 ha)
-
-# histograms from bootstrap
+Constructed from `bootperturb`. 
+```{r hists, cache=TRUE}
+# break points for data
 brksl <- list(aaxis1$logres, aaxis2$logarea, taxis1$logdays, taxis2$logdays)  
 
 # Assign bootstrapped values to bins, making necessary adjustments as needed 
 vs <- c("res", "ext", "int", "dur")
 hdat_bs <- lapply(1:length(bootperturb), function(x) {  # x <- 1
-  print(x)
+  # print(x)
   DT <- copy(bootperturb[[x]])
   hdb <- DT[, list("type" = type, "res" = log10(plot_res), 
                    "ext" = log10(eff_ext), "int" = log10(t_btwn_samp), 
                    "dur" = log10(eff_dur))]
   hdb[res < vlr[1], res := vlr[1]]  # set min res to 0.01 cm"^2 
   hdb[res > vlr[2], res := vlr[2]]  # set max res to 10000 ha 
-  # hdb[, lapply(.SD, range, na.rm = TRUE)]
   hdb[ext < vle[1], ext := vle[1]]  # set minimum extent -6 (0.01 m2)
   hdb[ext > vle[2], ext := vle[2]]  # set maximum extent 10 (10^10 ha)
-  
+
+  # histograms across all types and by type  
   types <- c("field|automated|remote|other|paleo", "field", "automated",
              "remote|other", "paleo")
   histso <- lapply(1:length(types), function(k) {  # k <- 5
@@ -90,7 +65,7 @@ hdat_bs <- lapply(1:length(bootperturb), function(x) {  # x <- 1
       datv[datv > hbrks[length(hbrks)]] <- hbrks[length(hbrks)]
       h <- hist(datv, breaks = hbrks, plot = FALSE)
       # h$density <- h$counts / sum(h$counts) * 100
-      h$density <- h$counts / 378 * 100
+      h$density <- h$counts / 378 * 100  # calculate as % of total observations
       h
     })
     names(hists) <- vs
@@ -98,14 +73,6 @@ hdat_bs <- lapply(1:length(bootperturb), function(x) {  # x <- 1
   })
   names(histso) <- c("all", "field", "automated", "remote", "paleo")
   histso
-})
-
-# convert density values for each dimension to data.tables
-hdat_bsdt <- lapply(1:length(vs), function(x) { # x <- 1
-  mat <- do.call(rbind, lapply(1:length(hdat_bs), function(y) {
-    hdat_bs[[y]][[x]]$density
-  }))
-  DT <- data.table(mat)
 })
 
 # Reduce dataset to just density values
@@ -138,9 +105,11 @@ hdatstat_bt <- lapply(1:length(hdat_bsdt), function(x) {
 names(hdatstat_bt) <- typenms
 ```
 
-## Figure 1
+<a href="#top">Back to top</a>
 
-```{r}
+
+## Figure 1 (main text)
+```{r, message=FALSE, warning=FALSE}
 xlabs <- c("Resolution", "Extent", "Interval", "Duration")
 ylabs <- c("All", "Field", "Automated", "Remote", "Paleo")
 axes2 <- list("aax1" = aaxis1$logres, "aax2" = aaxis2$logarea, 
@@ -159,7 +128,7 @@ yl <- 35
 cols <- c(reds[c(4, 6)], blues[c(4, 6)])
 
 # pdf("paper/figures/hists_bs.pdf", width = 5, height = 5)
-png("vignettes/figures/fig1.png", width = 5, height = 5, res = 600, 
+png("figures/fig1.png", width = 5, height = 5, res = 600, 
     units = "in")
 par(mfrow = c(2, 2), mar = c(4.5, 1, 1, 1), oma = c(2, 3, 0, 0))
 for(i in 1:length(vs)) {  # i <- 3
@@ -195,12 +164,14 @@ for(i in 1:length(vs)) {  # i <- 3
 dev.off()
 ```
 
+<a href="#top">Back to top</a>
 
-## Figure 1 detailed
 
-For supplemental.
+## Figure 1s
 
-```{r}
+Detailed by observation type, for supplemental material.
+
+```{r, message=FALSE, warning=FALSE}
 xlabs <- c("Resolution", "Extent", "Interval", "Duration")
 ylabs <- c("All", "Field", "Automated", "Remote", "Paleo")
 axes2 <- list("aax1" = aaxis1$logres, "aax2" = aaxis2$logarea, 
@@ -219,7 +190,7 @@ yl <- c(40, 40, 6, 6, 6)
 cols <- c(reds[c(4, 6)], blues[c(4, 6)])
 
 # pdf("paper/figures/hists_bs.pdf", width = 5, height = 5)
-png("vignettes/figures/fig1s.png", width = 9, height = 11, res = 600, 
+png("figures/fig1s.png", width = 9, height = 11, res = 600, 
     units = "in")
 par(mfrow = c(5, 4), mar = c(1, 0.25, 0.25, 0), oma = c(6, 5, 1, 1))
 for(i in 1:length(hdatstat_bt)) {  # i <- 5
@@ -280,18 +251,21 @@ for(i in 1:length(hdatstat_bt)) {  # i <- 5
 dev.off()
 ```
 
+<a href="#top">Back to top</a>
+
+
 ```{r, echo = FALSE, eval = FALSE}
-save(hdat, hdatstat_bt, file = "data/hdatstat.rda")
+# save(hdat, hdatstat_bt, file = "data/hdatstat.rda")
 ```
 
+
+## Figure 1 summary statistics 
+
 Statistics associated with Figure 1: percentage of observations falling within different scale ranges, and associated with different observational methods
-```{r, echo = FALSE}
-data("hdatstat")
-data("dimbreaks")
-```
-```{r, eval = FALSE}
+
+```{r}
 # res
-hdatst <- hdatstat_bt$res$mu
+hdatst <- hdatstat_bt$all$res$mu
 l <- length(hdatst)
 hds <- c("10cm^2 - 1 m^2", "<1m^2", "1 m^2-1 ha", "1-10000 ha")
 inds <- list(4:6, 1:6, 7:10, 11:l)
@@ -303,7 +277,7 @@ sapply(1:length(inds), function(x) {
 
 # extent
 # hdatst <- hdatstat[[2]]$density
-hdatst <- hdatstat_bt$ext$mu
+hdatst <- hdatstat_bt$all$ext$mu
 l <- length(hdatst)
 hds <- c("<1 ha", "<10 ha", "<100 ha", "<1000ha", "<10Kha", "10-1k ha", 
          "1k-10k", "10k-100k", "100k-1Mk", ">1Kha", ">100Kha", ">1Mha")
@@ -316,7 +290,7 @@ sapply(1:length(inds), function(x) {
 
 # interval
 # hdatst <- hdatstat[[3]]$density
-hdatst <- hdatstat_bt$int$mu
+hdatst <- hdatstat_bt$all$int$mu
 l <- length(hdatst)
 hds <- c("norep", "<daily", "<weekly", "<minute", "min-hour", 
          "hr-day", "day-wk", "wk-mo", "mo-yr", "yr-dec", "dec-cen", "cen-mil")
@@ -329,7 +303,7 @@ sapply(1:length(inds), function(x) {
 
 # duration
 # hdatst <- hdatstat[[4]]$density
-hdatst <- hdatstat_bt$dur$mu
+hdatst <- hdatstat_bt$all$dur$mu
 l <- length(hdatst)
 hds <- c("<=daily", "day-mo", "mo-yr", "yr-dec", "dec-cent")
 inds <- list(1:3, 4:5, 6, 7, 8:10)
@@ -342,3 +316,99 @@ sapply(1:length(inds), function(x) {
 
 <a href="#top">Back to top</a>
 
+```{r, echo = FALSE, eval = FALSE}
+# data checks (run in chunk only)
+# recreate plots from datf to compare visually to plots created in fig 1s, to
+# make sure they look more or less the same
+axlabs <- list(alab1, alab2, tlab1[-10], tlab2)
+dfnms <- c("plot_res", "eff_ext", "t_btwn_samp", "eff_dur")
+reds <- brewer.pal(9, name = "Reds")
+blues <- brewer.pal(9, name = "Blues")
+cols <- c(reds[c(4, 6)], blues[c(4, 6)])
+cxa <- 0.8
+cxl <- 0.9
+
+par(mfrow = c(2, 2))
+pat <- "paleo"
+yl <- 6
+for(i in 1:length(dfnms)) {  # i <- 1
+  print(dfnms[i])
+  if(i %in% c(1:2, 4)) {
+    datv <- datf[like(study_type, pat), log10(get(dfnms[i]))]    
+  }
+  if(i == 3) {
+    datv <- datf[like(study_type, pat),
+                 log10(to_infin_byond(get(dfnms[i])))]    
+  }
+  hbrks <- brksl[[i]]
+  datv[datv < hbrks[1]] <- hbrks[1]
+  datv[datv > hbrks[length(hbrks)]] <- hbrks[length(hbrks)]
+  h <- hist(datv, breaks = hbrks, plot = FALSE)
+  # h$density <- h$counts / sum(h$counts) * 100
+  h$density <- h$counts / 378 * 100  # calculate as % of total observations
+
+  axv <- brksl[[i]]
+  axvw <- axv[-1] - axv[-length(axv)]  # bar widths
+  axvw <- axv[-1] - axv[-length(axv)]  # bar widths
+  if(i %in% c(1:2, 4)) {
+    xaxp <- cumsum(c(0, axvw))  # x axis positions
+  } else if(i == 3) {
+    xaxp <- cumsum(c(0, axvw[-length(axvw)]))  # x axis positions
+    xaxp[length(xaxp)] <- xaxp[length(xaxp)] + axvw[length(axvw)] / 2
+  }
+  b <- barplot(h$density, width = axvw, space = c(0, 0), col = cols[i], 
+               yaxt = "n", ylim = c(0, yl), border = "grey40", 
+               axisnames = FALSE)
+  axis(1, at = xaxp, labels = axlabs[[i]], las = 2, 
+       cex.axis = cxa, tcl = -0.2, mgp = c(2, 0.25, 0))
+  axis(2, las = 2, cex.axis = cxa, tcl = -0.2, mgp = c(2, 0.25, 0))
+}
+
+# Data check - are we extracting the statistics correctly? Check on subsets
+l <- list(c("field", "field", 2), c("paleo", "paleo", 4), 
+          c("remote|other", "remote", 3), c("automated", "automated", 1))
+for(j in 1:length(l)) {
+  types <- l[[j]][1]
+  types2 <- l[[j]][2]
+  i <- as.numeric(l[[j]][3])
+  vss <- vs[i]
+  tst <- lapply(1:length(bootperturb), function(x) {  # x <- 1
+    DT <- copy(bootperturb[[x]])
+    hdb <- DT[, list("type" = type, "res" = log10(plot_res),
+                     "ext" = log10(eff_ext), "int" = log10(t_btwn_samp),
+                     "dur" = log10(eff_dur))]
+    hdb[res < vlr[1], res := vlr[1]]  # set min res to 0.01 cm"^2 
+    hdb[res > vlr[2], res := vlr[2]]  # set max res to 10000 ha 
+    hdb[ext < vle[1], ext := vle[1]]  # set minimum extent -6 (0.01 m2)
+    hdb[ext > vle[2], ext := vle[2]]  # set maximum extent 10 (10^10 ha)
+    dat <- hdb[like(type, types)]
+    datv <- dat[[vss]]
+    hbrks <- brksl[[i]]
+    datv[datv < hbrks[1]] <- hbrks[1]
+    datv[datv > hbrks[length(hbrks)]] <- hbrks[length(hbrks)]
+    h <- hist(datv, breaks = hbrks, plot = FALSE)
+    h$density <- h$counts / 378 * 100  # calculate as % of total observations
+    h$density
+  })
+  print(sapply(sample(1:1000, size = 20), function(x) {
+    identical(hdat_bs[[x]][[types2]][[i]]$density, tst[[x]])
+  }))
+  
+  # ran with permutation above--all check out
+  q2 <- function(x) quantile(x, 0.025)
+  q98 <- function(x) quantile(x, 0.975)
+  a <- identical(unname(hdatstat_bt[[types2]][[i]]$mu), 
+                 colMeans(do.call(rbind, tst)))
+  b <- identical(unname(hdatstat_bt[[types2]][[i]]$p2), 
+                 apply(do.call(rbind, tst), 2, q2))
+  d <- identical(unname(hdatstat_bt[[types2]][[i]]$p98), 
+                 apply(do.call(rbind, tst), 2, q98))
+  print(c(a, b, d))
+}
+
+# all checks true
+```
+
+```{r, echo = FALSE}
+rm(list = ls())
+```

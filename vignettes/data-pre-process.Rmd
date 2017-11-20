@@ -33,8 +33,6 @@ Datasets:
 ```{r, message = FALSE, warning=FALSE, results='hold'}
 library(ecoscales)
 library(readxl)
-library(RColorBrewer)
-library(viridis)
 
 f <- system.file("extdata/main-results.xlsx", package = "ecoscales")
 dat <- data.table(read_excel(f))

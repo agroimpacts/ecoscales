@@ -5,7 +5,7 @@
 #' @param p Vector of uncertainty bounds, one per assessed dimension
 #' @param iter Number of resampling iterations
 #' @return List of data.table equal to length iter
-#' @example 
+#' @examples 
 #' data(datf)
 #' set.seed(1)
 #' bootperturb <- resamp_func(datf, p = p, iter = 1000)
