@@ -8,6 +8,10 @@
 #' @param pts SpatialPointsDataFrame showing distribution of observations
 #' @param kwidth Kernel smoothing width 
 #' @return Raster of density values
+#' @examples 
+#' kder <- kdensity(xmn = -5, xmx = 5.56, ymn = -5, ymx = 5.57, dxdy = 0.1, 
+#'                  pts = odt, kwidth = 1)
+#' kder <- (kder / cellStats(kder, sum)) * 100  # convert to percentage
 #' @export
 kdensity <- function(xmn, xmx, ymn, ymx, dxdy, pts, kwidth) {
   

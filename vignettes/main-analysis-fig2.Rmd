@@ -1,0 +1,204 @@
+---
+title: "Main Analyses - Figure 2"
+output: 
+  rmarkdown::html_vignette:
+    toc: yes
+    number_sections: true
+    toc_depth: 3
+vignette: >
+  %\VignetteIndexEntry{Main Analyses - Figure 2}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, fig.align = 'center', fig.height = 4, 
+                      fig.width = 5, cache = TRUE)
+```
+
+
+# Overview
+
+The resampled full dataset created in the [Data Pre-processing vignette](data-pre-process.html) is used to construct kernel density estimates showing varying 2-D contrasts of observational scale dimensions.
+
+# Analyses
+## Data and libraries
+
+```{r, message = FALSE, warning=FALSE}
+library(ecoscales)
+library(doMC)
+library(viridis)
+data("dimbreaks")
+data("bootperturb")
+```
+
+
+<a href="#top">Back to top</a>
+
+## Kernel density estimates
+
+```{r, eval = FALSE}
+bootp_dt <- rbindlist(bootperturb)
+
+# choose which dataset to use
+# kdat <- copy(datf)  # ordinary
+kdat <- copy(bootp_dt)  # bootstrap
+
+# limits and variables
+lims <- list("t_btwn_samp" = c(-5, 5.57), "plot_res" = c(-5, 8), 
+             "eff_ext" = range(aaxis2$logarea),
+             "eff_dur" = c(-5, 5.56))  # limits
+# xyvars <- list(c("t_btwn_samp", "plot_res"),  # variable pairs 
+#                c("eff_ext", "eff_dur"), 
+#                c("eff_ext", "plot_res"), 
+#                c("t_btwn_samp", "eff_dur"))
+xyvars <- list(c(x = "plot_res", y = "t_btwn_samp"),  # variable pairs 
+               c(x = "eff_dur", y = "eff_ext"), 
+               c(x = "plot_res", y = "eff_ext"), 
+               c(x = "eff_dur", y = "t_btwn_samp"))
+dropones <- c(TRUE, FALSE, FALSE, TRUE)
+
+# Prepare datasets and run kernel density estimates
+registerDoMC(4)
+kderl <- foreach(i = 1:length(xyvars)) %dopar% {  # i <- 4
+  xyv <- xyvars[[i]]
+  xl <- lims[[xyv["x"]]]
+  yl <- lims[[xyv["y"]]]
+  
+  # create input spdf
+  odt <- kdat_setup(kdat, x = xyv["x"], y = xyv["y"], xlim = xl, ylim = yl, 
+                    drop.oneoff = dropones[x])  
+  
+  # kernel densities
+  kder <- kdensity(xl[1], xl[2], yl[1], yl[2], 0.1, odt, 1)
+  kder <- (kder / cellStats(kder, sum)) * 100
+  kder
+}
+
+# masks
+yr <- xr <- kderl[[3]]
+v <- xFromCell(xr, 1:ncell(xr))
+values(xr) <- v
+v <- yFromCell(yr, 1:ncell(yr))
+values(yr) <- v
+msk3 <- yr > xr
+kderl[[3]] <- mask(kderl[[3]], msk3, maskvalue = 0)
+
+yr <- xr <- kderl[[4]]
+v <- xFromCell(xr, 1:ncell(xr))
+values(xr) <- v
+v <- yFromCell(yr, 1:ncell(yr))
+values(yr) <- v
+msk4 <- yr < xr
+kderl[[4]] <- mask(kderl[[4]], msk4, maskvalue = 0)
+
+
+```
+
+<a href="#top">Back to top</a>
+
+## Figure 2
+
+```{r, eval = FALSE}
+# global function for defining breaks
+brkfun <- function(ext, ival, n) {
+  rng <- range(ext[is.finite(ext)])
+  bwidth <- (rng[2] - rng[1]) / n
+  brks <- seq(rng[1], rng[2], bwidth)
+  brklabs <- seq(0, round(rng[2], 2), ival)
+  list("brks" = brks, "labs" = brklabs)
+}
+
+# global function for plotting legend
+legfun <- function(kde, ival = 0.01, n, mgp = c(3, 0.25, 0), tcl = -0.1, 
+                   cxa = cxa, ls = 0.9, col = cols, lw = 1.25) {
+  brks <- brkfun(ext = kde, ival = ival, n = n)  # breaks
+  aargs <- list(mgp = mgp, at = brks$labs, labels = brks$labs, 
+              cex.axis = cxa, tcl = tcl)
+  plot(kde, legend.only = TRUE, axis.args = aargs, legend.width = lw,
+       legend.shrink = ls, col = col)#inferno(cuts))
+}
+  
+# cxa = 0.7
+ll <- 3.5
+cxa = 0.8
+# stps <- sapply(c(3, 4), function(x) which(kdat$st == x))  # IDs rs/auto/paleo
+# pchs <- list(1, "+")
+cexs <- c(0.4, 0.6)
+cuts <- 40
+bump <- 3
+cols <- inferno(cuts + bump)[-c(2:(bump + 1))]
+# plot(1:cuts, col = cols, pch = 20)
+
+# pdf("paper/figures/res_v_extent.pdf", width = 7, height = 2.5)
+pdf("vignettes/figures/fig2.pdf", width = 7, height = 6)
+par(mfrow = c(2, 2), mar = c(6, 6, 0.3, 3), oma = c(0, 0, 0.5, 1), 
+    mgp = c(2, 0.25, 0))
+# resolutions
+image(kderl[[1]], axes = FALSE, xlab = "", ylab = "", col = cols)
+axis(1, at = aaxis1$logres[-1], labels = alab1[-1], las = 2, tcl = -0.2, 
+     cex.axis = cxa)
+axis(2, at = taxis1$logdays[-c(5)], labels = tlab1[-c(5)], 
+     las = 2, tcl = -0.2, cex.axis = cxa)
+mtext("Resolution", 1, cex = cxa, line = ll)
+mtext("Interval", 2, cex = cxa, line = ll)
+legfun(kderl[[3]], n = cuts, cxa = cxa, col = cols)
+mtext("A", side = 3, line = -1, cex = 0.8, adj = 0.05, col = "white")
+
+# extents
+image(kderl[[3]], axes = FALSE, xlab = "", ylab = "", col = cols)
+axis(1, at = aaxis1$logres, labels = alab1, las = 2, tcl = -0.2, cex.axis = cxa)
+axis(2, at = aaxis2$logarea, labels = alab2, las = 2, tcl = -0.2, 
+     cex.axis = cxa)
+
+brks <- brkfun(rext3, 0.01, cuts)  # breaks
+aargs <- list(mgp = c(3, 0.25, 0), at = brks$labs, labels = brks$labs, 
+              cex.axis = cxa, tcl = -0.1)
+mtext("Duration", 1, cex = cxa, line = ll)
+mtext("Extent", 2, cex = cxa, line = ll)
+plot(rext3, legend.only = TRUE, axis.args = aargs, legend.width = 1.25,
+     legend.shrink = 0.9, col = cols)
+mtext("B", side = 3, line = -1, cex = 0.8, adj = 0.05, col = "white")
+
+# spatial
+image(sres, col = cols, axes = FALSE, xlab = "", ylab = "") 
+axis(1, at = taxis2$logdays[-5], labels = tlab2[-5], las = 2,
+     cex.axis = cxa, tcl = -0.2)
+axis(2, at = aaxis2$logarea, labels = alab2, las = 2, cex.axis = cxa,
+     tcl = -0.2)
+
+mtext("Resolution", 1, cex = cxa, line = ll)
+mtext("Extent", 2, cex = cxa, line = ll)
+brks <- brkfun(sres, 0.01, cuts)  # breaks
+aargs <- list(mgp = c(3, 0.25, 0), at = brks$labs, labels = brks$labs, 
+              cex.axis = cxa, tcl = -0.1)
+plot(sres, legend.only = TRUE, axis.args = aargs, legend.width = 1.25,
+     legend.shrink = 0.9, col = cols)
+mtext("C", side = 3, line = -1, cex = 0.8, adj = 0.05, col = "white")
+
+# temporal
+image(tres, axes = FALSE, xlab = "", ylab = "", col = cols)
+for(i in 1:2) {  # using taxis2 values for both axes because same
+  axis(i, at = taxis2$logdays[-5], labels = tlab2[-5], las = 2,
+       cex.axis = cxa, tcl = -0.2)
+}
+mtext("Interval", 1, cex = cxa, line = ll)
+mtext("Duration", 2, cex = cxa, line = ll)
+# brks <- brkfun(tres, 0.02, 100)  # breaks
+brks <- brkfun(tres, 0.01, cuts)  # breaks
+aargs <- list(mgp = c(3, 0.25, 0), at = brks$labs, labels = brks$labs, 
+              cex.axis = cxa, tcl = -0.1)
+plot(tres, legend.only = TRUE, axis.args = aargs, legend.width = 1.25,
+     legend.shrink = 0.9, col = cols)
+mtext("D", side = 3, line = -1, cex = 0.8, adj = 0.05, col = "white")
+dev.off()
+
+# image(rdur, axes = FALSE, xlab = "", ylab = "", col = cols)
+# plot(rdur, legend.only = TRUE, axis.args = aargs, legend.width = 1.25,
+#      legend.shrink = 0.9, col = cols)
+
+save(bootp_dt, file = "data/bootresults.rda")
+
+```
+

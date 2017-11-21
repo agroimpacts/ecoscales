@@ -32,7 +32,7 @@ resamp_func <- function(dat, p, iter) {
     dnew[plot_res > act_ext, plot_res := act_ext]  # plot_res can't be > act_ext
     dnew[plot_res > eff_ext, plot_res := eff_ext]  # or eff_ext
     dnew[act_ext > eff_ext, act_ext := eff_ext] # act_ext can't be > eff_ext
-    dnew[t_btwn_samp > eff_dur, t_btwn_samp := eff_dur]  # int can't be > eff_dur
+    dnew[t_btwn_samp > eff_dur, t_btwn_samp := eff_dur] # int can't be > eff_dur
     dnew[act_dur > eff_dur, act_dur := eff_dur]  # act_dur can't be > eff_dur
     dnew[, plot_res := plot_res * 10000]  # set plot_res back to m2
     

@@ -27,3 +27,8 @@ Raster of density values
 \description{
 Creates a raster from kernel density
 }
+\examples{
+kder <- kdensity(xmn = -5, xmx = 5.56, ymn = -5, ymx = 5.57, dxdy = 0.1, 
+                 pts = odt, kwidth = 1)
+kder <- (kder / cellStats(kder, sum)) * 100  # convert to percentage
+}
