@@ -2,7 +2,7 @@ Package: ecoscales
 Type: Package
 Title: The Spatial and Temporal Domains of Modern Ecology
 Description: Analysis supporting paper on observational scale domains in ecology
-Version: 0.3.5
+Version: 0.3.6
 Date: 20/11/2017
 Author: Lyndon Estes <LEstes@clarku.edu>
 Maintainer: Lyndon Estes <LEstes@clarku.edu>

@@ -36,8 +36,7 @@ kdensity <- function(xmn, xmx, ymn, ymx, dxdy, pts, kwidth) {
   kern <- spkernel2d(pts, crds, h0 = kwidth, grd)
   kgrid <- as(SpatialGridDataFrame(grd, data = data.frame(kern)),
               "SpatialPixelsDataFrame")
-
-  krast <- raster(kgrid)
+  krast <- trim(raster(kgrid))
   return(krast)
 }
 

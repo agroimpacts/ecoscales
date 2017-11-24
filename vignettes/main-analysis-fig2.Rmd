@@ -80,15 +80,14 @@ kderla <- foreach(i = 1:length(types)) %:%   # i <- 1
     # create input spdf
     odt <- kdat_setup(dfd, x = xyv["x"], y = xyv["y"], xlim = xl, ylim = yl, 
                       drop.oneoff = dropones[j])
-    cmus2 <- colMeans(coordinates(odt))
-    names(cmus2) <- names(xyv)  # post kdat_setup mean
-    cqtl2 <- apply(coordinates(odt), 2, qtl)
+    # cmus2 <- colMeans(coordinates(odt))
+    # names(cmus2) <- names(xyv)  # post kdat_setup mean
+    # cqtl2 <- apply(coordinates(odt), 2, qtl)
 
     # kernel densities
-    kder <- kdensity(xl[1], xl[2], yl[1], yl[2], 0.1, odt, 1)
+    kder <- kdensity(xl[1], xl[2], yl[1], yl[2], 0.1, odt$dat, 1)
     kder <- (kder / cellStats(kder, sum)) * 100
-    list("kde" = kder, "mean1" = cmus1, "qtl1" = cqtl1, "mean2" = cmus2, 
-         "qtl2" = cqtl2)
+    list("kde" = kder, "mean" = odt$mu, "med" =  odt$med)
   }
 kderla <- lapply(kderla, function(x) {
   names(x) <- c("resint", "durext", "resext", "durint")
@@ -97,30 +96,30 @@ kderla <- lapply(kderla, function(x) {
 names(kderla) <- c("all", "field", "automated", "remote", "paleo")
 
 
-xyv <- xyvars[[1]]
-dat <- bootp_dt[like(type, "remote")]
-xl <- lims[[xyv["x"]]]
-yl <- lims[[xyv["y"]]]
-
-dat2 <- dat[, list(x = plot_res, y = t_btwn_samp)][y != 365 * 10000]
-dat2[, lapply(.SD, )]
-datmu <- dat2[, lapply(.SD, mean)][, lapply(.SD, log10)]
-datmed <- dat2[, lapply(.SD, median)][, lapply(.SD, log10)]
-
-# dat2 <- dat[, list(x = log10(plot_res), y = log10(t_btwn_samp))]
-odt <- kdat_setup(dat, x = xyv["x"], y = xyv["y"], xlim = xl, ylim = yl, 
-                  drop.oneoff = dropones[1])
-# par(mfrow = c(1, 2))
-# pre- log means and medians
-plot(dat2[, lapply(.SD, log10)], cex = 0.1, xlim = xl, ylim = yl)
-points(datmu, col = "red", pch = 20)
-points(datmed, col = "blue", pch = 20)
-# plot(coordinates(odt), pch = 20, cex = 0.1, xlim = c(-6, 10), ylim = c(-8, 6))
-# points(dat2$x, dat2$y, pch = 20, cex = 0.1, col = "red")
-points(colMeans(coordinates(odt))[1], colMeans(coordinates(odt))[2], 
-       col = "green4", pch = 20)
-points(dat2[, lapply(.SD, log10)][, lapply(.SD, mean)], col = "pink", pch = 20)
-
+# xyv <- xyvars[[1]]
+# dat <- bootp_dt[like(type, "remote")]
+# xl <- lims[[xyv["x"]]]
+# yl <- lims[[xyv["y"]]]
+# 
+# dat2 <- dat[, list(x = plot_res, y = t_btwn_samp)][y != 365 * 10000]
+# dat2[, lapply(.SD, )]
+# datmu <- dat2[, lapply(.SD, mean)][, lapply(.SD, log10)]
+# datmed <- dat2[, lapply(.SD, median)][, lapply(.SD, log10)]
+# 
+# # dat2 <- dat[, list(x = log10(plot_res), y = log10(t_btwn_samp))]
+# odt <- kdat_setup(dat, x = xyv["x"], y = xyv["y"], xlim = xl, ylim = yl, 
+#                   drop.oneoff = dropones[1])
+# # par(mfrow = c(1, 2))
+# # pre- log means and medians
+# plot(dat2[, lapply(.SD, log10)], cex = 0.1, xlim = xl, ylim = yl)
+# points(datmu, col = "red", pch = 20)
+# points(datmed, col = "blue", pch = 20)
+# # plot(coordinates(odt), pch = 20, cex = 0.1, xlim = c(-6, 10), ylim = c(-8, 6))
+# # points(dat2$x, dat2$y, pch = 20, cex = 0.1, col = "red")
+# points(colMeans(coordinates(odt))[1], colMeans(coordinates(odt))[2], 
+#        col = "green4", pch = 20)
+# points(dat2[, lapply(.SD, log10)][, lapply(.SD, mean)], col = "pink", pch = 20)
+# 
 # registerDoMC(4)
 # kderl <- foreach(i = 1:length(xyvars)) %dopar% {  # i <- 4
 #   xyv <- xyvars[[i]]
@@ -144,8 +143,8 @@ yrng <- range(vy[vy < vx])
 pcrd <- cbind(c(xrng[1], xrng[2], xrng[2], xrng[1]), 
               c(yrng[1], yrng[1], yrng[2], yrng[1]))
 msk3sp <- SpatialPolygons(list(Polygons(list(Polygon(coords = pcrd)), ID = 1)))
-# plot(kderla$all$resext$kde)
-# plot(msk3sp, add= TRUE)
+msk3sp <- crop(msk3sp, extent(kderla$all$resext$kde))
+plot(msk3sp, add = TRUE, col = "blue", border = FALSE)
 
 yr <- xr <- kderla$all$durint$kde
 vx <- xFromCell(xr, 1:ncell(xr))
@@ -189,7 +188,7 @@ cxa = 0.8
 # stps <- sapply(c(3, 4), function(x) which(kdat$st == x))  # IDs rs/auto/paleo
 # pchs <- list(1, "+")
 cexs <- c(0.4, 0.6)
-cuts <- 40
+cuts <- 100
 bump <- 3
 cols <- inferno(cuts + bump)[-c(2:(bump + 1))]
 # plot(1:cuts, col = cols, pch = 20)
@@ -205,7 +204,7 @@ axl <- list("A" = list("x" = alab1[-1], "y" = tlab1[-c(5)]),
 d <- c("Resolution", "Extent", "Interval", "Duration")
 labs <- list("A" = d[c(1, 3)], "B" = d[4:3], "C" = d[1:2], "D" = d[c(4, 2)])
 ptnms <- names(kderla)[-1]   # names for point plots
-ppch <- c("F", "A", "R", "P")
+ppch <- c("f", "a", "r", "p")
 
 png("vignettes/figures/fig2.png", width = 7, height = 6, res = 600, units ="in")
 par(mfrow = c(2, 2), mar = c(6, 6, 0.3, 3), oma = c(0, 0, 0.5, 1), 
@@ -215,19 +214,20 @@ ki <- c(1, 4, 3, 2)  # index to account for change in kde order
 for(i in 1:4) {  # i <- 1
   # plot main images and masks
   image(kderla$all[[ki[i]]]$kde, axes = FALSE, xlab = "", ylab = "", col = cols)
-  if(i == 2) plot(msk4sp, add = TRUE, col = "grey20", border = "transparent")
-  if(i == 3) plot(msk3sp, add = TRUE, col = "grey20", border = "transparent")
+  if(i == 2) plot(msk4sp, add = TRUE, col = "grey30", border = "transparent")
+  if(i == 3) plot(msk3sp, add = TRUE, col = "grey30", border = "transparent")
   axis(1, axv[[i]]$x, labels = axl[[i]]$x, las = 2, tcl = -0.2, cex.axis = cxa)
   axis(2, axv[[i]]$y, labels = axl[[i]]$y, las = 2, tcl = -0.2, cex.axis = cxa)
   
   # observation type means
   for(k in 1:length(ptnms)) {  # k <- 1
-    ppts <- kderla[[ptnms[k]]][[ki[i]]]$mean2
-    # ppts2 <- kderla[[ptnms[k]]][[ki[i]]]$qtl2[6, ]
-    points(x = ppts[1], y = ppts[2], pch = ppch[k], col = "grey")
-    # points(x = ppts2[1], y = ppts2[2], pch = ppch[k], col = "green4")
+    # ppts <- kderla[[ptnms[k]]][[ki[i]]]$mean
+    ppts <- kderla[[ptnms[k]]][[ki[i]]]$med
+    if(i %in% c(2, 4)) ppts[x > axv[[i]]$x[9], x := axv[[i]]$x[9]]
+    points(ppts, pch = ppch[k], col = "cyan")
+    # points(ppts2, pch = ppch[k], col = "green4")
   }    
-  
+
   # legend and labels
   legfun(kderla$all[[ki[i]]]$kde, n = cuts, cxa = cxa, col = cols)
   for(j in 1:2) mtext(side = j, labs[[i]][j], cex = cxa, line = ll)
