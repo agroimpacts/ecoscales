@@ -14,16 +14,21 @@
 #' @export
 kdat_setup <- function(dat, x, y, xlim, ylim, drop.oneoff = FALSE, 
                        oneoff.var = "y") {
-  odat <- dat[, list("x" = log10(get(x)), "y" = log10(get(y)))]
+  odat <- dat[, list("x" = get(x), "y" = get(y))]
   if(drop.oneoff == TRUE) {
-    odat <- odat[round(get(oneoff.var), 8) != 6.56229286]  # remove one-time obs
+    odat <- odat[get(oneoff.var) != 365 * 10000]  # remove one-time obs
   }
   odat <- na.omit(odat)   # drop NA values
-  odat[, n := 1]  # set up count column
-  odat[x < xlim[1], x := xlim[1]]  # confine x to min
-  odat[x > xlim[2], x := xlim[2]]  # confine x to max
-  odat[y < ylim[1], y := ylim[1]]  # confine y to min
-  odat[y > ylim[2], y := ylim[2]]  # confine y to max
-  coordinates(odat) <- ~x + y  # to spdf
-  odat
+
+  mu <- odat[, lapply(.SD, mean)][, lapply(.SD, log10)]  # mean
+  med <- odat[, lapply(.SD, median)][, lapply(.SD, log10)]  # median
+  o <- odat[, lapply(.SD, log10)]  # convert to log10
+
+  o[, n := 1]  # set up count column
+  o[x < xlim[1], x := xlim[1]]  # confine x to min
+  o[x > xlim[2], x := xlim[2]]  # confine x to max
+  o[y < ylim[1], y := ylim[1]]  # confine y to min
+  o[y > ylim[2], y := ylim[2]]  # confine y to max
+  coordinates(o) <- ~x + y  # to spdf
+  list("dat" = o, "mu" = mu, "med" = med)
 }

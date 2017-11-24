@@ -61,36 +61,65 @@ dropones <- c(TRUE, FALSE, FALSE, TRUE)
 # Prepare datasets and run kernel density estimates
 types <- c("field|remote|paleo|automated|other", "field", "automated", 
            "remote|other", "paleo")
+# qtl <- function(x) quantile(x, probs = seq(0, 1, 0.1), na.rm = TRUE, type = 1)
 
 registerDoMC(8)
 kderla <- foreach(i = 1:length(types)) %:%   # i <- 1
   foreach(j = 1:length(xyvars)) %dopar% {  # j <- 1
-    dfd <- bootp_dt[like(type, types[i])]
+    dfd <- kdat[like(type, types[i])]
     xyv <- xyvars[[j]]
     xl <- lims[[xyv["x"]]]
     yl <- lims[[xyv["y"]]]
     
-    # pre-kdat_setup column means
-    cmus1 <- colMeans(dfd[, list(log10(get(xyv[1])), log10(get(xyv[2])))], 
-                      na.rm = TRUE)
-    names(cmus) <- xyv
-    
+    # cmus1 <- colMeans(dfd[, list(log10(get(xyv[1])), log10(get(xyv[2])))], 
+    #                   na.rm = TRUE)
+    # names(cmus1) <- names(xyv)
+    # cqtl1 <- apply(dfd[, list(log10(get(xyv[1])), log10(get(xyv[2])))], 2, qtl)
+    # names(cqtl1) <- names(xyv)
+    # 
     # create input spdf
     odt <- kdat_setup(dfd, x = xyv["x"], y = xyv["y"], xlim = xl, ylim = yl, 
                       drop.oneoff = dropones[j])
     cmus2 <- colMeans(coordinates(odt))
-    names(cmus2) <- xyv  # post kdat_setup mean
+    names(cmus2) <- names(xyv)  # post kdat_setup mean
+    cqtl2 <- apply(coordinates(odt), 2, qtl)
 
     # kernel densities
     kder <- kdensity(xl[1], xl[2], yl[1], yl[2], 0.1, odt, 1)
     kder <- (kder / cellStats(kder, sum)) * 100
-    list("kde" = kder, "mean1" = cmus1, "mean2" = cmus2)
+    list("kde" = kder, "mean1" = cmus1, "qtl1" = cqtl1, "mean2" = cmus2, 
+         "qtl2" = cqtl2)
   }
 kderla <- lapply(kderla, function(x) {
   names(x) <- c("resint", "durext", "resext", "durint")
   x
 })
 names(kderla) <- c("all", "field", "automated", "remote", "paleo")
+
+
+xyv <- xyvars[[1]]
+dat <- bootp_dt[like(type, "remote")]
+xl <- lims[[xyv["x"]]]
+yl <- lims[[xyv["y"]]]
+
+dat2 <- dat[, list(x = plot_res, y = t_btwn_samp)][y != 365 * 10000]
+dat2[, lapply(.SD, )]
+datmu <- dat2[, lapply(.SD, mean)][, lapply(.SD, log10)]
+datmed <- dat2[, lapply(.SD, median)][, lapply(.SD, log10)]
+
+# dat2 <- dat[, list(x = log10(plot_res), y = log10(t_btwn_samp))]
+odt <- kdat_setup(dat, x = xyv["x"], y = xyv["y"], xlim = xl, ylim = yl, 
+                  drop.oneoff = dropones[1])
+# par(mfrow = c(1, 2))
+# pre- log means and medians
+plot(dat2[, lapply(.SD, log10)], cex = 0.1, xlim = xl, ylim = yl)
+points(datmu, col = "red", pch = 20)
+points(datmed, col = "blue", pch = 20)
+# plot(coordinates(odt), pch = 20, cex = 0.1, xlim = c(-6, 10), ylim = c(-8, 6))
+# points(dat2$x, dat2$y, pch = 20, cex = 0.1, col = "red")
+points(colMeans(coordinates(odt))[1], colMeans(coordinates(odt))[2], 
+       col = "green4", pch = 20)
+points(dat2[, lapply(.SD, log10)][, lapply(.SD, mean)], col = "pink", pch = 20)
 
 # registerDoMC(4)
 # kderl <- foreach(i = 1:length(xyvars)) %dopar% {  # i <- 4
@@ -105,19 +134,11 @@ names(kderla) <- c("all", "field", "automated", "remote", "paleo")
 # }
 # sapply(1:4, function(x) identical(kderla$all[[x]]$kde, kderl[[x]]))
 
-# masks
+# create masks for impossible values in res vs ext, and dur vs int
 yr <- xr <- kderla$all$resext$kde
 v <- xFromCell(xr, 1:ncell(xr))
-# v <- log10(10^v / 10000)  # convert plot_res to ha 
 vx <- log10(10^v / 10000)  # convert plot_res to ha 
-# values(xr) <- v
-# v <- yFromCell(yr, 1:ncell(yr))
 vy <- yFromCell(yr, 1:ncell(yr))
-# values(yr) <- v
-# msk3 <- yr > xr
-# msk3[msk3 == 1] <- NA
-# msk3[msk3 == 0] <- 1
-# plot(trim(msk3))
 xrng <- range(v[vx > vy])  # select values from v, not vx, because of scale chng
 yrng <- range(vy[vy < vx])
 pcrd <- cbind(c(xrng[1], xrng[2], xrng[2], xrng[1]), 
@@ -125,53 +146,18 @@ pcrd <- cbind(c(xrng[1], xrng[2], xrng[2], xrng[1]),
 msk3sp <- SpatialPolygons(list(Polygons(list(Polygon(coords = pcrd)), ID = 1)))
 # plot(kderla$all$resext$kde)
 # plot(msk3sp, add= TRUE)
-# msk3sp <- rgeos::gSimplify(rasterToPolygons(msk3, dissolve = TRUE), tol = 0.2)
 
 yr <- xr <- kderla$all$durint$kde
 vx <- xFromCell(xr, 1:ncell(xr))
-# values(xr) <- v
 vy <- yFromCell(yr, 1:ncell(yr))
-# values(yr) <- v
-# msk4 <- yr < xr
 xrng <- range(vx[vx < vy])  # select values from vx
 yrng <- range(vy[vy > vx])
-# msk4[msk4 == 1] <- NA
-# msk4[msk4 == 0] <- 1
-# msk4sp <- rgeos::gSimplify(rasterToPolygons(msk4, dissolve = TRUE), tol = 0.8)
-# plot(msk4); plot(msk4sp, add = TRUE)
 pcrd <- cbind(c(xrng[1], xrng[2], xrng[1], xrng[1]), 
               c(yrng[2], yrng[2], yrng[1], yrng[2]))
 msk4sp <- SpatialPolygons(list(Polygons(list(Polygon(coords = pcrd)), ID = 1)))
 # plot(kderla$all$durint$kde)
 # plot(msk4sp, add= TRUE)
-
-
 ```
-
-```{r}
-
-
-library(MASS)
-xl <- lims$plot_res
-yl <- lims$eff_ext
-
-odt <- kdat_setup(bootp_dt[like(type, "remote|other")], x = "plot_res", 
-                  y = "eff_ext", xlim = xl, ylim = yl)  
-kder <- kdensity(xl[1], xl[2], yl[1], yl[2], 0.1, odt, 1)
-kder <- (kder / cellStats(kder, sum)) * 100
-v <- values(kder)
-vq <- quantile(v[v > 0], na.rm = TRUE)
-vqr <- kder > vq[4]
-pts <- t(cbind(colMeans(coordinates(odt))))
-plot(vqr)
-points(pts)
-lines(rasterToContour(vqr, nlevels = 1))
-plot(cont, add = TRUE)
-
-
-```
-
-
 
 <a href="#top">Back to top</a>
 
@@ -208,54 +194,99 @@ bump <- 3
 cols <- inferno(cuts + bump)[-c(2:(bump + 1))]
 # plot(1:cuts, col = cols, pch = 20)
 
-# pdf("vignettes/figures/fig2.pdf", width = 7, height = 6)
+axv <- list("A" = list("x" = aaxis1$logres[-1], "y" = taxis1$logdays[-c(5)]), 
+            "B" = list("x" = taxis2$logdays[-5], "y" = taxis2$logdays[-5]),
+            "C" = list("x" = aaxis1$logres[-1], "y" = aaxis2$logarea), 
+            "D" = list("x" = taxis2$logdays[-5], "y" = aaxis2$logarea))
+axl <- list("A" = list("x" = alab1[-1], "y" = tlab1[-c(5)]), 
+            "B" = list("x" = tlab2[-5], "y" = tlab2[-5]), 
+            "C" = list("x" = alab1[-1], "y" = alab2), 
+            "D" = list("x" = tlab2[-5], "y" = alab2))
+d <- c("Resolution", "Extent", "Interval", "Duration")
+labs <- list("A" = d[c(1, 3)], "B" = d[4:3], "C" = d[1:2], "D" = d[c(4, 2)])
+ptnms <- names(kderla)[-1]   # names for point plots
+ppch <- c("F", "A", "R", "P")
+
 png("vignettes/figures/fig2.png", width = 7, height = 6, res = 600, units ="in")
 par(mfrow = c(2, 2), mar = c(6, 6, 0.3, 3), oma = c(0, 0, 0.5, 1), 
     mgp = c(2, 0.25, 0))
 # resolutions
-image(kderl[[1]], axes = FALSE, xlab = "", ylab = "", col = cols)
-axis(1, aaxis1$logres[-1], labels = alab1[-1], las = 2, tcl = -0.2, 
-     cex.axis = cxa)
-axis(2, taxis1$logdays[-c(5)], labels = tlab1[-c(5)], las = 2, tcl = -0.2,
-     cex.axis = cxa)
-mtext("Resolution", 1, cex = cxa, line = ll)
-mtext("Interval", 2, cex = cxa, line = ll)
-legfun(kderl[[1]], n = cuts, cxa = cxa, col = cols)
-mtext("A", side = 3, line = -1, cex = 0.8, adj = 0.05, col = "white")
-
-# duration versus interval
-image(kderl[[4]], axes = FALSE, xlab = "", ylab = "", col = cols)
-plot(msk4sp, add = TRUE, col = "grey20", border = "transparent")
-for(i in 1:2) {  # using taxis2 values for both axes because same
-  axis(i, at = taxis2$logdays[-5], labels = tlab2[-5], las = 2,
-       cex.axis = cxa, tcl = -0.2)
+ki <- c(1, 4, 3, 2)  # index to account for change in kde order
+for(i in 1:4) {  # i <- 1
+  # plot main images and masks
+  image(kderla$all[[ki[i]]]$kde, axes = FALSE, xlab = "", ylab = "", col = cols)
+  if(i == 2) plot(msk4sp, add = TRUE, col = "grey20", border = "transparent")
+  if(i == 3) plot(msk3sp, add = TRUE, col = "grey20", border = "transparent")
+  axis(1, axv[[i]]$x, labels = axl[[i]]$x, las = 2, tcl = -0.2, cex.axis = cxa)
+  axis(2, axv[[i]]$y, labels = axl[[i]]$y, las = 2, tcl = -0.2, cex.axis = cxa)
+  
+  # observation type means
+  for(k in 1:length(ptnms)) {  # k <- 1
+    ppts <- kderla[[ptnms[k]]][[ki[i]]]$mean2
+    # ppts2 <- kderla[[ptnms[k]]][[ki[i]]]$qtl2[6, ]
+    points(x = ppts[1], y = ppts[2], pch = ppch[k], col = "grey")
+    # points(x = ppts2[1], y = ppts2[2], pch = ppch[k], col = "green4")
+  }    
+  
+  # legend and labels
+  legfun(kderla$all[[ki[i]]]$kde, n = cuts, cxa = cxa, col = cols)
+  for(j in 1:2) mtext(side = j, labs[[i]][j], cex = cxa, line = ll)
+  mtext(LETTERS[i], side = 3, line = -1, cex = 0.8, adj = 0.05, col = "white")
 }
-mtext("Duration", 1, cex = cxa, line = ll)
-mtext("Interval", 2, cex = cxa, line = ll)
-legfun(kderl[[4]], n = cuts, cxa = cxa, col = cols)
-mtext("B", side = 3, line = -1, cex = 0.8, adj = 0.05, col = "white")
-
-# Resolution versus extent
-image(kderl[[3]], col = cols, axes = FALSE, xlab = "", ylab = "") 
-plot(msk3sp, add = TRUE, col = "grey20", border = "transparent")
-axis(1, aaxis1$logres[-1], labels = alab1[-1], las = 2, cex.axis = cxa, 
-     tcl = -0.2)
-axis(2, aaxis2$logarea, labels = alab2, las = 2, cex.axis = cxa, tcl = -0.2)
-mtext("Resolution", 1, cex = cxa, line = ll)
-mtext("Extent", 2, cex = cxa, line = ll)
-legfun(kderl[[3]], n = cuts, cxa = cxa, col = cols)
-mtext("C", side = 3, line = -1, cex = 0.8, adj = 0.05, col = "white")
-
-# Duration versus extent
-image(kderl[[2]], axes = FALSE, xlab = "", ylab = "", col = cols)
-axis(1, taxis2$logdays[-5], labels = tlab2[-5], las = 2, cex.axis = cxa, 
-     tcl = -0.2)
-axis(2, aaxis2$logarea, labels = alab2, las = 2, cex.axis = cxa, tcl = -0.2)
-mtext("Duration", 1, cex = cxa, line = ll)
-mtext("Extent", 2, cex = cxa, line = ll)
-legfun(kderl[[2]], n = cuts, cxa = cxa, col = cols)
-mtext("D", side = 3, line = -1, cex = 0.8, adj = 0.05, col = "white")
 dev.off()
+
+
+
+
+
+# # pdf("vignettes/figures/fig2.pdf", width = 7, height = 6)
+# png("vignettes/figures/fig2.png", width = 7, height = 6, res = 600, units ="in")
+# par(mfrow = c(2, 2), mar = c(6, 6, 0.3, 3), oma = c(0, 0, 0.5, 1), 
+#     mgp = c(2, 0.25, 0))
+# # resolutions
+# image(kderla[[1]], axes = FALSE, xlab = "", ylab = "", col = cols)
+# axis(1, aaxis1$logres[-1], labels = alab1[-1], las = 2, tcl = -0.2, 
+#      cex.axis = cxa)
+# axis(2, taxis1$logdays[-c(5)], labels = tlab1[-c(5)], las = 2, tcl = -0.2,
+#      cex.axis = cxa)
+# mtext("Resolution", 1, cex = cxa, line = ll)
+# mtext("Interval", 2, cex = cxa, line = ll)
+# legfun(kderl[[1]], n = cuts, cxa = cxa, col = cols)
+# mtext("A", side = 3, line = -1, cex = 0.8, adj = 0.05, col = "white")
+# 
+# # duration versus interval
+# image(kderl[[4]], axes = FALSE, xlab = "", ylab = "", col = cols)
+# plot(msk4sp, add = TRUE, col = "grey20", border = "transparent")
+# for(i in 1:2) {  # using taxis2 values for both axes because same
+#   axis(i, at = taxis2$logdays[-5], labels = tlab2[-5], las = 2,
+#        cex.axis = cxa, tcl = -0.2)
+# }
+# mtext("Duration", 1, cex = cxa, line = ll)
+# mtext("Interval", 2, cex = cxa, line = ll)
+# legfun(kderl[[4]], n = cuts, cxa = cxa, col = cols)
+# mtext("B", side = 3, line = -1, cex = 0.8, adj = 0.05, col = "white")
+# 
+# # Resolution versus extent
+# image(kderl[[3]], col = cols, axes = FALSE, xlab = "", ylab = "") 
+# plot(msk3sp, add = TRUE, col = "grey20", border = "transparent")
+# axis(1, aaxis1$logres[-1], labels = alab1[-1], las = 2, cex.axis = cxa, 
+#      tcl = -0.2)
+# axis(2, aaxis2$logarea, labels = alab2, las = 2, cex.axis = cxa, tcl = -0.2)
+# mtext("Resolution", 1, cex = cxa, line = ll)
+# mtext("Extent", 2, cex = cxa, line = ll)
+# legfun(kderl[[3]], n = cuts, cxa = cxa, col = cols)
+# mtext("C", side = 3, line = -1, cex = 0.8, adj = 0.05, col = "white")
+# 
+# # Duration versus extent
+# image(kderl[[2]], axes = FALSE, xlab = "", ylab = "", col = cols)
+# axis(1, taxis2$logdays[-5], labels = tlab2[-5], las = 2, cex.axis = cxa, 
+#      tcl = -0.2)
+# axis(2, aaxis2$logarea, labels = alab2, las = 2, cex.axis = cxa, tcl = -0.2)
+# mtext("Duration", 1, cex = cxa, line = ll)
+# mtext("Extent", 2, cex = cxa, line = ll)
+# legfun(kderl[[2]], n = cuts, cxa = cxa, col = cols)
+# mtext("D", side = 3, line = -1, cex = 0.8, adj = 0.05, col = "white")
+# dev.off()
 
 # image(rdur, axes = FALSE, xlab = "", ylab = "", col = cols)
 # plot(rdur, legend.only = TRUE, axis.args = aargs, legend.width = 1.25,
