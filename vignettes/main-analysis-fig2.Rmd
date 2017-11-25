@@ -38,7 +38,7 @@ data("bootperturb")
 
 ## Kernel density estimates
 
-```{r, eval = FALSE}
+```{r kde, cache=TRUE}
 bootp_dt <- rbindlist(bootperturb)
 
 # choose which dataset to use
@@ -48,10 +48,6 @@ kdat <- copy(bootp_dt)  # bootstrap
 lims <- list("t_btwn_samp" = c(-5, 5.57), "plot_res" = c(-5, 8), 
              "eff_ext" = range(aaxis2$logarea),
              "eff_dur" = c(-5, 5.56))  # limits
-# xyvars <- list(c("t_btwn_samp", "plot_res"),  # variable pairs 
-#                c("eff_ext", "eff_dur"), 
-#                c("eff_ext", "plot_res"), 
-#                c("t_btwn_samp", "eff_dur"))
 xyvars <- list(c(x = "plot_res", y = "t_btwn_samp"),  # variable pairs 
                c(x = "eff_dur", y = "eff_ext"), 
                c(x = "plot_res", y = "eff_ext"), 
@@ -71,18 +67,9 @@ kderla <- foreach(i = 1:length(types)) %:%   # i <- 1
     xl <- lims[[xyv["x"]]]
     yl <- lims[[xyv["y"]]]
     
-    # cmus1 <- colMeans(dfd[, list(log10(get(xyv[1])), log10(get(xyv[2])))], 
-    #                   na.rm = TRUE)
-    # names(cmus1) <- names(xyv)
-    # cqtl1 <- apply(dfd[, list(log10(get(xyv[1])), log10(get(xyv[2])))], 2, qtl)
-    # names(cqtl1) <- names(xyv)
-    # 
     # create input spdf
     odt <- kdat_setup(dfd, x = xyv["x"], y = xyv["y"], xlim = xl, ylim = yl, 
                       drop.oneoff = dropones[j])
-    # cmus2 <- colMeans(coordinates(odt))
-    # names(cmus2) <- names(xyv)  # post kdat_setup mean
-    # cqtl2 <- apply(coordinates(odt), 2, qtl)
 
     # kernel densities
     kder <- kdensity(xl[1], xl[2], yl[1], yl[2], 0.1, odt$dat, 1)
@@ -95,44 +82,6 @@ kderla <- lapply(kderla, function(x) {
 })
 names(kderla) <- c("all", "field", "automated", "remote", "paleo")
 
-
-# xyv <- xyvars[[1]]
-# dat <- bootp_dt[like(type, "remote")]
-# xl <- lims[[xyv["x"]]]
-# yl <- lims[[xyv["y"]]]
-# 
-# dat2 <- dat[, list(x = plot_res, y = t_btwn_samp)][y != 365 * 10000]
-# dat2[, lapply(.SD, )]
-# datmu <- dat2[, lapply(.SD, mean)][, lapply(.SD, log10)]
-# datmed <- dat2[, lapply(.SD, median)][, lapply(.SD, log10)]
-# 
-# # dat2 <- dat[, list(x = log10(plot_res), y = log10(t_btwn_samp))]
-# odt <- kdat_setup(dat, x = xyv["x"], y = xyv["y"], xlim = xl, ylim = yl, 
-#                   drop.oneoff = dropones[1])
-# # par(mfrow = c(1, 2))
-# # pre- log means and medians
-# plot(dat2[, lapply(.SD, log10)], cex = 0.1, xlim = xl, ylim = yl)
-# points(datmu, col = "red", pch = 20)
-# points(datmed, col = "blue", pch = 20)
-# # plot(coordinates(odt), pch = 20, cex = 0.1, xlim = c(-6, 10), ylim = c(-8, 6))
-# # points(dat2$x, dat2$y, pch = 20, cex = 0.1, col = "red")
-# points(colMeans(coordinates(odt))[1], colMeans(coordinates(odt))[2], 
-#        col = "green4", pch = 20)
-# points(dat2[, lapply(.SD, log10)][, lapply(.SD, mean)], col = "pink", pch = 20)
-# 
-# registerDoMC(4)
-# kderl <- foreach(i = 1:length(xyvars)) %dopar% {  # i <- 4
-#   xyv <- xyvars[[i]]
-#   xl <- lims[[xyv["x"]]]
-#   yl <- lims[[xyv["y"]]]
-#   odt <- kdat_setup(kdat, x = xyv["x"], y = xyv["y"], xlim = xl, ylim = yl, 
-#                     drop.oneoff = dropones[i])
-#   kder <- kdensity(xl[1], xl[2], yl[1], yl[2], 0.1, odt, 1)
-#   kder <- (kder / cellStats(kder, sum)) * 100
-#   kder
-# }
-# sapply(1:4, function(x) identical(kderla$all[[x]]$kde, kderl[[x]]))
-
 # create masks for impossible values in res vs ext, and dur vs int
 yr <- xr <- kderla$all$resext$kde
 v <- xFromCell(xr, 1:ncell(xr))
@@ -143,8 +92,8 @@ yrng <- range(vy[vy < vx])
 pcrd <- cbind(c(xrng[1], xrng[2], xrng[2], xrng[1]), 
               c(yrng[1], yrng[1], yrng[2], yrng[1]))
 msk3sp <- SpatialPolygons(list(Polygons(list(Polygon(coords = pcrd)), ID = 1)))
-msk3sp <- crop(msk3sp, extent(kderla$all$resext$kde))
-plot(msk3sp, add = TRUE, col = "blue", border = FALSE)
+# plot(kderla$all$resext$kde)
+# plot(msk3sp, add = TRUE, col = "blue", border = FALSE)
 
 yr <- xr <- kderla$all$durint$kde
 vx <- xFromCell(xr, 1:ncell(xr))
@@ -162,7 +111,9 @@ msk4sp <- SpatialPolygons(list(Polygons(list(Polygon(coords = pcrd)), ID = 1)))
 
 ## Figure 2
 
-```{r, eval = FALSE}
+Main figure of kernel densities, with median values added to density plots. 
+
+```{r fig2, cache = TRUE}
 # global function for defining breaks
 brkfun <- function(ext, ival, n) {
   rng <- range(ext[is.finite(ext)])
@@ -174,12 +125,13 @@ brkfun <- function(ext, ival, n) {
 
 # global function for plotting legend
 legfun <- function(kde, ival = 0.01, n, mgp = c(3, 0.25, 0), tcl = -0.1, 
-                   cxa = cxa, ls = 0.9, col = cols, lw = 1.25) {
+                   cxa = cxa, ls = 0.9, col = cols, lw = 1.25, 
+                   smallplot = c(0.875, 0.9, 0.4, 0.95)) {
   brks <- brkfun(ext = kde, ival = ival, n = n)  # breaks
   aargs <- list(mgp = mgp, at = brks$labs, labels = brks$labs, 
-              cex.axis = cxa, tcl = tcl)
+                cex.axis = cxa, tcl = tcl)
   plot(kde, legend.only = TRUE, axis.args = aargs, legend.width = lw,
-       legend.shrink = ls, col = col)#inferno(cuts))
+       legend.shrink = ls, col = col, smallplot = smallplot)#inferno(cuts))
 }
   
 # cxa = 0.7
@@ -188,7 +140,7 @@ cxa = 0.8
 # stps <- sapply(c(3, 4), function(x) which(kdat$st == x))  # IDs rs/auto/paleo
 # pchs <- list(1, "+")
 cexs <- c(0.4, 0.6)
-cuts <- 100
+cuts <- 30
 bump <- 3
 cols <- inferno(cuts + bump)[-c(2:(bump + 1))]
 # plot(1:cuts, col = cols, pch = 20)
@@ -206,7 +158,7 @@ labs <- list("A" = d[c(1, 3)], "B" = d[4:3], "C" = d[1:2], "D" = d[c(4, 2)])
 ptnms <- names(kderla)[-1]   # names for point plots
 ppch <- c("f", "a", "r", "p")
 
-png("vignettes/figures/fig2.png", width = 7, height = 6, res = 600, units ="in")
+png("figures/fig2.png", width = 7, height = 6, res = 600, units ="in")
 par(mfrow = c(2, 2), mar = c(6, 6, 0.3, 3), oma = c(0, 0, 0.5, 1), 
     mgp = c(2, 0.25, 0))
 # resolutions
@@ -224,75 +176,55 @@ for(i in 1:4) {  # i <- 1
     # ppts <- kderla[[ptnms[k]]][[ki[i]]]$mean
     ppts <- kderla[[ptnms[k]]][[ki[i]]]$med
     if(i %in% c(2, 4)) ppts[x > axv[[i]]$x[9], x := axv[[i]]$x[9]]
-    points(ppts, pch = ppch[k], col = "cyan")
+    points(ppts, pch = ppch[k], col = "grey60")
     # points(ppts2, pch = ppch[k], col = "green4")
   }    
 
   # legend and labels
   legfun(kderla$all[[ki[i]]]$kde, n = cuts, cxa = cxa, col = cols)
   for(j in 1:2) mtext(side = j, labs[[i]][j], cex = cxa, line = ll)
-  mtext(LETTERS[i], side = 3, line = -1, cex = 0.8, adj = 0.05, col = "white")
+  mtext(LETTERS[i], side = 3, line = -0.1, cex = 0.8, adj = 0.025)
 }
 dev.off()
 
+```
 
+## Figure 2S
 
+Expanded version of Figure 2, showing kernel densities of different observational categories. 
 
+```{r, cache = TRUE}
+ylabs <- c("All", "Field", "Automated", "Remote", "Paleo")
+titles <- c("Res v Int", "Dur v Int", "Res v Ext", "Dur v Ext")
 
-# # pdf("vignettes/figures/fig2.pdf", width = 7, height = 6)
-# png("vignettes/figures/fig2.png", width = 7, height = 6, res = 600, units ="in")
-# par(mfrow = c(2, 2), mar = c(6, 6, 0.3, 3), oma = c(0, 0, 0.5, 1), 
-#     mgp = c(2, 0.25, 0))
-# # resolutions
-# image(kderla[[1]], axes = FALSE, xlab = "", ylab = "", col = cols)
-# axis(1, aaxis1$logres[-1], labels = alab1[-1], las = 2, tcl = -0.2, 
-#      cex.axis = cxa)
-# axis(2, taxis1$logdays[-c(5)], labels = tlab1[-c(5)], las = 2, tcl = -0.2,
-#      cex.axis = cxa)
-# mtext("Resolution", 1, cex = cxa, line = ll)
-# mtext("Interval", 2, cex = cxa, line = ll)
-# legfun(kderl[[1]], n = cuts, cxa = cxa, col = cols)
-# mtext("A", side = 3, line = -1, cex = 0.8, adj = 0.05, col = "white")
-# 
-# # duration versus interval
-# image(kderl[[4]], axes = FALSE, xlab = "", ylab = "", col = cols)
-# plot(msk4sp, add = TRUE, col = "grey20", border = "transparent")
-# for(i in 1:2) {  # using taxis2 values for both axes because same
-#   axis(i, at = taxis2$logdays[-5], labels = tlab2[-5], las = 2,
-#        cex.axis = cxa, tcl = -0.2)
-# }
-# mtext("Duration", 1, cex = cxa, line = ll)
-# mtext("Interval", 2, cex = cxa, line = ll)
-# legfun(kderl[[4]], n = cuts, cxa = cxa, col = cols)
-# mtext("B", side = 3, line = -1, cex = 0.8, adj = 0.05, col = "white")
-# 
-# # Resolution versus extent
-# image(kderl[[3]], col = cols, axes = FALSE, xlab = "", ylab = "") 
-# plot(msk3sp, add = TRUE, col = "grey20", border = "transparent")
-# axis(1, aaxis1$logres[-1], labels = alab1[-1], las = 2, cex.axis = cxa, 
-#      tcl = -0.2)
-# axis(2, aaxis2$logarea, labels = alab2, las = 2, cex.axis = cxa, tcl = -0.2)
-# mtext("Resolution", 1, cex = cxa, line = ll)
-# mtext("Extent", 2, cex = cxa, line = ll)
-# legfun(kderl[[3]], n = cuts, cxa = cxa, col = cols)
-# mtext("C", side = 3, line = -1, cex = 0.8, adj = 0.05, col = "white")
-# 
-# # Duration versus extent
-# image(kderl[[2]], axes = FALSE, xlab = "", ylab = "", col = cols)
-# axis(1, taxis2$logdays[-5], labels = tlab2[-5], las = 2, cex.axis = cxa, 
-#      tcl = -0.2)
-# axis(2, aaxis2$logarea, labels = alab2, las = 2, cex.axis = cxa, tcl = -0.2)
-# mtext("Duration", 1, cex = cxa, line = ll)
-# mtext("Extent", 2, cex = cxa, line = ll)
-# legfun(kderl[[2]], n = cuts, cxa = cxa, col = cols)
-# mtext("D", side = 3, line = -1, cex = 0.8, adj = 0.05, col = "white")
-# dev.off()
+png("figures/fig2s.png", width = 8.5, height = 9, res = 600, 
+    units = "in")
+par(mfrow = c(5, 4), mar = c(4.5, 4.5, 0.3, 2.5), oma = c(0, 1, 1, 0), 
+    mgp = c(2, 0.25, 0))
+kj <- c(1, 4, 3, 2)  # index to account for change in kde order
+for(i in 1:5) {
+  for(j in 1:4) {  # i <- 1
+    # plot main images and masks
+    image(kderla[[i]][[kj[j]]]$kde, axes = FALSE, xlab = "", ylab = "", 
+          col = cols)
+    if(j == 2) plot(msk4sp, add = TRUE, col = "grey30", border = "transparent")
+    if(j == 3) plot(msk3sp, add = TRUE, col = "grey30", border = "transparent")
+    axis(2, axv[[j]]$y, labels = axl[[j]]$y, las = 2, tcl = -0.2,
+         cex.axis = cxa)
+    axis(1, axv[[j]]$x, labels = axl[[j]]$x, las = 2, tcl = -0.2,
+         cex.axis = cxa)
+    if(j == 1) mtext(ylabs[i], side = 2, line = 4, cex = cxa)
+    if(i == 1) mtext(titles[j], side = 3, line = 0, cex = cxa)
 
-# image(rdur, axes = FALSE, xlab = "", ylab = "", col = cols)
-# plot(rdur, legend.only = TRUE, axis.args = aargs, legend.width = 1.25,
-#      legend.shrink = 0.9, col = cols)
-
-# save(bootp_dt, file = "data/bootresults.rda")
+    # legend and labels
+    legfun(kderla$all[[kj[j]]]$kde, n = cuts, cxa = cxa, col = cols, 
+           smallplot = c(0.85, 0.875, 0.4, 0.95))
+  }
+}
+dev.off()
 
 ```
+
+
+
 
