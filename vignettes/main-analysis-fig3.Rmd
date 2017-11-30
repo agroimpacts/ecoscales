@@ -28,147 +28,150 @@ The resampled full dataset created in the [Data Pre-processing vignette](data-pr
 ```{r, message = FALSE, warning=FALSE}
 library(ecoscales)
 library(viridis)
-library(lmisc)
 data("dimbreaks")
 data("bootperturb")
 ```
 
-### Figure 3
-Actual versus effective duration/extent
-```{r, eval=FALSE}
+## Actual versus effective duration/extent
 
-# plot params
-ex <- range(aaxis2$logarea)
-ey <- range(aaxis2$logarea)
-ll <- 3.5
-cxa = 0.7
-stps <- sapply(c(3, 4), function(x) which(kdat$st == x))  # IDs rs/auto/paleo
-pchs <- list(1, "+")
-cexs <- c(0.4, 0.6)
-cuts <- 40
-bump <- 3
-cols <- inferno(cuts + bump)[-c(2:(bump + 1))]
+Prepare the data for creating boxplots: calculate differences between log-transformed actual and effective extents/durations, assign the values to different bins (intervals) of extent/duration, calculate the percentage of observations in each bin. 
+```{r datprep}
+kdat <- rbindlist(bootperturb)
 
-# Difference in effective versus actual extent/duration against actual ext/dur
-hdat_bs2 <- lapply(1:length(bootperturb), function(x) {  # x <- 1
-  print(x)
-  DT <- bootperturb[[x]]
+# limits
+xyvars <- list(c(x = "eff_ext", y = "act_ext"),  # variable pairs 
+               c(x = "eff_dur", y = "act_dur"))
+lims <- list("eff_ext" = range(aaxis2$logarea), # limits
+             "act_ext" = range(aaxis2$logarea), 
+             "eff_dur" = range(taxis2$logdays[-5]), 
+             "act_dur" = range(taxis2$logdays[-5]))
+ivals <- list("ext" = aaxis2$logarea, "dur" = taxis2$logdays[-5])
+dropones <- c(FALSE, TRUE)
+onms <- list(c("eext", "aext"), c("edur", "adur"))
+wgtint <- c(0, 1, seq(5, 40, 5)) / 100
+wgttxt <- (c("  0", "  1", "  5", seq(10, 40, 5)))
+
+dif_ints <- lapply(1:length(xyvars), function(x) {  # x <- 2
+  xyv <- xyvars[[x]]
+  onm <- onms[[x]]
+  ival <- ivals[[x]]
+  xl <- lims[[xyv["x"]]]
+  yl <- lims[[xyv["y"]]]
   
-  # extent measures log10 transformed
-  edb <- DT[, lapply(.SD, log10), .SDcol = c("eff_ext", "act_ext")]
-  setnames(edb, c("eff_ext", "act_ext"), c("eext", "aext"))
-  edb[, dif := eext - aext]  # difference between extent and actual extent
+  o <- copy(kdat)
+  if(x == 2) o <- o[t_btwn_samp != 365 * 10000, ]
+  type <- o$type
+  type[type == "other"] <- "remote"
+  o <- o[, list("x" = get(xyv["x"]), "y" = get(xyv["y"]))]
+  o <- o[, lapply(.SD, log10)]
+  o <- cbind(type, o)
+  o[x < xl[1], x := xl[1]]  # confine x to min
+  o[x > xl[2], x := xl[2]]  # confine x to max
+  o[y < yl[1], y := yl[1]]  # confine y to min
+  o[y > yl[2], y := yl[2]]  # confine y to max
+  o <- na.omit(o)
 
-  # duration measures log10 transformed, unreplicated dropped
-  tdb <- DT[t_btwn_samp != 365 * 10000, lapply(.SD, log10), 
-            .SDcol = c("eff_dur", "act_dur")]
-  setnames(tdb, c("eff_dur", "act_dur"), c("edur", "adur"))
-  # print(paste(edb[, .N], tdb[, .N]))
-  tdb[, dif := edur - adur]  # difference between duration and actual duration
-  return(list("edb" = edb, "tdb" = tdb, #"elm" = elm, "tlm" = tlm, 
-              "Ns" = c(edb[, .N], tdb[, .N])))
+  # difference and intervals - if want to plot versus actual dur/ext, switch
+  # x for y in findInterval
+  o[, dif := x - y]
+  o[, int := findInterval(x, ival, rightmost.closed = TRUE)]
+  setnames(o, c("x", "y"), onm)
+  
+  # plot related variables, finding percentages in each bin, occupied intervals 
+  ints <- sort(o[, unique(int)])
+  pctobs <- sapply(ints, function(i) o[int == i, .N])
+  wgt <- pctobs / sum(pctobs)
+  wgti <- c(0, 1, seq(5, max(round(wgt, 1)) * 100, 5))
+  cols <- findInterval(wgt, wgti / 100)  # corresponding color index
+  return(list("db" = o, "wgt" = wgt, "wgti" = wgti,
+              "col" = cols, "xl" = xl, "yl" = yl, "ival" = ival, "ints" = ints))
 })
+names(dif_ints) <- c("e", "d")
 
-# calculate box statistics
-# Extent differences
-eint <- aaxis2$logarea
-edif_int <- rbindlist(lapply(hdat_bs2, function(y) {  # y <- hdat_bs2[[2]]
-  dd <- copy(y$edb[!is.na(aext)])
-  dd[aext < ex[1], aext := ex[1]]  # set to min
-  # dd[eext < ex[1], eext := ex[1]]  # set to min
-  dd[, int := findInterval(aext, eint, rightmost.closed = TRUE)]
-  # dd[, int := findInterval(eext, eint, rightmost.closed = TRUE)]
-}))
-ints <- sort(edif_int[, unique(int)])
-ebox <- lapply(ints, function(x) edif_int[int == x, lmisc::box_stats(dif)])
-pctobs <- sapply(ints, function(x) edif_int[int == x, .N])
-ewgt <- pctobs / sum(pctobs)
-# round(cumsum(ewgt), 2)
-ewgtint <- c(0, 1, 5, 10, 15, 20, 25) / 100  # weight intervals
-ewgttxt <- c("  0", "  1", "  5", seq(10, 25, 5))
-ecols <- findInterval(ewgt, ewgtint)  # corresponding color index
+```
 
-# temporal differences
-dint <- taxis2$logdays[-5]
-tx <- range(dint)
-ddif_int <- rbindlist(lapply(hdat_bs2, function(y) {  # y <- hdat_bs2[[2]]
-  dd <- copy(y$tdb[!is.na(adur)])
-  dd[adur < tx[1], adur := tx[1]]  # set to min
-  dd[adur > tx[2], adur := tx[2]]  # set to max
-  dd[, int := findInterval(adur, dint, rightmost.closed = TRUE)]  # include high
-  # dd[, int := findInterval(edur, dint, rightmost.closed = TRUE)]  # include high
-}))
-dints <- sort(ddif_int[, unique(int)])
-tbox <- lapply(dints, function(x) ddif_int[int == x, lmisc::box_stats(dif)])
-pctobs <- sapply(dints, function(x) ddif_int[int == x, .N])
-dwgt <- pctobs / sum(pctobs)
-# round(cumsum(dwgt), 2)
+## Figure 3
 
-dwgtint <- c(0, 1, 5, 10, 15, 20, 25, 30) / 100  # weight intervals
-dwgttxt <- c("  0", "  1", "  5", seq(10, 30, 5))
-dcols <- findInterval(dwgt, dwgtint)  
+Box plots by bins of extent/duration, colored and labelled by the percent of observations per bin.
 
+```{r fig3}
 # y grid line function
 ylines <- function(yr, by, lty = 1, col = "grey") {
   abline(h = seq.int(from = yr[1], to = yr[2], by = 2), lty = lty, col = col)
 }
 
-# pdf("paper/figures/act_v_eff_diff.pdf", width = 7, height = 4)
-png("vignettes/figures/fig3.png", width = 7, height = 4, res = 600, 
+cxa <- 0.7
+ayl <- c(0, 20)
+byl <- c(0, 40)
+
+colpals <- c("Blues", "Reds")
+ylabs <- c("Extent", "Duration")
+a2mgp <- c(3, 0.5, 0)
+bwex <- c(0.9, 1.4)
+
+png("figures/fig3.png", width = 7, height = 4, res = 600, 
     units = "in")
 par(mfrow = c(1, 2), mar = c(4, 0, 1, 0.75), oma = c(0, 3, 0, 0))
-bx <- rowMeans(cbind(eint[-length(eint)], eint[-1]))
-# cols <- sapply(ealphs, function(x) rgb(0, 0.1, 1, alpha = x))
-cols <- brewer.pal(length(ewgtint) - 1, "Blues")
-plot(ex, c(0, 14), pch = "", xlab = "", ylab = "", xaxt = "n", yaxt = "n",
-     mgp = c(3, 0.5, 0), tcl = -0.2, xaxs = "i")
-polygon(c(ex, rev(ex), ex[1]), c(-1, -1, 15, 15, -1), col = "grey90")
-ylines(yr = c(0, 14), by = 2, col = "grey95")
-for(i in 1:length(ebox)) {
-  boxplot_v(bx[i], y = ebox[[i]], n = 1.75, whiskhgt = 1.5, 
-            bfill = cols[ecols][i])
-  text(bx[i], ebox[[i]][5] + 0.15, round(ewgt[i] * 100, 1), cex = 0.3)
-} 
-axis(1, at = eint, labels = alab2, las = 2, tcl = -0.2, cex.axis = cxa, 
-     mgp = c(3, 0.5, 0))
-axis(2, at = seq(0, 14, 2), las = 2, tcl = -0.2, cex.axis = cxa, 
-     mgp = c(3, 0.5, 0))
-mtext("Actual Extent", side = 1, line = 3, cex = 0.9)
-mtext("Magnitude of difference between Extent/Duration", side = 2, line = 2.2, 
-      cex = 0.9)
-mtext("and Actual Extent/Duration", side = 2, line = 1.4, cex = 0.9)
-lrng <- c(mean(ex), max(ex) - 0.05 * max(ex))
-xs <- seq(lrng[1], lrng[2], by = (diff(lrng)) / (length(cols)))
-rect_shade(xs, y = c(11.5, 12.5), fillcol = cols, linecol = "grey30")
-text(xs, rep(10.5, length(xs)), ewgttxt, srt = 90, col = "grey30")
-text(mean(xs), 13, "% of observations", col = "grey30")
-mtext("A", side = 3, line = -1, cex = 1, adj = 0.02)
+for(i in 1:2) {  # i <- 1
+  di <- dif_ints[[i]]  # subset list element
+  bxa <- rowMeans(cbind(di$ival[-length(di$ival)], di$ival[-1]))[di$ints]
+  bxw <- (di$ival[-1] - di$ival[-length(di$ival)])[di$ints]
+  cols <- brewer.pal(length(di$wgti) - 1, colpals[[i]])
+  mus <- di$db[order(int), list("mu" = mean(dif)), by = int]
 
-# duration
-bx <- rowMeans(cbind(dint[-length(dint)], dint[-1]))
-bd <- abs(dint[-length(dint)] - dint[-1])
-cols <- brewer.pal(length(dwgtint) - 1, "Reds")
-plot(tx, c(0, 14), pch = "", xlab = "", ylab = "", xaxt = "n", xaxs = "i",
-     mgp = c(3, 0.5, 0), tcl = -0.2, yaxt = "n")
-polygon(c(tx, rev(tx), tx[1]), c(-1, -1, 15, 15, -1), col = "grey90")
-ylines(yr = c(0, 14), by = 2, col = "grey95")
-for(i in 1:length(tbox)) {
-  boxplot_v(bx[i], y = tbox[[i]], n = 0.9, inhgt = bd[i] * 10, whiskhgt = 0.75, 
-            bfill = cols[dcols][i])
-  text(bx[i], tbox[[i]][5] + 0.15, round(dwgt[i] * 100, 1), cex = 0.3)
-
-} 
-axis(1, at = dint, labels = tlab2[-c(5)], las = 2, tcl = -0.2, cex.axis = cxa, 
-     mgp = c(3, 0.5, 0))
-axis(2, at = seq(0, 14, 2), labels = rep("", 8), las = 2, tcl = -0.2, 
-     cex.axis = cxa, mgp = c(3, 0.5, 0))
-mtext("Actual Duration", side = 1, line = 3, cex = 0.9)
-lrng <- c(mean(tx), max(tx) - 0.05 * max(tx))
-xs <- seq(lrng[1], lrng[2], by = (diff(lrng)) / (length(cols)))
-rect_shade(xs, y = c(11.5, 12.5), fillcol = cols, linecol = "grey30")
-text(xs, rep(10.5, length(xs)), dwgttxt, srt = 90, col = "grey30")
-text(mean(xs), 13, "% of observations", col = "grey30")
-mtext("B", side = 3, line = -1, cex = 1, adj = 0.02)
+  yls <- c(0, 14)
+  plot(di$xl, yls, pch = "", xlab = "", ylab = "", xaxt = "n", yaxt = "n",
+       mgp = c(3, 0.5, 0), tcl = -0.2, xaxs = "i")
+  polygon(c(di$xl, rev(di$xl), di$xl[1]), c(-1, -1, rep(yls[2] * 1.2, 2), -1), 
+          col = "grey90")
+  ylines(yr = yls, by = 2, col = "grey95")
+  b <- boxplot(formula = dif ~ int, data = di$db, col = cols[di$col], 
+               range = 0, width = bxw, at = bxa, xlim = di$xl, boxwex = bwex[i], 
+               axes = FALSE, outline = FALSE, lty = 1, add = TRUE, 
+               staplewex = 0.2)
+  points(bxa, mus$mu, pch = 20, col = "black")
+  text(bxa, b$stats[5, ] + 0.15, round(di$wgt * 100, 1), cex = 0.3)
+  
+  axis(1, at = ivals[[i]], labels = list(alab2, tlab2[-c(5)])[[i]], las = 2, 
+       tcl = -0.2, cex.axis = cxa, mgp = c(3, 0.5, 0))
+  at <- seq(0, yls[2], 2)
+  if(i == 1) axis(2, at, las = 2, tcl = -0.2, cex.axis = cxa, mgp = a2mgp)
+  if(i == 2) {
+    axis(2, at, labels = rep("", length(at)), las = 2, tcl = -0.2,
+         cex.axis = cxa, mgp = a2mgp)
+  }
+  mtext(ylabs[i], side = 1, line = 3, cex = 0.9)
+  if(i == 1) {
+    mtext("Magnitude of difference between Extent/Duration", side = 2, 
+          line = 2.2, cex = 0.9)
+    mtext("and Actual Extent/Duration", side = 2, line = 1.4, cex = 0.9)
+  }
+  lrng <- c(min(di$xl) - 0.05 * min(di$xl), mean(di$xl))
+  xs <- seq(lrng[1], lrng[2], by = (diff(lrng)) / (length(cols)))
+  rect_shade(xs, y = c(13, 14), fillcol = cols, linecol = "grey30")
+  text(xs, rep(12.5, length(xs)), di$wgti, srt = 90, col = "grey30", cex = cxa)
+  text(mean(xs), 14.25, "% of observations", col = "grey30", cex = cxa)
+  mtext(c("A", "B")[i], side = 3, line = 0, cex = 1, adj = 0.02)
+}
 dev.off()
 
 ```
+
+## Observational type by bin
+
+To see how much different observational types contribute to each bin.
+
+```{r}
+dif_ints$e$db[order(int), .N, by = list(int, type)][, {
+  ggplot() + aes(x = int, y = N, color = type) + geom_line() + 
+    xlab("Extent interval")
+}]
+
+dif_ints$d$db[order(int), .N, by = list(int, type)][, {
+  ggplot() + aes(x = int, y = N, color = type) + geom_line() + 
+    xlab("Duration interval")
+}]
+
+
+```
+
