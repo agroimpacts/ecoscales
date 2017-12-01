@@ -176,7 +176,7 @@ for(i in 1:4) {  # i <- 1
     # ppts <- kderla[[ptnms[k]]][[ki[i]]]$mean
     ppts <- kderla[[ptnms[k]]][[ki[i]]]$med
     if(i %in% c(2, 4)) ppts[x > axv[[i]]$x[9], x := axv[[i]]$x[9]]
-    points(ppts, pch = ppch[k], col = "grey60")
+    points(ppts, pch = ppch[k], col = "grey80", font = 2)
     # points(ppts2, pch = ppch[k], col = "green4")
   }    
 

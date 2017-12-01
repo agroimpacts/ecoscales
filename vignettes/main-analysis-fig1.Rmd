@@ -24,7 +24,7 @@ The resampled full dataset created in the [Data Pre-processing vignette](data-pr
 # Analyses
 
 ## Data and libraries
-```{r}
+```{r, message = FALSE, warning = FALSE}
 library(ecoscales)
 data("datf")
 data("dimbreaks")
@@ -37,6 +37,8 @@ Constructed from `bootperturb`.
 ```{r hists, cache=TRUE}
 # break points for data
 brksl <- list(aaxis1$logres, aaxis2$logarea, taxis1$logdays, taxis2$logdays)  
+vlr <- range(aaxis1$logres)  # for resolution
+vle <- range(aaxis2$logarea)  # for extent
 
 # Assign bootstrapped values to bins, making necessary adjustments as needed 
 vs <- c("res", "ext", "int", "dur")
