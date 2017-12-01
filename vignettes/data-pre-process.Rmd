@@ -69,29 +69,34 @@ for(i in 1:nrow(kwords)) {
 
 ## Merge full and calibration datasets
 ```{r, message=FALSE, warning=FALSE, results='hide'}
-dat2 <- copy(dat[, .(DOI, study_type, plot_res, n_sites, act_ext, eff_ext,
-                     samp_dur, t_btwn_samp, act_dur, eff_dur)])
-selind <- 4:ncol(dat2)
-for(j in names(dat2)[selind]) set(dat2, j=j, value = as.numeric(dat2[[j]]))
-rnms <- c("DOI", "study_type", "feature", "observer", "plot_res",
-          "n_sites", "act_ext", "eff_ext", "samp_dur", "t_btwn_samp",
-          "act_dur", "eff_dur")
-calr <- cal[, rnms, with = FALSE]
-selind <- c(3, 5:length(rnms))
-for(j in names(calr)[selind]) set(calr, j=j, value = as.numeric(calr[[j]]))
+# select common names in main dataset and convert to numeric
+comnames <- names(dat)[names(dat) %in% names(cal)]
+comnames <- comnames[-grep("region|matter|source|breadth", comnames)]
+datnames <- comnames[-grep("observer", comnames)]
+dat2 <- copy(dat[, datnames, with = FALSE])
+selnames <- datnames[-grep("DOI|study_type", datnames)]
+for(j in selnames) set(dat2, j = j, value = as.numeric(dat2[[j]]))
 
-# select down to columns of interest
-calr_type <- calr[feature != 99, { 
+# select comman names + features in calibration set
+calnames <- c("feature", comnames)
+cal2 <- copy(cal[, calnames, with = FALSE])
+selnames <- calnames[-grep("observer|DOI|study_type", calnames)]
+for(j in selnames) set(cal2, j = j, value = as.numeric(cal2[[j]]))
+
+# calculate averags over observers and features
+# get study type 
+cal2_type <- cal2[feature != 99, { 
   list(unique(study_type[!is.na(study_type)]))
 }, by = .(DOI, feature)][, list("study_type" = unique(V1)), by = DOI]
-calr <- calr[feature != 99, {
-  lapply(.SD, function(x) mean(x, na.rm = TRUE))
-},  by = .(DOI, feature), .SDcols = rnms[c(5:ncol(calr))]]
+
+# calculate mean 
+munms <- calnames[-grep("observer|DOI|study_type|feature", calnames)]
+cal2 <- cal2[feature != 99, lapply(.SD, function(x) mean(x, na.rm = TRUE)),  
+             by = .(DOI, feature), .SDcols = munms]
 
 # combine full and calibration
-calr[, samp_dur := NA]
-calr[, "feature" := NULL] 
-calr <- merge(calr, calr_type, by = "DOI")
+cal2[, feature := NULL]
+calr <- merge(cal2, cal2_type, by = "DOI")
 setcolorder(calr, names(dat2))
 datf <- rbind(cbind("dsrc" = 1, dat2), cbind("dsrc" = 2, calr))
 
@@ -124,13 +129,12 @@ doisup <- unlist(strsplit(doisup, ";"))
 # apply fixes (mostly to account for observer omissions)
 # 1. if samp_dur != act_dur and t_btwn_samp == 0, set 
 #    act_dur == samp_dur
-names(datf)
-datf[t_btwn_samp == 0 & (act_dur != samp_dur), ]  
+datf[t_btwn_samp == 0 & (round(act_dur, 2) != round(samp_dur, 2)), ]  
 dat[t_btwn_samp == 0 & (act_dur != samp_dur), c(1, 3:4, 9:15), with = FALSE]  
 # function to set t_btwn_samp to 365 * 100000 to indicate once-off studies 
 # when t_btwn_samp == 0.  
-dat[act_dur < 1 & t_btwn_samp > 1000, ]
-dat[act_dur > 1 & t_btwn_samp == 0, c(1, 3:4, 9:15), with = FALSE]
+datf[act_dur < 1 & t_btwn_samp > 1000, ]
+datf[act_dur > 1 & t_btwn_samp == 0, ]
 ```
 
 <a href="#top">Back to top</a>
