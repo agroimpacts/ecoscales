@@ -65,7 +65,6 @@ cal[, study_type := tolower(study_type)]
 for(i in 1:nrow(kwords)) {
   cal[like(study_type, kwords[i, 1]), study_type := kwords[i, 2]]
 }
-
 ```
 
 ## Merge full and calibration datasets

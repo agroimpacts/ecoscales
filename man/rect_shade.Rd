@@ -19,8 +19,8 @@ rect_shade(x, y, fillcol = "grey", linecol = "black", lwd = 1)
 A polygon "chain": segmented polygons with interior vertical x or horizontal y axis
 }
 \description{
-Generic function to create adjacent rectangular polygons from vectors of coordinates passed to 
-it
+Generic function to create adjacent rectangular polygons from 
+vectors of coordinates passed to it
 }
 \details{
 This is modeled on the rect_coords function used by flex_legend, but the resulting polygon 

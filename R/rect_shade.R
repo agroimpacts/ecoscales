@@ -1,6 +1,6 @@
 #' Create adjacent rectangular polygons
-#' @description Generic function to create adjacent rectangular polygons from vectors of coordinates passed to 
-#' it
+#' @description Generic function to create adjacent rectangular polygons from 
+#' vectors of coordinates passed to it
 #' @param x Vector of x coordinates, arranged in ascending order
 #' @param y Vector of y coordinates, arrange in acending order
 #' @param fillcol A 1 to n - 1 length vector of colors for filling. n = length of x or y (the longest)
@@ -31,15 +31,21 @@
 rect_shade <- function(x, y, fillcol = "grey", linecol = "black", lwd = 1) {
   vlengths <- c(length(x), length(y))
   xydir <- which.max(vlengths)
-  if(length(fillcol) != (vlengths[xydir] - 1)) fillcol <- rep(fillcol[1], vlengths[xydir] - 1)
-  if(length(linecol) != (vlengths[xydir] - 1)) linecol <- rep(linecol, vlengths[xydir] - 1)
+  if(length(fillcol) != (vlengths[xydir] - 1)) {
+    fillcol <- rep(fillcol[1], vlengths[xydir] - 1)
+  }
+  if(length(linecol) != (vlengths[xydir] - 1)) {
+    linecol <- rep(linecol, vlengths[xydir] - 1)
+  }
   rects <- lapply(1:(vlengths[xydir] - 1), function(j) {
     if(xydir == 1) {
-      pols <- polygon(x = c(x[j], rep(x[j + 1], 2), x[j]), y = c(y[1], y[1], y[2], y[2]), col = fillcol[j], 
+      pols <- polygon(x = c(x[j], rep(x[j + 1], 2), x[j]), 
+                      y = c(y[1], y[1], y[2], y[2]), col = fillcol[j], 
                       border = linecol[j], lwd = lwd)
     }
     if(xydir == 2) {
-      pols <- polygon(x = c(x[1], x[1], x[2], x[2]), y = c(y[j], rep(y[j + 1], 2), y[j]), col = fillcol[j], 
+      pols <- polygon(x = c(x[1], x[1], x[2], x[2]), 
+                      y = c(y[j], rep(y[j + 1], 2), y[j]), col = fillcol[j], 
                       border = linecol[j], lwd = lwd)
     }
   })

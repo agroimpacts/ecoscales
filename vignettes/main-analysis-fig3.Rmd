@@ -20,7 +20,7 @@ knitr::opts_chunk$set(echo = TRUE, fig.align = 'center', fig.height = 4,
 
 # Overview
 
-The resampled full dataset created in the [Data Pre-processing vignette](data-pre-process.html) is used to construct kernel density estimates showing varying 2-D contrasts of observational scale dimensions.
+The resampled full dataset created in the [Data Pre-processing vignette](data-pre-process.html) is used to calculate and plot the magnitude of difference extent and actual extent and duration and actual duration.
 
 # Analyses
 ## Data and libraries
@@ -28,6 +28,7 @@ The resampled full dataset created in the [Data Pre-processing vignette](data-pr
 ```{r, message = FALSE, warning=FALSE}
 library(ecoscales)
 library(viridis)
+library(ggplot2)
 data("dimbreaks")
 data("bootperturb")
 ```
@@ -163,12 +164,14 @@ To see how much different observational types contribute to each bin.
 
 ```{r}
 dif_ints$e$db[order(int), .N, by = list(int, type)][, {
-  ggplot() + aes(x = int, y = N, color = type) + geom_line() + 
+  ggplot() + aes(x = int, y = N, color = type) + geom_line() +
+    scale_color_brewer(type = "div") +
     xlab("Extent interval")
 }]
 
 dif_ints$d$db[order(int), .N, by = list(int, type)][, {
   ggplot() + aes(x = int, y = N, color = type) + geom_line() + 
+    scale_color_brewer(type = "div") +
     xlab("Duration interval")
 }]
 
