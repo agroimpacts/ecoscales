@@ -1,0 +1,402 @@
+---
+title: "Additional Analyses"
+output: 
+  rmarkdown::html_vignette:
+    toc: yes
+    number_sections: true
+    toc_depth: 3
+vignette: >
+  %\VignetteIndexEntry{Additional Analyses}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, fig.align = 'center', fig.height = 4, 
+                      fig.width = 5, cache = TRUE)
+```
+```{r, echo = FALSE}
+e <- TRUE
+```
+
+
+# Overview
+
+Additional analyses undertaken to evaluate changes in scale by year, and to compare scales estimated in this study with those from several earlier studies. 
+
+# Analyses
+## Data and libraries
+
+```{r, message = FALSE, warning=FALSE}
+library(ecoscales)
+library(viridis)
+library(ggplot2)
+data("dimbreaks")
+data("bootperturb")
+data("datf")
+```
+
+## Observational methods
+
+### Percent by observational category
+```{r}
+knitr::kable(datf[, list("%" = round(.N / nrow(datf) * 100, 2)), 
+                    by = study_type])
+```
+
+### Remote/automated/paleo shares of observations
+
+Comparing the share of these observational types relative to certain extent and durational thresholds
+```{r, eval = e}
+# share of observations made with remote/other above 10,000 ha extent
+aext <- 10^4
+datf[, {
+  a = length(which(act_ext > aext))
+  b1 = length(which((act_ext > aext) & like(study_type, "remote")))
+  b2 = length(which((act_ext > aext) & like(study_type, "other")))
+  round(c("remote" = b1 / a * 100, "other" = b2 / a * 100), 1)
+}]
+
+# share of automated/paleo observations of observatons lasting more than 1 year
+adur <- 365
+datf[, {
+  a = length(which(act_dur > adur))
+  b1 = length(which((act_dur > adur) & like(study_type, "auto")))
+  b2 = length(which((act_dur > adur) & like(study_type, "paleo")))
+  round(c("automated" = b1 / a * 100, "paleo" = b2 / a * 100), 1)
+}]
+
+# share of automated/paleo observations of observatons lasting < 1 year
+datf[, {
+  a = length(which(act_dur <= adur))
+  b1 = length(which((act_dur <= adur) & like(study_type, "auto")))
+  b2 = length(which((act_dur <= adur) & like(study_type, "paleo")))
+  round(c("automated" = b1 / a * 100, "paleo" = b2 / a * 100), 1)
+}]
+
+```
+
+## Study type by year
+
+Calculate types of study by year, as total and percent
+```{r, warning = FALSE, message = FALSE, fig.height=3, eval = e}
+# One Oecologia study listed as 2004 (by Endnote) was actually 2003 
+# Set it to 2004
+stypes <- copy(datf)  # new dataset out of dat (which retain year info)
+stypes[study_year < 2004, study_year := 2004] 
+
+# ID NA eff_ext values
+na_effext <- datf[is.na(eff_ext), unique(DOI)]
+
+# Estimate and plot study type by year
+stypeyr <- stypes[, list(.N, study_type), by = study_year][, {
+  list("tot" = N, "ct" = .N, "prop" = .N / N * 100)
+}, by = .(study_type, study_year)][order(study_year)]
+stypeyr <- stypeyr[, lapply(.SD, mean), .SDcols = c("tot", "ct", "prop"), 
+                   by = .(study_type, study_year)]
+```
+```{r, eval = e}
+obs_types <- c("remote", "field", "auto")
+obs_types2 <- c("Remote sensing", "Field", "Automatic")
+cols <- c("orange", "green4", "blue4")
+png("figures/stype_by_yr.png", width = 7, height = 2.75, res = 300, 
+    units = "in")
+par(mfrow = c(1, 3), oma = c(0, 3, 0, 0), mar = c(4, 1, 2, 1))
+for(i in 1:3) {  # i <- 1
+  plot(c(2004, 2014), c(0, 100), xlab = "", ylab = "", pch = "")
+  stypeyr[like(study_type, obs_types[i]), {
+    points(study_year, prop, col = cols[i], pch = 20)
+    yr = as.numeric(study_year)
+    slm = lm(prop ~ yr, weights = tot)  # weighted regression
+    slms = summary(slm)
+    abline(slm, col = cols[i])
+    cf = round(coef(slm)[1:2], 4)
+    pf = round(coef(slms)[8], 2)
+    rf = round(slms$adj.r.squared, 2)
+    cfa = paste0(cf[2], "% year")
+    text(x = 2006, y = 100, labels = substitute(x^-1, list(x = cfa)), 
+         cex = 0.9)
+    text(x = 2011.5, y = 100, cex = 0.9,
+         labels = substitute(R^2~"="~x~"; p <"~y, list(x = rf, y = pf)))
+    if(i == 1) mtext("percent", side = 2, line = 2.5, cex = 0.8)
+    if(i == 2) mtext("year", side = 1, line = 2.5, cex = 0.8)
+    mtext(obs_types2[i], side = 3, cex = 0.8)
+  }]
+}
+o <- dev.off()
+```
+
+Extrapolating percentage of studies using remote sensing to 2017
+```{r, eval = e}
+preds <- stypeyr[like(study_type, "remote"), {
+  slm = lm(prop ~ study_year, weights = tot)
+  predict(slm, newdata = data.frame("study_year" = 2004:2017))
+}]
+names(preds) <- 2004:2017
+```
+
+Percent of remote sensing studies by year
+```{r, eval = e}
+round(preds, 1)
+```
+
+Average annual percent of studies using remote sensing 2004-2014, and projected increases in this percent through 2017 (2004-2017) 
+```{r, eval = e}
+# murs2014 <- stypeyr[study_type == "remote", round(mean(prop), 2)]
+murs2014 <- stypeyr[, sum(ct[study_type == "remote"]) / sum(ct) * 100]
+pctinc <- mean(preds) / mean(preds[1:(length(preds) - 3)])
+
+pcttab <- cbind("2014" = murs2014, "pct increase" = (pctinc - 1) * 100,
+                "2017" = murs2014 * pctinc)
+knitr::kable(round(pcttab, 1))
+```
+
+```{r, eval = e}
+types <- datf[, .N, by = study_type]
+rs2017 <- mean(preds)  # avg predicted % using RS through 2004-2017
+rs2014 <- mean(preds[1:(length(preds) - 3)])  # avg predicted % RS 2004-2014
+# rs2017 / rs2014
+
+# translate to N more RS studies would have been selected given those %ages
+rsinc <- rs2017 / rs2014 * types[study_type == "remote", N] - 
+                 types[study_type == "remote", N]  
+
+remote <- datf[study_type == "remote", eff_ext]
+notremote <- datf[study_type != "remote", eff_ext]
+
+set.seed(1)
+ext2017 <- unlist(lapply(1:1000, function(x) {  # x = 1
+  ind <- sample(1:length(remote), size = round(rsinc))
+  mean(c(remote, remote[ind], notremote), na.rm = TRUE)
+}))
+
+dec1417 <- log10(mean(ext2017, na.rm = TRUE) / 
+                   datf[, mean(eff_ext, na.rm = TRUE)])
+qtiles1417 <- log10(quantile(ext2017, c(0.025, 0.975), na.rm = TRUE) / 
+                      datf[, mean(eff_ext, na.rm = TRUE)])
+
+pctdiff1417 <- mean(ext2017, na.rm = TRUE) / datf[, mean(eff_ext, na.rm = TRUE)]
+pctqtiles1417 <- quantile(ext2017, c(0.025, 0.975), na.rm = TRUE) / 
+                      datf[, mean(eff_ext, na.rm = TRUE)]
+
+otab <- cbind("decade" = round(dec1417, 4), "dec2.5" = round(qtiles1417[1], 4),
+              "dec97.5" = round(qtiles1417[2], 4),
+              "pctdiff" = round((pctdiff1417 - 1) * 100, 1),
+              "pctdiff2.5" = round((pctqtiles1417[1] - 1) * 100, 1), 
+              "pctdiff97.5" = round((pctqtiles1417[2] - 1) * 100, 1))
+knitr::kable(otab)
+```
+
+<a href="#top">Back to top</a>
+
+## Change in dimensions by year
+```{r, eval = e}
+vars <- c("plot_res", "eff_ext", "t_btwn_samp", "eff_dur")
+varlabs <- c("Resolution", "Extent", "Interval", "Duration")
+labcols <- c(brewer.pal(8, "Reds")[c(7, 7)], brewer.pal(8, "Blues")[c(7, 7)])
+png("figures/dim_by_yr.png", width = 7, height = 6, res = 300, 
+    units = "in")
+par(mfrow = c(2, 2), mar = c(1, 3, 1, 1), oma = c(2, 3, 0, 0))
+for(i in 1:length(varlabs)) {  # i <- 1
+  if(i == 3) {
+    DT <- copy(stypes[t_btwn_samp != 0, ])
+  } else {
+    DT <- copy(stypes)
+  }
+  DT[, list(mean(get(vars[i]), na.rm = TRUE), .N), by = study_year][, {
+    dim = log10(V1)
+    yr = as.numeric(study_year)
+    if(i %in% 1:2) rng = c(0, 10)
+    if(i %in% 3:4) rng = c(0, 5)
+    if(i %in% 3:4) {
+      xlabs = seq(2004, 2014, 2)
+    } else {
+      xlabs = rep("", 6)
+    }
+    plot(yr, dim, ylim = rng, xaxt = "n", pch = 20, col = labcols[i], 
+         main = varlabs[i], mgp = c(2, 0.5, 0), tcl = -0.2, ylab = "")
+    axis(1, at = seq(2004, 2014, 2), labels = xlabs, tcl = -0.2, 
+         mgp = c(2, 0.5, 0))
+    slm = lm(dim ~ yr, weights = N)
+    slms = summary(slm)
+    abline(slm, col = labcols[i])
+    cf = round(coef(slm)[1:2], 3)
+    pf = round(coef(slms)[8], 2)
+    rf = round(slms$adj.r.squared, 2)
+    text(x = 2006.25, y = rng[2] * 0.97, cex = 0.9,
+         labels = substitute(x~year^-1, list(x = cf[2])))
+    text(x = 2011.5, y = rng[2] * 0.97, cex = 0.9,
+         labels = substitute(R^2~"="~x~"; p <"~y, list(x = rf, y = pf)))
+    if(i == 1) mtext(expression("log10 m"^2), side = 2, line = 2)
+    if(i == 2) mtext("log10 ha", side = 2, line = 2)
+    if(i %in% 3:4) mtext("log10 days", side = 2, line = 2)
+  }]
+}
+o <- dev.off()
+```
+
+<a href="#top">Back to top</a>
+
+## Scales in earlier studies
+### Duration from Tilman, 1989
+```{r, eval = e}
+kdat <- rbindlist(bootperturb)
+std <- function(x) (x - min(x)) / diff(range(x))
+
+# Tilman (1989), Figure 6.1 (visually interpreted)
+# Data extracted from figure using http://arohatgi.info/WebPlotDigitizer/app/
+f <- system.file("extdata/tilman1989.csv", package = "ecoscales")
+tilman <- fread(f)
+
+## Find n and proportion of non-experimental observations per year
+# first find mean/median value of data > 100 years in our observed data
+gt100 <- kdat[eff_dur > (365 * 100), {
+  list("med" = median(eff_dur) / 365, "mu" = mean(eff_dur) / 365) 
+}]
+
+# find weights and proportion of studies lasting particular duration in Tilman
+tilman_noexp <- tilman[, {
+  a = round(623 * prop[fig == 1] * (1 / sum(prop[fig == 1])))
+  b = round(180 * prop[fig == 2] * (1 / sum(prop[fig == 2])))
+  padj = a - b
+  w = padj / sum(padj)
+  list("yrmu" = yrmu[fig == 1], "n" = padj, "prop" = w)
+}]
+
+# median and mean duration in Tilman data, assuming 150 years for studies > 100
+tilmedmu <- tilman_noexp[, rep(yrmu, n), by = n][, {
+  list("med" = median(V1), "mean" = mean(V1))
+}]
+
+# as above, but testing different durations for studies lasting > 100 years
+gt1002 <- unname(c(200, 500, 1000, unlist(gt100)))
+tilmedmu2 <- rbindlist(lapply(gt1002, function(x) {
+  DT2 = copy(tilman_noexp)[yrmu == 150, yrmu := x]
+  DT2[, rep(yrmu, n), by = n][, list("med" = median(V1), "mean" = mean(V1))]
+}))
+
+# And calculate only for years less than 100
+tilmedmu_lt100 <- tilman_noexp[yrmu < 150, rep(yrmu, n), by = n][, {
+  list("med" = median(V1), "mean" = mean(V1))
+}]
+
+# calculation mean and median duration from our data, both from replicated 
+# and non-replicated studies
+# including studies > 100 years
+durmedmu <- kdat[, {
+  list("med" = median(eff_dur[t_btwn_samp != (365 * 10000)], na.rm=TRUE) / 365, 
+       "mean" = mean(eff_dur[t_btwn_samp != (365 * 10000)], na.rm = TRUE) / 365,
+       "medall" = median(eff_dur, na.rm = TRUE) / 365, 
+       "meanall" = mean(eff_dur, na.rm = TRUE) / 365)
+}]
+
+# excluding studies > 100 years
+durmedmu_lt100 <- kdat[eff_dur < (365 * 100), {
+  list("med" = median(eff_dur[t_btwn_samp != (365 * 10000)], na.rm=TRUE) / 365, 
+       "mean" = mean(eff_dur[t_btwn_samp != (365 * 10000)], na.rm = TRUE) / 365,
+       "medall" = median(eff_dur, na.rm = TRUE) / 365, 
+       "meanall" = mean(eff_dur, na.rm = TRUE) / 365)
+}]
+```
+
+Median, mean duration from Tilman (1989), varying according to assumption of duration of studies > 100 years
+```{r, eval = e}
+yr <- c(150, 200, 500, 1000, unlist(gt100))
+knitr::kable(cbind("max_years" = round(yr), 
+                   round(rbind(tilmedmu, tilmedmu2), 2)))
+```
+
+Tilman with studies > 100 years dropped
+```{r, eval = e}
+knitr::kable(round(tilmedmu_lt100, 2))
+```
+
+Tilman (1989) duration of observational studies by bin
+```{r, eval = e}
+knitr::kable(tilman_noexp[, {
+  a = round(prop * 100, 1)
+  names(a) = tilman[fig == 1, yr]
+  rbind(a, n)
+}])
+```
+
+Median, mean duration from this study
+```{r, eval = e}
+knitr::kable(round(durmedmu, 2))
+```
+
+This study with years > 100 dropped
+```{r, eval = e}
+knitr::kable(round(durmedmu_lt100, 2))
+```
+
+<a href="#top">Back to top</a>
+
+### Kareiva and Anderson (1989)
+
+Kareiva and Anderson (1989) report resolution data. The 80th, 90th, and 95th percentile values of resolutions in Kareiva and Anderson are also calculated as a basis for comparison.
+```{r, eval = e}
+# helper func
+q80 <- function(x) quantile(x, 0.8, na.rm = TRUE)
+q90 <- function(x) quantile(x, 0.9, na.rm = TRUE)
+q95 <- function(x) quantile(x, 0.95, na.rm = TRUE)
+
+f <- system.file("extdata/kareiva_anderson1989.csv", package = "ecoscales")
+kareiva <- fread(f)
+a <- kareiva[, {
+  list("med" = median(res^2), "mean" = mean(res^2), "80" = q80(res^2), 
+       "90" = q90(res^2), "95" = q95(res^2))
+}]
+b <- kdat[, {
+  list("med" = median(plot_res), "mean" = mean(plot_res), "80" = q80(plot_res), 
+       "90" = q90(plot_res), "95" = q95(plot_res))
+}]
+study <- c("Kareiva & Anderson, 1989", "This study")
+knitr::kable(cbind(study, round(rbind(a, b), 2)))
+```
+
+<a href="#top">Back to top</a>
+
+### Porter et al (2005)
+
+Porter et al (2005) report interval and extent data extracted from a number of studies.
+
+#### Interval
+```{r, eval = e}
+f <- system.file("extdata/porter.csv", package = "ecoscales")
+porter <- fread(f)
+porter <- porter[sample == 1]
+porter[, ext := ext^2 / 10000]
+
+study <- c("Porter et al, 1989", "This study")
+a <- porter[int > 0, {
+  list("med" = median(int), "mean" = mean(int), "80" = q80(int), "90" = q90(int),
+       "95" = q95(int))
+}]
+
+b <- kdat[t_btwn_samp != (365 * 10000), {
+  list("med" = median(t_btwn_samp), "mean" = mean(t_btwn_samp), 
+       "80" = q80(t_btwn_samp), "90" = q90(t_btwn_samp), "95" = q95(t_btwn_samp))
+}]
+knitr::kable(cbind(study, round(rbind(a, b))))
+```
+
+#### Extent
+```{r, eval = e}
+study <- c("Porter et al, 1989", "This study", "Ratio")
+a <- porter[, {
+  list("med" = median(ext), "mean" = mean(ext), "80" = q80(ext), 
+       "90" = q90(ext), "95" = q95(ext))
+}] 
+b <- kdat[, {
+  list("med" = median(eff_ext, na.rm = TRUE), 
+       "mean" = mean(eff_ext, na.rm = TRUE), "80" = q80(eff_ext), 
+       "90" = q90(eff_ext), "95" = q95(eff_ext))
+}]
+knitr::kable(cbind(study, round(rbind(a, b, b / a))))
+```
+
+<a href="#top">Back to top</a>
+
+
