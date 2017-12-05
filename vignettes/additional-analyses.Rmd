@@ -77,7 +77,9 @@ datf[, {
 
 ```
 
-## Study type by year
+## Annual changes in observational scales
+
+### Study type by year
 
 Calculate types of study by year, as total and percent
 ```{r, warning = FALSE, message = FALSE, fig.height=3, eval = e}
@@ -190,7 +192,9 @@ knitr::kable(otab)
 
 <a href="#top">Back to top</a>
 
-## Change in dimensions by year
+### All scales
+
+#### Figure
 ```{r, eval = e}
 vars <- c("plot_res", "eff_ext", "t_btwn_samp", "eff_dur")
 varlabs <- c("Resolution", "Extent", "Interval", "Duration")
@@ -234,6 +238,27 @@ for(i in 1:length(varlabs)) {  # i <- 1
   }]
 }
 o <- dev.off()
+```
+
+#### Projected increase in mean observational extent
+
+Between 2014-2017
+```{r, eval = e}
+preds <- stypes[, list(mean(eff_ext, na.rm = TRUE), .N), by = study_year][, {
+  dim = log10(V1)
+  yr = as.numeric(study_year)
+  slm = lm(dim ~ yr, weights = N)
+  predict(slm, newdata = data.frame("yr" = 2004:2017))
+}]
+# preds[14] - preds[13]
+
+# projected percent increase in extent 2014-2017
+pctinc <- mean(preds) / mean(preds[1:(length(preds) - 3)])
+muext2014 <- stypes[, mean(eff_ext, na.rm = TRUE)]
+pcttab <- cbind("2014" = log10(muext2014), "pct increase" = (pctinc - 1) * 100,
+                "2017" = log10(muext2014 * pctinc), 
+                "decade" = log10((pctinc * muext2014) / muext2014))
+knitr::kable(round(pcttab, 3))
 ```
 
 <a href="#top">Back to top</a>
