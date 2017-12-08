@@ -1,0 +1,230 @@
+---
+title: "Sensitivity-related Analyses"
+output: 
+  rmarkdown::html_vignette:
+    toc: yes
+    number_sections: true
+    toc_depth: 3
+vignette: >
+  %\VignetteIndexEntry{Sensitivity-related Analyses}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r setup, include = FALSE}
+knitr::opts_chunk$set(
+  # collapse = TRUE,
+  comment = "#>"
+)
+
+```
+```{r, echo = FALSE}
+e <- TRUE
+```
+
+# Overview
+
+These analyses examine two further specific aspects of uncertainty in the study's methods: 
+
+1. The percent of studies in which the scale of particular dimensions had to be estimated;
+2. The impact of bandwidth on kernel density estimates 
+
+## Proportion of observations estimated
+
+This assessment is based on notes that each observer made in their data sheets specifying which dimensions for each observation were uncertain (and thus had to be estimated) based on the description of methods in the paper in question.  These notes occur in "sensitivity" column of the main data sheet. 
+
+The notes themselves are noisy and need to be wrangled to get them into the correct dimensional names. 
+
+```{r, eval = e, message=FALSE}
+library(ecoscales)
+f <- system.file("extdata/main-results.xlsx", package = "ecoscales")
+dat <- data.table(read_excel(f))
+
+svars <- c("plot_res", "n_sites", "act_ext", "eff_ext", "samp_dur",
+           "t_btwn_samp", "act_dur", "eff_dur")
+sens <- gsub("\\\\", ";", dat$sensitivity)
+sens <- gsub(", ", ";", gsub("; ", ";", sens))
+sens <- tolower(sens)
+sensl <- strsplit(sens, ";")
+# unique(unlist(sensl))
+
+sens2 <- gsub("plo_|plot-", "plot_", sens)  # fix this one
+sens2 <- gsub("[[:blank:]]", "_", sens2)  # replace spaces with _
+sens2 <- gsub("-", "_", sens2)  # replace - with _
+
+# correction table--unique strings in sensitivity column and their replacements
+corrtab <- cbind(c("^res", "plo_res", "plot_resolution", "plot_size", 
+                   "sample_area", "samples_area", "sampled area", "study_area",
+                   "sampled_area",
+                   "t_btwn_samples", "t_btwn_sample", "t_btwn_samp_samp", 
+                   "t_twn_samp", "t_btw_samp", "time_between_sampling", 
+                   "time_between_samples", 
+                   "samp_duratiion", "sampling_duration", "sample_duration", 
+                   "number_of_sites", 
+                   "study_span", "sutdy_span", "study_dur", "study_soan",
+                   "samp_study", ":", " ", ";_", 
+                   "duration", "dure", 
+                   "extent"), 
+                 c(rep("plot_res", 4), rep("act_ext", 5), rep("t_btwn_samp", 7),                    rep("samp_dur", 3), "n_sites", rep("eff_dur", 4), 
+                   "samp;study", ";", ";", ";", 
+                   "dur", "dur", "ext"))
+
+# replace
+for(i in 1:nrow(corrtab)) {
+  sens2 <- gsub(corrtab[i, 1], corrtab[i, 2], sens2)
+}
+# gsub("[a-z]( )[a-z]", "_", sens[[228]])
+# sens[[228]]
+# sens2[is.na(sens2)]
+sens2[is.na(sens2)] <- "none"
+sensl2 <- lapply(1:length(sens2), function(x) strsplit(sens2[x], ";")[[1]])
+# unique(unlist(sensl))
+# unique(unlist(sensl2))
+
+# create a sensitivity table, based on whether each observation has one of the 
+# variables listed as uncertain
+senst <- do.call(cbind.data.frame, lapply(svars, function(x) {  # x <- svars[1]
+  v <- sapply(sensl2, function(y) ifelse(any(y == x), 1, 0)) # y <- sensl2[[37]]
+  # ifelse(is.na(v), 0, v)
+}))
+colnames(senst) <- c("res", "n", "aext", "eext", "sampd", "tbtwn", "actdur", 
+                     "effdur")
+
+# apply fixes (mostly to account for observer omissions)
+# 1. if samp_dur OR t_btwn_samp is uncertain, act_dur must also be. 
+id <- which((senst$sampd == 1 | senst$tbtwn == 1) & senst$actdur == 0)
+senst[id, "actdur"] <- 1
+
+# 2. if act_dur is uncertain but t_btwn and samp_dur are not, treat
+# both as uncertain
+# although it is possible that just n_repeats is uncertain, but more likely 
+# that observers didn't note this is sensitive. 
+id <- which(senst$tbtwn == 0 & senst$sampd == 0 & senst$actdur == 1)
+senst[id, c("sampd", "tbtwn")] <- 1
+
+# 3. if plot_res or n_sites is uncertain, then act_ext must be
+id <- which((senst$res == 1 | senst$n == 1) & senst$aext == 0)
+senst[id, "aext"] <- 1
+
+# percentage of records that are uncertain
+knitr::kable(t(round(colSums(senst) / nrow(senst) * 100, 1)))
+```
+
+## Kernel Bandwidth
+
+Testing the results on images related to varying kernel sizes.
+
+### Run kernel density estimates
+
+```{r kdes, cache=TRUE}
+library(doMC)
+data("bootperturb")
+data("dimbreaks")
+bootp_dt <- rbindlist(bootperturb)
+kdat <- copy(bootp_dt)  # bootstrap
+
+# limits and variables
+lims <- list("t_btwn_samp" = c(-5, 5.57), "plot_res" = c(-5, 8), 
+             "eff_ext" = range(aaxis2$logarea),
+             "eff_dur" = c(-5, 5.56))  # limits
+xyvars <- list(c(x = "plot_res", y = "t_btwn_samp"),  # variable pairs 
+               c(x = "eff_dur", y = "eff_ext"))
+dropones <- c(TRUE, FALSE, FALSE, TRUE)
+
+# Prepare datasets and run kernel density estimates
+registerDoMC(8)
+kderls <- foreach(i = 1:length(xyvars)) %:%   # i <- 1
+  foreach(j = c(0.4, 0.7, 1)) %dopar% {  # j <- 1
+    xyv <- xyvars[[i]]
+    xl <- lims[[xyv["x"]]]
+    yl <- lims[[xyv["y"]]]
+    
+    # create input spdf
+    odt <- kdat_setup(kdat, x = xyv["x"], y = xyv["y"], xlim = xl, ylim = yl, 
+                    drop.oneoff = dropones[i])
+
+    # kernel densities
+    kder <- kdensity(xl[1], xl[2], yl[1], yl[2], 0.1, odt$dat, j)
+    kder <- (kder / cellStats(kder, sum)) * 100
+    kder
+  }
+kderls <- lapply(kderls, function(x) {
+  names(x) <- paste0("k", c(0.4, 0.7, 1))
+  x
+})
+names(kderls) <- c("resint", "durext")
+```
+
+<a href="#top">Back to top</a>
+
+
+### Plot
+```{r}
+library(viridis)
+
+# global function for defining breaks and plotting legend (haven't added to 
+# package since used <3 times!)
+# breaks
+brkfun <- function(ext, ival, n) {
+  rng <- range(ext[is.finite(ext)])
+  bwidth <- (rng[2] - rng[1]) / n
+  brks <- seq(rng[1], rng[2], bwidth)
+  brklabs <- seq(0, round(rng[2], 2), ival)
+  list("brks" = brks, "labs" = brklabs)
+}
+
+# legend
+legfun <- function(kde, ival = 0.01, n, mgp = c(3, 0.25, 0), tcl = -0.1, 
+                   cxa = cxa, ls = 0.9, col = cols, lw = 1.25, 
+                   smallplot = c(0.875, 0.9, 0.1, 0.8)) {
+  brks <- brkfun(ext = kde, ival = ival, n = n)  # breaks
+  aargs <- list(mgp = mgp, at = brks$labs, labels = brks$labs, 
+                cex.axis = cxa, tcl = tcl)
+  plot(kde, legend.only = TRUE, axis.args = aargs, legend.width = lw,
+       legend.shrink = ls, col = col, smallplot = smallplot)#inferno(cuts))
+}
+
+# plot parameters
+cxa <- 1.25
+cuts <- 40
+bump <- 3
+cols <- inferno(cuts + bump)[-c(2:(bump + 1))]
+
+axv <- list("A" = list("x" = aaxis1$logres[-1], "y" = taxis1$logdays[-c(5)]), 
+            "B" = list("x" = taxis2$logdays[-5], "y" = aaxis2$logarea))
+axl <- list("A" = list("x" = alab1[-1], "y" = tlab1[-c(5)]), 
+            "D" = list("x" = tlab2[-5], "y" = alab2))
+
+# As separate plots
+# pdf("vignettes/figures/res_v_extent_ksize2.pdf", width = 8, height = 10)
+png("figures/res_v_extent_ksize2.png", width = 8, height = 10, 
+    units = "in", res = 600)
+par(mfrow = c(3, 2), oma = c(6, 3, 0, 0), mar = c(1, 5, 3, 4))
+for(i in 1:3) {  # i <- 1
+  for(j in 1:2) { # j <- 1
+    image(kderls[[j]][[i]], col = cols, axes = FALSE, xlab = "", ylab = "")
+    if(i == 3) {
+      axis(1, axv[[j]]$x, labels = axl[[j]]$x, las = 2, tcl = -0.2,
+           cex.axis = cxa)
+    }
+    axis(2, axv[[j]]$y, labels = axl[[j]]$y, las = 2, tcl = -0.2, cex.axis=cxa)
+    legfun(kderls[[j]][[i]], n = cuts, cxa = cxa, col = cols)
+  }
+}
+dev.off()
+
+```
+<a href="#top">Back to top</a>
+
+```{r, eval=FALSE, echo=FALSE}
+# check effect of averaging by DOI
+data("datf")
+datf[, {
+ list("a" = log10(mean(plot_res)), "b" = log10(mean(eff_ext, na.rm = TRUE)))
+}, by = DOI][, list("a" = mean(a), "b" = mean(b, na.rm = TRUE))]
+datf[, list("a" = mean(log10(plot_res)), "b" = mean(log10(eff_ext), na.rm = T))]
+
+```
+
+
+
