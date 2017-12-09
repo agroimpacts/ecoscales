@@ -24,7 +24,7 @@ The resampled full dataset created in the [Data Pre-processing vignette](data-pr
 # Analyses
 
 ## Data and libraries
-```{r, message = FALSE, warning = FALSE}
+```{r, message = FALSE, warning = FALSE, eval = e}
 library(ecoscales)
 data("datf")
 data("dimbreaks")
@@ -35,6 +35,7 @@ data("bootperturb")
 
 Constructed from `bootperturb`. 
 ```{r hists, cache=TRUE}
+# ```{r, eval = e}
 # break points for data
 brksl <- list(aaxis1$logres, aaxis2$logarea, taxis1$logdays, taxis2$logdays)  
 vlr <- range(aaxis1$logres)  # for resolution
@@ -110,7 +111,7 @@ names(hdatstat_bt) <- typenms
 
 
 ## Figure 1 (main text)
-```{r, message=FALSE, warning=FALSE}
+```{r, message=FALSE, warning=FALSE, eval = e}
 xlabs <- c("Resolution", "Extent", "Interval", "Duration")
 ylabs <- c("All", "Field", "Automated", "Remote", "Paleo")
 axes2 <- list("aax1" = aaxis1$logres, "aax2" = aaxis2$logarea, 
@@ -172,7 +173,7 @@ dev.off()
 
 Detailed by observation type, for supplemental material.
 
-```{r, message=FALSE, warning=FALSE}
+```{r, message=FALSE, warning=FALSE, eval = e}
 xlabs <- c("Resolution", "Extent", "Interval", "Duration")
 ylabs <- c("All", "Field", "Automated", "Remote", "Paleo")
 axes2 <- list("aax1" = aaxis1$logres, "aax2" = aaxis2$logarea, 
@@ -254,17 +255,11 @@ dev.off()
 
 <a href="#top">Back to top</a>
 
-
-```{r, echo = FALSE, eval = FALSE}
-# save(hdat, hdatstat_bt, file = "data/hdatstat.rda")
-```
-
-
 ## Figure 1 summary statistics 
 
 Statistics associated with Figure 1: percentage of observations falling within different scale ranges, and associated with different observational methods
 
-```{r}
+```{r, eval = e}
 # res
 hdatst <- hdatstat_bt$all$res$mu
 l <- length(hdatst)

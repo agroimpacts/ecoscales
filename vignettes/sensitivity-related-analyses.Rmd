@@ -37,6 +37,11 @@ The notes themselves are noisy and need to be wrangled to get them into the corr
 
 ```{r, eval = e, message=FALSE}
 library(ecoscales)
+library(viridis)
+library(doMC)
+data("bootperturb")
+data("dimbreaks")
+
 f <- system.file("extdata/main-results.xlsx", package = "ecoscales")
 dat <- data.table(read_excel(f))
 
@@ -117,9 +122,7 @@ Testing the results on images related to varying kernel sizes.
 ### Run kernel density estimates
 
 ```{r kdes, cache=TRUE}
-library(doMC)
-data("bootperturb")
-data("dimbreaks")
+# ```{r, eval = e}
 bootp_dt <- rbindlist(bootperturb)
 kdat <- copy(bootp_dt)  # bootstrap
 
@@ -159,9 +162,7 @@ names(kderls) <- c("resint", "durext")
 
 
 ### Plot
-```{r}
-library(viridis)
-
+```{r, eval = e}
 # global function for defining breaks and plotting legend (haven't added to 
 # package since used <3 times!)
 # breaks

@@ -33,10 +33,14 @@ data("dimbreaks")
 data("bootperturb")
 ```
 
+```{r, echo = FALSE}
+e <- TRUE
+```
+
 ## Actual versus effective duration/extent
 
 Prepare the data for creating boxplots: calculate differences between log-transformed actual and effective extents/durations, assign the values to different bins (intervals) of extent/duration, calculate the percentage of observations in each bin. 
-```{r}
+```{r, eval = e}
 kdat <- rbindlist(bootperturb)
 
 # limits
@@ -95,7 +99,7 @@ names(dif_ints) <- c("e", "d")
 
 Box plots by bins of extent/duration, colored and labelled by the percent of observations per bin.
 
-```{r}
+```{r, eval = e}
 # y grid line function
 ylines <- function(yr, by, lty = 1, col = "grey") {
   abline(h = seq.int(from = yr[1], to = yr[2], by = 2), lty = lty, col = col)
@@ -162,7 +166,7 @@ dev.off()
 
 To see how much different observational types contribute to each bin.
 
-```{r}
+```{r, eval = e}
 dif_ints$e$db[order(int), .N, by = list(int, type)][, {
   ggplot() + aes(x = int, y = N, color = type) + geom_line() +
     scale_color_brewer(type = "div") +

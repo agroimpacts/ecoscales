@@ -113,7 +113,7 @@ msk4sp <- SpatialPolygons(list(Polygons(list(Polygon(coords = pcrd)), ID = 1)))
 
 Main figure of kernel densities, with median values added to density plots. 
 
-```{r fig2, cache = TRUE}
+```{r, eval=TRUE}
 # global function for defining breaks
 brkfun <- function(ext, ival, n) {
   rng <- range(ext[is.finite(ext)])
