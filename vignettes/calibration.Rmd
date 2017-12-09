@@ -7,13 +7,16 @@ output:
     toc_depth: 3
     fig_caption: true
 vignette: >
-  %\VignetteIndexEntry{Analysis of Calibration Data}
+  %\VignetteIndexEntry{2. Analysis of Calibration Data}
   %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
 
 ---
 
-# Calibration data
+# Overview
+
+Analysis of calibration dataset used to assess between observer uncertainties.
+
 ```{r, message=FALSE, warning = FALSE}
 library(ecoscales)
 library(readxl)
@@ -39,6 +42,7 @@ library(irr)
 # write.csv(cal, file = fp(p_dat, "merged_calibrationf.csv"))
 ```
 
+# Data
 ```{r, warning = FALSE}
 # external fixes and recodes, bring back in
 calfile <- system.file("extdata", "calibration-set.xlsx", package ="ecoscales")
@@ -58,6 +62,7 @@ for(j in nuvars) {
 
 ```
 
+# Analyses
 ## Agreement on studies included/excluded
 ```{r}
 # ndois <- cal[, unique(DOI)]  # check on number of journals

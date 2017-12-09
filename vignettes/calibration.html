@@ -71,23 +71,29 @@ code > span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Inf
 
 <div id="TOC">
 <ul>
-<li><a href="#calibration-data"><span class="toc-section-number">1</span> Calibration data</a><ul>
-<li><a href="#agreement-on-studies-includedexcluded"><span class="toc-section-number">1.1</span> Agreement on studies included/excluded</a></li>
-<li><a href="#inter-rater-reliability-using-number-of-records-per-paper"><span class="toc-section-number">1.2</span> Inter-rater reliability using number of records per paper</a></li>
-<li><a href="#variance-in-extracted-statistics"><span class="toc-section-number">1.3</span> Variance in extracted statistics</a><ul>
-<li><a href="#by-doi"><span class="toc-section-number">1.3.1</span> By DOI</a></li>
-<li><a href="#by-feature-individual-records-across-dois"><span class="toc-section-number">1.3.2</span> By feature (individual records) across DOIs</a></li>
+<li><a href="#overview"><span class="toc-section-number">1</span> Overview</a></li>
+<li><a href="#data"><span class="toc-section-number">2</span> Data</a></li>
+<li><a href="#analyses"><span class="toc-section-number">3</span> Analyses</a><ul>
+<li><a href="#agreement-on-studies-includedexcluded"><span class="toc-section-number">3.1</span> Agreement on studies included/excluded</a></li>
+<li><a href="#inter-rater-reliability-using-number-of-records-per-paper"><span class="toc-section-number">3.2</span> Inter-rater reliability using number of records per paper</a></li>
+<li><a href="#variance-in-extracted-statistics"><span class="toc-section-number">3.3</span> Variance in extracted statistics</a><ul>
+<li><a href="#by-doi"><span class="toc-section-number">3.3.1</span> By DOI</a></li>
+<li><a href="#by-feature-individual-records-across-dois"><span class="toc-section-number">3.3.2</span> By feature (individual records) across DOIs</a></li>
 </ul></li>
 </ul></li>
 </ul>
 </div>
 
-<div id="calibration-data" class="section level1">
-<h1><span class="header-section-number">1</span> Calibration data</h1>
+<div id="overview" class="section level1">
+<h1><span class="header-section-number">1</span> Overview</h1>
+<p>Analysis of calibration dataset used to assess between observer uncertainties.</p>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw">library</span>(ecoscales)
 <span class="kw">library</span>(readxl)
 <span class="kw">library</span>(Agreement)
 <span class="kw">library</span>(irr)</code></pre></div>
+</div>
+<div id="data" class="section level1">
+<h1><span class="header-section-number">2</span> Data</h1>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="co"># external fixes and recodes, bring back in</span>
 calfile &lt;-<span class="st"> </span><span class="kw">system.file</span>(<span class="st">&quot;extdata&quot;</span>, <span class="st">&quot;calibration-set.xlsx&quot;</span>, <span class="dt">package =</span><span class="st">&quot;ecoscales&quot;</span>)
 cal &lt;-<span class="st"> </span><span class="kw">data.table</span>(<span class="kw">read_excel</span>(calfile))
@@ -103,8 +109,11 @@ nuvars &lt;-<span class="st"> </span><span class="kw">c</span>(<span class="st">
   <span class="kw">set</span>(cal, <span class="dt">j =</span> j, <span class="dt">value =</span> <span class="kw">as.numeric</span>(cal[[j]]))
 }
 <span class="co"># length(which(is.na(cal$feature)))</span></code></pre></div>
+</div>
+<div id="analyses" class="section level1">
+<h1><span class="header-section-number">3</span> Analyses</h1>
 <div id="agreement-on-studies-includedexcluded" class="section level2">
-<h2><span class="header-section-number">1.1</span> Agreement on studies included/excluded</h2>
+<h2><span class="header-section-number">3.1</span> Agreement on studies included/excluded</h2>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="co"># ndois &lt;- cal[, unique(DOI)]  # check on number of journals</span>
 
 <span class="co"># reduce within-observer DOI duplicates </span>
@@ -125,7 +134,7 @@ dois_c1 &lt;-<span class="st"> </span><span class="kw">dcast</span>(dois, V1 <sp
 ##   p-value = 0</code></pre>
 </div>
 <div id="inter-rater-reliability-using-number-of-records-per-paper" class="section level2">
-<h2><span class="header-section-number">1.2</span> Inter-rater reliability using number of records per paper</h2>
+<h2><span class="header-section-number">3.2</span> Inter-rater reliability using number of records per paper</h2>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">doisum &lt;-<span class="st"> </span><span class="kw">dcast</span>(cal, DOI <span class="op">~</span><span class="st"> </span>observer, <span class="dt">value.var =</span> <span class="st">&quot;inout&quot;</span>, <span class="dt">fun =</span> sum)
 <span class="co"># kappam.fleiss(doisum[, 2:7, with = FALSE])</span>
 <span class="kw">icc</span>(<span class="dt">ratings =</span> doisum[, <span class="dv">2</span><span class="op">:</span><span class="dv">7</span>, <span class="dt">with =</span> <span class="ot">FALSE</span>], <span class="dt">model =</span> <span class="st">&quot;twoway&quot;</span>)</code></pre></div>
@@ -162,9 +171,9 @@ pchs &lt;-<span class="st"> </span><span class="kw">c</span>(<span class="kw">re
 </div>
 </div>
 <div id="variance-in-extracted-statistics" class="section level2">
-<h2><span class="header-section-number">1.3</span> Variance in extracted statistics</h2>
+<h2><span class="header-section-number">3.3</span> Variance in extracted statistics</h2>
 <div id="by-doi" class="section level3">
-<h3><span class="header-section-number">1.3.1</span> By DOI</h3>
+<h3><span class="header-section-number">3.3.1</span> By DOI</h3>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">varnms &lt;-<span class="st"> </span><span class="kw">c</span>(<span class="st">&quot;plot_res&quot;</span>, <span class="st">&quot;n_sites&quot;</span>, <span class="st">&quot;act_ext&quot;</span>, <span class="st">&quot;eff_ext&quot;</span>, <span class="st">&quot;t_btwn_samp&quot;</span>, 
             <span class="st">&quot;act_dur&quot;</span>, <span class="st">&quot;eff_dur&quot;</span>)
 mus &lt;-<span class="st"> </span>cal[inout <span class="op">==</span><span class="st"> </span><span class="dv">1</span>, <span class="kw">lapply</span>(.SD, mean, <span class="dt">na.rm =</span> <span class="ot">TRUE</span>), by =<span class="st"> </span>.(DOI, observer),             .SDcols =<span class="st"> </span>varnms]  <span class="co"># mean variable val per paper per observer</span>
@@ -198,7 +207,7 @@ vars[, <span class="kw">lapply</span>(.SD, mean, <span class="dt">na.rm =</span>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="co"># calr[DOI == &quot;10.1007/s00442-005-0338-3&quot; &amp; feature == 2]</span></code></pre></div>
 </div>
 <div id="by-feature-individual-records-across-dois" class="section level3">
-<h3><span class="header-section-number">1.3.2</span> By feature (individual records) across DOIs</h3>
+<h3><span class="header-section-number">3.3.2</span> By feature (individual records) across DOIs</h3>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">CV &lt;-<span class="st"> </span><span class="cf">function</span>(x) <span class="kw">sd</span>(x, <span class="dt">na.rm =</span> <span class="ot">TRUE</span>) <span class="op">/</span><span class="st"> </span><span class="kw">mean</span>(x, <span class="dt">na.rm =</span> <span class="ot">TRUE</span>)
 rnms &lt;-<span class="st"> </span><span class="kw">c</span>(<span class="st">&quot;DOI&quot;</span>, <span class="st">&quot;feature&quot;</span>, <span class="st">&quot;observer&quot;</span>, <span class="st">&quot;plot_res&quot;</span>, <span class="st">&quot;n_sites&quot;</span>, 
           <span class="st">&quot;act_ext&quot;</span>, <span class="st">&quot;eff_ext&quot;</span>, <span class="st">&quot;t_btwn_samp&quot;</span>, <span class="st">&quot;act_dur&quot;</span>, <span class="st">&quot;eff_dur&quot;</span>)

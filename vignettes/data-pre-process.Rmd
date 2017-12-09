@@ -6,7 +6,7 @@ output:
     number_sections: true
     toc_depth: 3
 vignette: >
-  %\VignetteIndexEntry{Scale Data Pre-processing}
+  %\VignetteIndexEntry{3. Scale Data Pre-processing}
   %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
 
@@ -159,7 +159,7 @@ for(i in sample(1:1000, 6)) {
   plot(datf[, eff_ext], datf[, eff_ext] - bootperturb[[i]][, eff_ext], 
        pch = 20)
 }
-dev.off()
+# dev.off()
 ```
 
 <a href="#top">Back to top</a>
