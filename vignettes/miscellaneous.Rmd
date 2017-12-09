@@ -1,0 +1,208 @@
+---
+title: "Miscellaneous"
+author: "Lyndon Estes"
+output: 
+  rmarkdown::html_vignette:
+    toc: yes
+    number_sections: true
+    toc_depth: 3
+vignette: >
+  %\VignetteIndexEntry{2. Scale Data Pre-processing}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+# Overview
+
+A few helper calculations for the paper and supplementals.
+
+```{r, message=FALSE, warning=FALSE}
+library(ecoscales)
+library(readxl)
+library(xtable)
+library(sp)
+library(raster)
+library(rgdal)
+library(rgeos)
+p_geo <- "external/data/geo/"
+gcs <- "+proj=longlat +ellps=WGS84 +datum=WGS84 +no_defs"
+```
+
+## Journal list
+```{r}
+f <- system.file("extdata/journals.xls", package = "ecoscales")
+journals <- read_excel(f)
+
+simple_cap <- function(x) {
+  s <- tolower(x)
+  s <- strsplit(s, " ")[[1]]
+  paste0(toupper(substring(s, 1,1)), substring(s, 2), collapse=" ")
+}
+
+journals$Journal <- sapply(1:nrow(journals), function(x) {
+  simple_cap(journals$Journal[x])
+})
+
+print.xtable(xtable(journals), include.rownames = FALSE)
+```
+
+# Effective extent calculations
+```{r, eval = FALSE}
+# Urbanova et al 2013 DOI: 10.1007/s10021-013-9637-4
+bogs <- cbind.data.frame(x = c(13 + 27 / 60, 13 + 24 / 60, #13 + 19 / 60, 
+                               13 + 19 / 60, 13 + 22 / 60, 13 + 27 / 60), 
+                         y = c(48 + 58 / 60, 49 + 1 / 60, #49 + 10 / 60, 
+                               49 + 10 / 60, 49 + 9 / 60, 48 + 58 / 60))
+# plot(bogs, pch = "")
+# text(x = bogs$x, y = bogs$y, labels = 1:6, offset = 1)
+
+bogpoly <- SpatialPolygons(list(Polygons(list(Polygon(bogs)), ID = "1")))
+# plot(bogpoly)
+crs(bogpoly) <- "+proj=longlat +ellps=WGS84 +datum=WGS84 +no_defs"
+eualb <- paste0("+proj=aea +lat_1=43 +lat_2=62 +lat_0=30 +lon_0=10 +x_0=0",     
+                " +y_0=0 +ellps=intl +units=m +no_defs")
+gArea(spTransform(bogpoly, CRS(eualb))) / 10000
+
+# weather stations
+bogs <- cbind.data.frame(x = c(13 + 24 / 60, 13.399, 13 + 22 / 60, 13.367, 
+                               13 + 24 / 60),
+                         y = c(49 + 1 / 60, 49 + 1 / 60, 49 + 10 / 60, 
+                               49 + 10 / 60, 49 + 1 / 60))
+bogpoly <- SpatialPolygons(list(Polygons(list(Polygon(bogs)), ID = "1")))
+plot(bogpoly)
+crs(bogpoly) <- gcs
+gArea(spTransform(bogpoly, CRS(eualb))) / 10000
+
+```
+
+Tsounis et al (2007)
+```{r, eval = FALSE}
+x <- cbind(rep(3, 6), c(16, 16, 13, 13, 12, 14), c(30, 50, 1, 30, 51, 55))
+y <- cbind(c(42, 42, 42, 42, 42, 42), c(20, 16, 13, 2, 5, 1), 
+           c(1, 5, 45, 30, 56, 0))
+
+dd <- function(x, y, z) x + y / 60 + z / 3600
+xy <- cbind.data.frame(x = dd(x[, 1], x[, 2], x[, 3]), 
+                       y = dd(y[, 1], y[, 2], y[, 3]))
+xy$ID <- 1:nrow(xy)
+xy$ID2 <- c(1, 2, 6, 4, 5, 3)
+plot(xy[, 1], xy[, 2], pch = "")
+text(xy[, 1], xy[, 2], xy$ID)
+xy <- xy[order(xy$ID2), ]
+xy <- rbind(xy, xy[1, ])
+plot(xy[, 1], xy[, 2], pch = "")
+text(xy[, 1], xy[, 2], xy$ID2)
+
+xypoly <- SpatialPolygons(list(Polygons(list(Polygon(xy[, 1:2])), ID = "1")))
+xypoly <- as(xypoly, "SpatialPolygonsDataFrame")
+crs(xypoly) <- "+proj=longlat +ellps=WGS84 +datum=WGS84 +no_defs"
+gArea(spTransform(xypoly, CRS(eualb))) / 10000
+plot(xypoly)
+
+writeOGR(xypoly, dsn = "external/data/geo/tsounis.kml", 
+                layer = "tsounis", driver = "KML", overwrite_layer = TRUE)
+```
+
+# Giese et al (2013) - Mongolia Ecol Monographs
+```{r, eval = FALSE}
+x <- cbind(rep(116, 3), rep(40, 3), c(37, 04, 33))
+y <- cbind(rep(43, 3), c(34, 32, 33), c(54, 57, 10))
+
+dd <- function(x, y, z) x + y / 60 + z / 3600
+xy <- cbind.data.frame(x = dd(x[, 1], x[, 2], x[, 3]), 
+                       y = dd(y[, 1], y[, 2], y[, 3]))
+xy$ID <- 1:nrow(xy)
+xy$ID2 <- c(1, 2, 3)
+plot(xy[, 1], xy[, 2], pch = "")
+text(xy[, 1], xy[, 2], xy$ID)
+# xy <- xy[order(xy$ID2), ]
+xy <- rbind(xy, xy[1, ])
+plot(xy[, 1], xy[, 2], pch = "")
+text(xy[, 1], xy[, 2], xy$ID2)
+
+xypoly <- SpatialPolygons(list(Polygons(list(Polygon(xy[, 1:2])), ID = "1")))
+xypoly <- as(xypoly, "SpatialPolygonsDataFrame")
+crs(xypoly) <- "+proj=longlat +ellps=WGS84 +datum=WGS84 +no_defs"
+
+asian <- paste0("+proj=aea +lat_1=15 +lat_2=65 +lat_0=30 +lon_0=95 +x_0=0",
+                " +y_0=0 +ellps=WGS84 +datum=WGS84 +units=m +no_defs")
+gArea(spTransform(xypoly, CRS(asian))) / 10000
+plot(xypoly)
+
+writeOGR(xypoly, dsn = "external/data/geo/giese.kml", layer = "giese",
+                driver = "KML", overwrite_layer = TRUE)
+```
+
+# Nally (2005) - Diversity and Distributions
+```{r, eval = FALSE}
+x <- cbind(rep(145, 4), rep(40, 4), c(83, 90, 90, 83))
+y <- cbind(rep(37, 4), rep(30, 4), c(44, 44, 29, 29))
+
+dd <- function(x, y, z) x + y / 60 + z / 3600
+xy <- cbind.data.frame(x = dd(x[, 1], x[, 2], x[, 3]),
+                       y = dd(y[, 1], y[, 2], y[, 3]))
+xy[, 2] <- -xy[, 2]  # add negative on
+xy$ID <- 1:nrow(xy)
+# xy$ID2 <- c(1, 2)
+plot(xy[, 1], xy[, 2], pch = "")
+text(xy[, 1], xy[, 2], xy$ID)
+# xy <- xy[order(xy$ID2), ]
+xy <- rbind(xy, xy[1, ])
+plot(xy[, 1], xy[, 2], pch = "")
+text(xy[, 1], xy[, 2], xy$ID)
+
+xypoly <- SpatialPolygons(list(Polygons(list(Polygon(xy[, 1:2])), ID = "1")))
+xypoly <- as(xypoly, "SpatialPolygonsDataFrame")
+crs(xypoly) <- "+proj=longlat +ellps=WGS84 +datum=WGS84 +no_defs"
+
+aus <- paste0("+proj=aea +lat_1=-18 +lat_2=-36 +lat_0=0 +lon_0=134 +x_0=0",
+              " +y_0=0 +ellps=GRS80 +towgs84=0,0,0,0,0,0,0 +units=m +no_defs")
+gArea(spTransform(xypoly, CRS(aus))) / 10000
+plot(xypoly)
+
+writeOGR(xypoly, dsn = "external/data/geo/nally.kml", layer = "nally",
+                driver = "KML", overwrite_layer = TRUE)
+
+# plot(seq(0, 1000, 100), -635 * seq(0, 1000, 100) + 25 * seq(0, 1000, 100)^2) 
+
+```
+
+# Piping Plover layer for Roche et al (2008)
+```{r, eval = FALSE}
+usalb <- paste0("+proj=aea +lat_1=29.5 +lat_2=45.5 +lat_0=37.5", 
+                " +lon_0=-96 +x_0=0 +y_0=0 +ellps=GRS80 +datum=NAD83", 
+                " +units=m +no_defs")
+pp <- readOGR(paste0(p_geo, "pplover.kml"), layer = "pplover")
+gArea(spTransform(pp, CRS(usalb))) / 10000
+
+```
+
+# Nor et al 2011
+```{r, eval = FALSE}
+
+pp <- readOGR(paste0(p_geo, "nor_et_al_2011_complete.sqlite"), 
+              layer = "nor_et_al_2011_complete")
+crs(pp) <- "+proj=longlat +ellps=WGS84 +datum=WGS84 +no_defs"
+laenp <- paste0("+proj=laea +lat_0=90 +lon_0=0 +x_0=0 +y_0=0 +ellps=WGS84", 
+                " +datum=WGS84 +units=m +no_defs") 
+gArea(spTransform(pp, CRS(laenp))) / 10000
+
+```
+
+# Gutierrez et al - 2013
+```{r, eval = FALSE}
+ext <- as(extent(380000, 480000, 4420000, 4580000), "SpatialPolygons")
+crs(ext) <- "+proj=utm +zone=30 +ellps=WGS84 +datum=WGS84 +units=m +no_defs"
+ext <- spTransform(ext, CRS(gcs))
+# spdem <- getData(name = 'alt', country = "ESP")
+spdem <- getData(name = 'SRTM', lat = 40.75, lon = -4.0)
+plot(spdem)
+gutdem <- crop(spdem, ext, file = fp(p_geo, "gutdem.tif"), overwrite = TRUE)
+plot(gutdem)
+
+```
+
+
+
+
+
