@@ -18,6 +18,7 @@ knitr::opts_chunk$set(echo = TRUE, fig.align = 'center', fig.height = 4,
 ```
 ```{r, echo=FALSE}
 e <- TRUE
+e2 <- TRUE
 ```
 
 
@@ -131,7 +132,7 @@ msk4sp <- SpatialPolygons(list(Polygons(list(Polygon(coords = pcrd)), ID = 1)))
 
 Main figure of kernel densities, with median values added to density plots. 
 
-```{r, eval=e}
+```{r, eval=e2}
 # global function for defining breaks
 brkfun <- function(ext, ival, n) {
   rng <- range(ext[is.finite(ext)])
@@ -211,7 +212,7 @@ o <- dev.off()
 
 Expanded version of Figure 2, showing kernel densities of different observational categories. 
 
-```{r, eval = FALSE}
+```{r, eval = e2}
 ylabs <- c("All", "Field", "Automated", "Remote", "Paleo")
 titles <- c("Res v Int", "Dur v Int", "Res v Ext", "Dur v Ext")
 

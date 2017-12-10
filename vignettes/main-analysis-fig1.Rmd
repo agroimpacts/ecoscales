@@ -16,8 +16,9 @@ vignette: >
 knitr::opts_chunk$set(echo = TRUE, fig.align = 'center', fig.height = 4, 
                       fig.width = 5)
 ```
-```{r, echo = TRUE}
+```{r, echo = FALSE}
 e <- TRUE
+e2 <- TRUE
 ```
 
 
@@ -118,7 +119,7 @@ save(hdatstat_bt, file = "data/hdatstat_bt.rda")
 <a href="#top">Back to top</a>
 
 ## Figure 1 (main text)
-```{r, echo=FALSE}
+```{r, echo=FALSE, eval = e2}
 data("hdatstat_bt")
 ```
 ```{r, message=FALSE, warning=FALSE, eval = e}

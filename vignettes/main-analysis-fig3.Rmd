@@ -18,6 +18,7 @@ knitr::opts_chunk$set(echo = TRUE, fig.align = 'center', fig.height = 4,
 ```
 ```{r, echo=FALSE}
 e <- TRUE
+e2 <- TRUE
 ```
 
 # Overview
@@ -97,7 +98,7 @@ names(dif_ints) <- c("e", "d")
 
 Box plots by bins of extent/duration, colored and labelled by the percent of observations per bin.
 
-```{r, eval = e}
+```{r, eval = e2}
 # y grid line function
 ylines <- function(yr, by, lty = 1, col = "grey") {
   abline(h = seq.int(from = yr[1], to = yr[2], by = 2), lty = lty, col = col)

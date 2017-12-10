@@ -6,7 +6,7 @@ output:
     number_sections: true
     toc_depth: 3
 vignette: >
-  %\VignetteIndexEntry{Additional Analyses}
+  %\VignetteIndexEntry{7. Additional Analyses}
   %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
 
@@ -18,6 +18,7 @@ knitr::opts_chunk$set(echo = TRUE, fig.align = 'center', fig.height = 4,
 ```
 ```{r, echo = FALSE}
 e <- TRUE
+e2 <- TRUE
 ```
 
 
@@ -45,44 +46,53 @@ knitr::kable(datf[, list("%" = round(.N / nrow(datf) * 100, 2)),
                     by = study_type])
 ```
 
+<a href="#top">Back to top</a>
+
 ### Remote/automated/paleo shares of observations
 
 Comparing the share of these observational types relative to certain extent and durational thresholds
 ```{r, eval = e}
 # share of observations made with remote/other above 10,000 ha extent
 aext <- 10^4
-datf[, {
+a <- datf[, {
   a = length(which(act_ext > aext))
   b1 = length(which((act_ext > aext) & like(study_type, "remote")))
   b2 = length(which((act_ext > aext) & like(study_type, "other")))
   round(c("remote" = b1 / a * 100, "other" = b2 / a * 100), 1)
 }]
+knitr::kable(t(as.matrix(a)))
 
 # share of automated/paleo observations of observatons lasting more than 1 year
 adur <- 365
-datf[, {
+b <- datf[, {
   a = length(which(act_dur > adur))
   b1 = length(which((act_dur > adur) & like(study_type, "auto")))
   b2 = length(which((act_dur > adur) & like(study_type, "paleo")))
   round(c("automated" = b1 / a * 100, "paleo" = b2 / a * 100), 1)
 }]
+knitr::kable(t(as.matrix(b)))
 
 # share of automated/paleo observations of observatons lasting < 1 year
-datf[, {
+d <- datf[, {
   a = length(which(act_dur <= adur))
   b1 = length(which((act_dur <= adur) & like(study_type, "auto")))
   b2 = length(which((act_dur <= adur) & like(study_type, "paleo")))
   round(c("automated" = b1 / a * 100, "paleo" = b2 / a * 100), 1)
 }]
+knitr::kable(t(as.matrix(d)))
 
 ```
+
+<a href="#top">Back to top</a>
 
 ## Annual changes in observational scales
 
 ### Study type by year
 
+#### Calculation
+
 Calculate types of study by year, as total and percent
-```{r, warning = FALSE, message = FALSE, fig.height=3, eval = e}
+```{r, warning = FALSE, message = FALSE, eval = e}
 # One Oecologia study listed as 2004 (by Endnote) was actually 2003 
 # Set it to 2004
 stypes <- copy(datf)  # new dataset out of dat (which retain year info)
@@ -98,7 +108,9 @@ stypeyr <- stypes[, list(.N, study_type), by = study_year][, {
 stypeyr <- stypeyr[, lapply(.SD, mean), .SDcols = c("tot", "ct", "prop"), 
                    by = .(study_type, study_year)]
 ```
-```{r, eval = e}
+
+#### Figure 
+```{r, eval = e2}
 obs_types <- c("remote", "field", "auto")
 obs_types2 <- c("Remote sensing", "Field", "Automatic")
 cols <- c("orange", "green4", "blue4")
@@ -129,6 +141,8 @@ for(i in 1:3) {  # i <- 1
 o <- dev.off()
 ```
 
+#### Extrapolation to 2017
+
 Extrapolating percentage of studies using remote sensing to 2017
 ```{r, eval = e}
 preds <- stypeyr[like(study_type, "remote"), {
@@ -140,8 +154,9 @@ names(preds) <- 2004:2017
 
 Percent of remote sensing studies by year
 ```{r, eval = e}
-round(preds, 1)
+knitr::kable(t(as.matrix(round(preds, 1))))
 ```
+
 
 Average annual percent of studies using remote sensing 2004-2014, and projected increases in this percent through 2017 (2004-2017) 
 ```{r, eval = e}
@@ -195,7 +210,7 @@ knitr::kable(otab)
 ### All scales
 
 #### Figure
-```{r, eval = e}
+```{r, eval = e2}
 vars <- c("plot_res", "eff_ext", "t_btwn_samp", "eff_dur")
 varlabs <- c("Resolution", "Extent", "Interval", "Duration")
 labcols <- c(brewer.pal(8, "Reds")[c(7, 7)], brewer.pal(8, "Blues")[c(7, 7)])
