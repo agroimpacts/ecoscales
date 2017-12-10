@@ -119,10 +119,10 @@ save(hdatstat_bt, file = "data/hdatstat_bt.rda")
 <a href="#top">Back to top</a>
 
 ## Figure 1 (main text)
-```{r, echo=FALSE, eval = e2}
+```{r, echo=FALSE, eval = e}
 data("hdatstat_bt")
 ```
-```{r, message=FALSE, warning=FALSE, eval = e}
+```{r, message=FALSE, warning=FALSE, eval = e2}
 vs <- c("res", "ext", "int", "dur")
 xlabs <- c("Resolution", "Extent", "Interval", "Duration")
 ylabs <- c("All", "Field", "Automated", "Remote", "Paleo")
@@ -185,7 +185,7 @@ o <- dev.off()
 
 Detailed by observation type, for supplemental material.
 
-```{r, message=FALSE, warning=FALSE, eval = e}
+```{r, message=FALSE, warning=FALSE, eval = e2}
 xlabs <- c("Resolution", "Extent", "Interval", "Duration")
 ylabs <- c("All", "Field", "Automated", "Remote", "Paleo")
 axes2 <- list("aax1" = aaxis1$logres, "aax2" = aaxis2$logarea, 
