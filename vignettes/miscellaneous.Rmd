@@ -1,5 +1,5 @@
 ---
-title: "Miscellaneous"
+title: "Miscellaneous Supporting Analyses"
 author: "Lyndon Estes"
 output: 
   rmarkdown::html_vignette:
@@ -7,7 +7,7 @@ output:
     number_sections: true
     toc_depth: 3
 vignette: >
-  %\VignetteIndexEntry{9. Scale Data Pre-processing}
+  %\VignetteIndexEntry{9. Miscellaneous Supporting Analyses}
   %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
 ---

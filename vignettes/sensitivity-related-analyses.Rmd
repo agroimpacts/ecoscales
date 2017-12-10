@@ -19,7 +19,8 @@ knitr::opts_chunk$set(
 
 ```
 ```{r, echo = FALSE}
-e <- FALSE
+e <- TRUE
+e2 <- TRUE
 ```
 
 # Overview
@@ -29,13 +30,9 @@ These analyses examine two further specific aspects of uncertainty in the study'
 1. The percent of studies in which the scale of particular dimensions had to be estimated;
 2. The impact of bandwidth on kernel density estimates 
 
-## Proportion of observations estimated
-
-This assessment is based on notes that each observer made in their data sheets specifying which dimensions for each observation were uncertain (and thus had to be estimated) based on the description of methods in the paper in question.  These notes occur in "sensitivity" column of the main data sheet. 
-
-The notes themselves are noisy and need to be wrangled to get them into the correct dimensional names. 
-
-```{r, eval = e, message=FALSE}
+# Analyses
+## Data and libraries
+```{r, message=FALSE, warning=FALSE}
 library(ecoscales)
 library(viridis)
 library(doMC)
@@ -44,6 +41,17 @@ data("dimbreaks")
 
 f <- system.file("extdata/main-results.xlsx", package = "ecoscales")
 dat <- data.table(read_excel(f))
+```
+
+
+
+## Proportion of observations estimated
+
+This assessment is based on notes that each observer made in their data sheets specifying which dimensions for each observation were uncertain (and thus had to be estimated) based on the description of methods in the paper in question.  These notes occur in "sensitivity" column of the main data sheet. 
+
+The notes themselves are noisy and need to be wrangled to get them into the correct dimensional names. 
+
+```{r, eval = e, message=FALSE}
 
 svars <- c("plot_res", "n_sites", "act_ext", "eff_ext", "samp_dur",
            "t_btwn_samp", "act_dur", "eff_dur")
@@ -121,7 +129,9 @@ Testing the results on images related to varying kernel sizes.
 
 ### Run kernel density estimates
 
-```{r, eval = e}
+The processing time is slow so this chunk is run separately, and results are added to package for lazy load, so that package vignettes can build more quickly (and to avoid hassles with caching chunks and vignettes).  
+
+```{r, eval = FALSE}
 # ```{r, eval = e}
 bootp_dt <- rbindlist(bootperturb)
 kdat <- copy(bootp_dt)  # bootstrap
@@ -156,12 +166,17 @@ kderls <- lapply(kderls, function(x) {
   x
 })
 names(kderls) <- c("resint", "durext")
+
+save(kderls, file = "data/kderls.rda")
 ```
 
 <a href="#top">Back to top</a>
 
 ### Plot
-```{r, eval = e}
+```{r, echo = FALSE}
+data("kderls")
+```
+```{r, eval = e2}
 # global function for defining breaks and plotting legend (haven't added to 
 # package since used <3 times!)
 # breaks
@@ -211,20 +226,11 @@ for(i in 1:3) {  # i <- 1
     legfun(kderls[[j]][[i]], n = cuts, cxa = cxa, col = cols)
   }
 }
-dev.off()
+o <- dev.off()
 
 ```
 <a href="#top">Back to top</a>
 
-```{r, eval=FALSE, echo=FALSE}
-# check effect of averaging by DOI
-data("datf")
-datf[, {
- list("a" = log10(mean(plot_res)), "b" = log10(mean(eff_ext, na.rm = TRUE)))
-}, by = DOI][, list("a" = mean(a), "b" = mean(b, na.rm = TRUE))]
-datf[, list("a" = mean(log10(plot_res)), "b" = mean(log10(eff_ext), na.rm = T))]
-
-```
 
 
 
