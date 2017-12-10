@@ -6,7 +6,7 @@ output:
     number_sections: true
     toc_depth: 3
 vignette: >
-  %\VignetteIndexEntry{Main Analyses - Figure 3}
+  %\VignetteIndexEntry{6. Main Analyses - Figure 3}
   %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
 
@@ -14,9 +14,11 @@ vignette: >
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE, fig.align = 'center', fig.height = 4, 
-                      fig.width = 5, cache = TRUE)
+                      fig.width = 6, cache = TRUE)
 ```
-
+```{r, echo=FALSE}
+e <- TRUE
+```
 
 # Overview
 
@@ -31,10 +33,6 @@ library(viridis)
 library(ggplot2)
 data("dimbreaks")
 data("bootperturb")
-```
-
-```{r, echo = FALSE}
-e <- TRUE
 ```
 
 ## Actual versus effective duration/extent
