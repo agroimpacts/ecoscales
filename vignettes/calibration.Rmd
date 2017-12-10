@@ -17,14 +17,6 @@ vignette: >
 
 Analysis of calibration dataset used to assess between observer uncertainties.
 
-```{r, message=FALSE, warning = FALSE}
-library(ecoscales)
-library(readxl)
-library(Agreement)
-library(irr)
-
-```
-
 ```{r, eval=FALSE, echo = FALSE}
 # Read in and clean-up calibration data
 # cal <- data.table(read_excel(fp(p_dat, "merged_calibration.xlsx")))
@@ -42,8 +34,14 @@ library(irr)
 # write.csv(cal, file = fp(p_dat, "merged_calibrationf.csv"))
 ```
 
-# Data
-```{r, warning = FALSE}
+# Analyses
+## Data and libraries
+```{r, message=FALSE, warning = FALSE}
+library(ecoscales)
+library(readxl)
+library(Agreement)
+library(irr)
+
 # external fixes and recodes, bring back in
 calfile <- system.file("extdata", "calibration-set.xlsx", package ="ecoscales")
 cal <- data.table(read_excel(calfile))
@@ -62,7 +60,6 @@ for(j in nuvars) {
 
 ```
 
-# Analyses
 ## Agreement on studies included/excluded
 ```{r}
 # ndois <- cal[, unique(DOI)]  # check on number of journals

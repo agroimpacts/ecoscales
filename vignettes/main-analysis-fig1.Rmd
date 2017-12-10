@@ -6,7 +6,7 @@ output:
     number_sections: true
     toc_depth: 3
 vignette: >
-  %\VignetteIndexEntry{Main Analyses - Figure 1}
+  %\VignetteIndexEntry{4. Main Analyses - Figure 1}
   %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
 
@@ -16,6 +16,10 @@ vignette: >
 knitr::opts_chunk$set(echo = TRUE, fig.align = 'center', fig.height = 4, 
                       fig.width = 5)
 ```
+```{r, echo = TRUE}
+e <- TRUE
+```
+
 
 # Overview
 
@@ -34,15 +38,17 @@ data("bootperturb")
 ## Histograms
 
 Constructed from `bootperturb`. 
-```{r hists, cache=TRUE}
-# ```{r, eval = e}
+```{r}
 # break points for data
 brksl <- list(aaxis1$logres, aaxis2$logarea, taxis1$logdays, taxis2$logdays)  
 vlr <- range(aaxis1$logres)  # for resolution
 vle <- range(aaxis2$logarea)  # for extent
-
-# Assign bootstrapped values to bins, making necessary adjustments as needed 
 vs <- c("res", "ext", "int", "dur")
+```
+
+The processing time is slow so this chunk is run separately, and results are added to package for lazy load, so that package vignettes can build more quickly (and to avoid hassles with caching chunks and vignettes).  
+```{r, eval = FALSE}
+# Assign bootstrapped values to bins, making necessary adjustments as needed 
 hdat_bs <- lapply(1:length(bootperturb), function(x) {  # x <- 1
   # print(x)
   DT <- copy(bootperturb[[x]])
@@ -105,13 +111,18 @@ hdatstat_bt <- lapply(1:length(hdat_bsdt), function(x) {
   hdatstat_bti
 })
 names(hdatstat_bt) <- typenms
+
+save(hdatstat_bt, file = "data/hdatstat_bt.rda")
 ```
 
 <a href="#top">Back to top</a>
 
-
 ## Figure 1 (main text)
+```{r, echo=FALSE}
+data("hdatstat_bt")
+```
 ```{r, message=FALSE, warning=FALSE, eval = e}
+vs <- c("res", "ext", "int", "dur")
 xlabs <- c("Resolution", "Extent", "Interval", "Duration")
 ylabs <- c("All", "Field", "Automated", "Remote", "Paleo")
 axes2 <- list("aax1" = aaxis1$logres, "aax2" = aaxis2$logarea, 
@@ -163,7 +174,7 @@ for(i in 1:length(vs)) {  # i <- 3
   points(b, hvals$p2, pch = "-", cex = 1, col = "grey40")
   points(b, hvals$p98, pch = "-", cex = 1, col = "grey40")
 }
-dev.off()
+o <- dev.off()
 ```
 
 <a href="#top">Back to top</a>

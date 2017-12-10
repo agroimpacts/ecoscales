@@ -6,7 +6,7 @@ output:
     number_sections: true
     toc_depth: 3
 vignette: >
-  %\VignetteIndexEntry{Sensitivity-related Analyses}
+  %\VignetteIndexEntry{8. Sensitivity Analyses}
   %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
 ---
@@ -19,7 +19,7 @@ knitr::opts_chunk$set(
 
 ```
 ```{r, echo = FALSE}
-e <- TRUE
+e <- FALSE
 ```
 
 # Overview
@@ -121,7 +121,7 @@ Testing the results on images related to varying kernel sizes.
 
 ### Run kernel density estimates
 
-```{r kdes, cache=TRUE}
+```{r, eval = e}
 # ```{r, eval = e}
 bootp_dt <- rbindlist(bootperturb)
 kdat <- copy(bootp_dt)  # bootstrap
@@ -159,7 +159,6 @@ names(kderls) <- c("resint", "durext")
 ```
 
 <a href="#top">Back to top</a>
-
 
 ### Plot
 ```{r, eval = e}

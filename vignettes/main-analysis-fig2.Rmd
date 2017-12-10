@@ -6,7 +6,7 @@ output:
     number_sections: true
     toc_depth: 3
 vignette: >
-  %\VignetteIndexEntry{Main Analyses - Figure 2}
+  %\VignetteIndexEntry{5. Main Analyses - Figure 2}
   %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
 
@@ -15,6 +15,9 @@ vignette: >
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE, fig.align = 'center', fig.height = 4, 
                       fig.width = 5, cache = TRUE)
+```
+```{r, echo=FALSE}
+e <- TRUE
 ```
 
 
@@ -38,7 +41,11 @@ data("bootperturb")
 
 ## Kernel density estimates
 
-```{r kde, cache=TRUE}
+Kernel density estimates are created from juxtapositions of different scale dimensions, which are further broken down by observational types for supplementary analyses. 
+
+The processing time is slow so this chunk is run separately, and results are added to package for lazy load, so that package vignettes can build more quickly (and to avoid hassles with caching chunks and vignettes). 
+
+```{r, eval = FALSE}
 bootp_dt <- rbindlist(bootperturb)
 
 # choose which dataset to use
@@ -82,6 +89,17 @@ kderla <- lapply(kderla, function(x) {
 })
 names(kderla) <- c("all", "field", "automated", "remote", "paleo")
 
+save(kderla, file = "data/kderla.rda")
+```
+
+```{r, echo=FALSE}
+data("kderla")
+```
+
+## Masks for impossible domains
+
+To block out areas in subsequent plot that are not physically possible (e.g. interval > duration; resolution > extent)
+```{r, eval = e}
 # create masks for impossible values in res vs ext, and dur vs int
 yr <- xr <- kderla$all$resext$kde
 v <- xFromCell(xr, 1:ncell(xr))
@@ -113,7 +131,7 @@ msk4sp <- SpatialPolygons(list(Polygons(list(Polygon(coords = pcrd)), ID = 1)))
 
 Main figure of kernel densities, with median values added to density plots. 
 
-```{r, eval=TRUE}
+```{r, eval=e}
 # global function for defining breaks
 brkfun <- function(ext, ival, n) {
   rng <- range(ext[is.finite(ext)])
@@ -185,7 +203,7 @@ for(i in 1:4) {  # i <- 1
   for(j in 1:2) mtext(side = j, labs[[i]][j], cex = cxa, line = ll)
   mtext(LETTERS[i], side = 3, line = -0.1, cex = 0.8, adj = 0.025)
 }
-dev.off()
+o <- dev.off()
 
 ```
 
@@ -193,7 +211,7 @@ dev.off()
 
 Expanded version of Figure 2, showing kernel densities of different observational categories. 
 
-```{r, cache = TRUE}
+```{r, eval = FALSE}
 ylabs <- c("All", "Field", "Automated", "Remote", "Paleo")
 titles <- c("Res v Int", "Dur v Int", "Res v Ext", "Dur v Ext")
 
@@ -221,7 +239,7 @@ for(i in 1:5) {
            smallplot = c(0.85, 0.875, 0.4, 0.95))
   }
 }
-dev.off()
+o <- dev.off()
 
 ```
 
