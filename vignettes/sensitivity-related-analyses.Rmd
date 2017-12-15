@@ -38,6 +38,7 @@ library(viridis)
 library(doMC)
 data("bootperturb")
 data("dimbreaks")
+data("datf")
 
 f <- system.file("extdata/main-results.xlsx", package = "ecoscales")
 dat <- data.table(read_excel(f))
@@ -121,6 +122,17 @@ senst[id, "aext"] <- 1
 
 # percentage of records that are uncertain
 knitr::kable(t(round(colSums(senst) / nrow(senst) * 100, 1)))
+```
+
+## Observations Assigned Token 1 day
+
+Calculating the proportions of observations assigned this value overall, focusing on the `samp_dur` parameter
+```{r}
+v <- round(datf[samp_dur == 1, .N] / datf[, .N] * 100, 1)
+v2 <- round(datf[samp_dur == 1 & study_type != "automated" & t_btwn_samp != 0, 
+                 .N] / datf[, .N] * 100, 1)
+knitr::kable(cbind(v, v2), col.names = c("% of total (all 1 day values)", 
+                                         "% of total (no automated or one-off"))
 ```
 
 ## Kernel Bandwidth

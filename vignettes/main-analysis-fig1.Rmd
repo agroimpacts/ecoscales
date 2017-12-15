@@ -18,7 +18,7 @@ knitr::opts_chunk$set(echo = TRUE, fig.align = 'center', fig.height = 4,
 ```
 ```{r, echo = FALSE}
 e <- TRUE
-e2 <- FALSE
+e2 <- TRUE
 ```
 
 
@@ -145,7 +145,7 @@ cols <- c(reds[c(4, 6)], blues[c(4, 6)])
 png("figures/fig1.png", width = 5, height = 5, res = 600, 
     units = "in")
 par(mfrow = c(2, 2), mar = c(4.5, 1, 1, 1), oma = c(2, 3, 0, 0))
-for(i in 1:length(vs)) {  # i <- 3
+for(i in 1:length(vs)) {  # i <- 4
   hvals <- hdatstat_bt$all[[i]]
   axv <- brksl[[i]]
   mids <- sapply(2:length(axv), function(x) mean(c(axv[x], axv[x - 1])))
@@ -170,6 +170,12 @@ for(i in 1:length(vs)) {  # i <- 3
     mtext("Percent of observations", side = 2, line = 1.5, cex = 0.8)
   }
   mtext(LETTERS[i], side = 3, line = sfigl, cex = 0.8, adj = 0.05)
+  
+  if(i == 4) {
+    lines(x = rep(xaxp[4], 2), y = c(0, 45), col = "grey40")
+    text(x = xaxp[4], y = 25, labels = "unreplicated", srt = 90, col = "grey40",
+         pos = 3, cex = cxa)
+  }
 
   # confidence intervals
   points(b, hvals$p2, pch = "-", cex = 1, col = "grey40")
