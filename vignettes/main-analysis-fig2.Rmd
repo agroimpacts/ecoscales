@@ -14,7 +14,7 @@ vignette: >
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE, fig.align = 'center', fig.height = 4, 
-                      fig.width = 5, cache = TRUE)
+                      fig.width = 5)
 ```
 ```{r, echo=FALSE}
 e <- TRUE
@@ -182,7 +182,7 @@ par(mfrow = c(2, 2), mar = c(6, 6, 0.3, 3), oma = c(0, 0, 0.5, 1),
     mgp = c(2, 0.25, 0))
 # resolutions
 ki <- c(1, 4, 3, 2)  # index to account for change in kde order
-for(i in 1:4) {  # i <- 1
+for(i in 1:4) {  # i <- 4
   # plot main images and masks
   image(kderla$all[[ki[i]]]$kde, axes = FALSE, xlab = "", ylab = "", col = cols)
   if(i == 2) plot(msk4sp, add = TRUE, col = "grey30", border = "transparent")
@@ -190,6 +190,13 @@ for(i in 1:4) {  # i <- 1
   axis(1, axv[[i]]$x, labels = axl[[i]]$x, las = 2, tcl = -0.2, cex.axis = cxa)
   axis(2, axv[[i]]$y, labels = axl[[i]]$y, las = 2, tcl = -0.2, cex.axis = cxa)
   
+  # draw line for unreplicated observations
+  if(i == 4) {
+    lines(x = rep(axv[[i]]$x[4], 2), y = range(axv[[i]]$y), col = "grey40")
+    text(x = axv[[i]]$x[4], y = axv[[i]]$y[3], labels = "unreplicated", 
+         srt = 90, col = "grey40", pos = 3, cex = cxa)
+  }
+
   # observation type means
   for(k in 1:length(ptnms)) {  # k <- 1
     # ppts <- kderla[[ptnms[k]]][[ki[i]]]$mean
