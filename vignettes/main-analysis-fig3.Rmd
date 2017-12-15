@@ -18,7 +18,7 @@ knitr::opts_chunk$set(echo = TRUE, fig.align = 'center', fig.height = 4,
 ```
 ```{r, echo=FALSE}
 e <- TRUE
-e2 <- TRUE
+e2 <- FALSE
 ```
 
 # Overview
@@ -34,7 +34,6 @@ library(viridis)
 library(ggplot2)
 data("dimbreaks")
 data("bootperturb")
-# data(datf)
 ```
 
 ## Actual versus effective duration/extent
@@ -43,7 +42,6 @@ Prepare the data for creating boxplots: calculate differences between log-transf
 ```{r, eval = e}
 bootp_dt <- rbindlist(bootperturb)
 kdat <- copy(bootp_dt)  # bootstrap
-# kdat <- copy(datf)
 
 # limits
 xyvars <- list(c(x = "eff_ext", y = "act_ext"),  # variable pairs 
@@ -65,9 +63,7 @@ pctints <- c(0, 1, seq(5, 100, 5))
 
 # calculate difference magnitudes by type
 dif_ints <- lapply(1:length(types), function(i) {  # i <- 3
-  # print(i)
   dif_int <- lapply(1:length(xyvars), function(x) {  # x <- 1
-    # print(x)
     xyv <- xyvars[[x]]
     onm <- onms[[x]]
     ival <- ivals[[x]]
@@ -77,7 +73,6 @@ dif_ints <- lapply(1:length(types), function(i) {  # i <- 3
     # grab all data first (want to preserve total N obs), remove unrepl as
     # needed and subset down to variables, dropping NAs
     dat <- copy(kdat)
-    # setnames(dat, "study_type", "type")
     if(x == 2) dat <- dat[t_btwn_samp != 365 * 10000, ]  # drop unreplicated
     dat <- dat[, list("type" = type, "x" = get(xyv["x"]), "y" = get(xyv["y"]))]
     dat <- na.omit(dat)
@@ -87,17 +82,14 @@ dif_ints <- lapply(1:length(types), function(i) {  # i <- 3
     dfd[type == "other", type := "remote"]
     type <- dfd$type
     
-    # type[type == "other"] <- "remote"
     dfd <- dfd[, lapply(.SD, log10), .SDcol = c("x", "y")]
     dfd <- cbind(type, dfd)
     
-    # dfd <- cbind(type, dfd)
     dfd[x < xl[1], x := xl[1]]  # confine x to min
     dfd[x > xl[2], x := xl[2]]  # confine x to max
     dfd[y < yl[1], y := yl[1]]  # confine y to min
     dfd[y > yl[2], y := yl[2]]  # confine y to max
-    # dfd <- na.omit(dfd)
-    
+
     # difference and intervals - if want to plot versus actual dur/ext, switch
     # x for y in findInterval
     dfd[, dif := x - y]
@@ -108,11 +100,9 @@ dif_ints <- lapply(1:length(types), function(i) {  # i <- 3
     # occupied intervals 
     ints <- sort(dfd[, unique(int)])
     nobs <- sapply(ints, function(i) dfd[int == i, .N])
-    # wgt <- nobs / sum(nobs)
     wgt <- nobs / nrow(dat) * 100
     intmax <- findInterval(max(wgt), pctints) + 1  # upper int
     wgti <- pctints[1:intmax]  # select all intervals
-    # wgti <- c(0, 1, seq(5, max(round(wgt, 1)) * 100, 5))
     cols <- findInterval(wgt, wgti)  # corresponding color index
     return(list("db" = dfd, "wgt" = wgt, "wgti" = wgti,
                 "col" = cols, "xl" = xl, "yl" = yl, "ival" = ival, 
@@ -140,10 +130,9 @@ byl <- c(0, 40)
 
 colpals <- c("Blues", "Reds")
 pal_len <- c(5, 9)  # max ncolors in palette
-ylabs <- c("Extent", "Duration")
+xlabs <- c("Extent", "Duration")
 a2mgp <- c(3, 0.5, 0)
 bwex <- c(0.9, 1.4)
-
 
 png("figures/fig3.png", width = 7, height = 4, res = 600, 
     units = "in")
@@ -176,7 +165,7 @@ for(i in 1:2) {  # i <- 1
     axis(2, at, labels = rep("", length(at)), las = 2, tcl = -0.2,
          cex.axis = cxa, mgp = a2mgp)
   }
-  mtext(ylabs[i], side = 1, line = 3, cex = 0.9)
+  mtext(xlabs[i], side = 1, line = 3, cex = 0.9)
   if(i == 1) {
     mtext("Magnitude of difference between Extent/Duration", side = 2, 
           line = 2.2, cex = 0.9)
@@ -202,8 +191,6 @@ Box plots by bins of extent/duration *and* by observational type, colored and la
 cxa <- 1
 ayl <- c(0, 20)
 byl <- c(0, 40)
-
-xlabs <- c("Extent", "Duration")
 ylabs <- c("All", "Field", "Automated", "Remote", "Paleo")
 a2mgp <- c(3, 0.5, 0)
 bwex <- c(0.9, 1.4)
