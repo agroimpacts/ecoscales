@@ -18,7 +18,7 @@ knitr::opts_chunk$set(echo = TRUE, fig.align = 'center', fig.height = 4,
 ```
 ```{r, echo=FALSE}
 e <- TRUE
-e2 <- FALSE
+e2 <- TRUE
 ```
 
 # Overview
@@ -34,13 +34,16 @@ library(viridis)
 library(ggplot2)
 data("dimbreaks")
 data("bootperturb")
+# data(datf)
 ```
 
 ## Actual versus effective duration/extent
 
 Prepare the data for creating boxplots: calculate differences between log-transformed actual and effective extents/durations, assign the values to different bins (intervals) of extent/duration, calculate the percentage of observations in each bin. 
 ```{r, eval = e}
-kdat <- rbindlist(bootperturb)
+bootp_dt <- rbindlist(bootperturb)
+kdat <- copy(bootp_dt)  # bootstrap
+# kdat <- copy(datf)
 
 # limits
 xyvars <- list(c(x = "eff_ext", y = "act_ext"),  # variable pairs 
@@ -55,43 +58,70 @@ onms <- list(c("eext", "aext"), c("edur", "adur"))
 wgtint <- c(0, 1, seq(5, 40, 5)) / 100
 wgttxt <- (c("  0", "  1", "  5", seq(10, 40, 5)))
 
-dif_ints <- lapply(1:length(xyvars), function(x) {  # x <- 2
-  xyv <- xyvars[[x]]
-  onm <- onms[[x]]
-  ival <- ivals[[x]]
-  xl <- lims[[xyv["x"]]]
-  yl <- lims[[xyv["y"]]]
-  
-  o <- copy(kdat)
-  if(x == 2) o <- o[t_btwn_samp != 365 * 10000, ]
-  type <- o$type
-  type[type == "other"] <- "remote"
-  o <- o[, list("x" = get(xyv["x"]), "y" = get(xyv["y"]))]
-  o <- o[, lapply(.SD, log10)]
-  o <- cbind(type, o)
-  o[x < xl[1], x := xl[1]]  # confine x to min
-  o[x > xl[2], x := xl[2]]  # confine x to max
-  o[y < yl[1], y := yl[1]]  # confine y to min
-  o[y > yl[2], y := yl[2]]  # confine y to max
-  o <- na.omit(o)
+# types
+types <- c("field|remote|paleo|automated|other", "field", "automated", 
+           "remote|other", "paleo")
+pctints <- c(0, 1, seq(5, 100, 5))
 
-  # difference and intervals - if want to plot versus actual dur/ext, switch
-  # x for y in findInterval
-  o[, dif := x - y]
-  o[, int := findInterval(x, ival, rightmost.closed = TRUE)]
-  setnames(o, c("x", "y"), onm)
-  
-  # plot related variables, finding percentages in each bin, occupied intervals 
-  ints <- sort(o[, unique(int)])
-  pctobs <- sapply(ints, function(i) o[int == i, .N])
-  wgt <- pctobs / sum(pctobs)
-  wgti <- c(0, 1, seq(5, max(round(wgt, 1)) * 100, 5))
-  cols <- findInterval(wgt, wgti / 100)  # corresponding color index
-  return(list("db" = o, "wgt" = wgt, "wgti" = wgti,
-              "col" = cols, "xl" = xl, "yl" = yl, "ival" = ival, "ints" = ints))
+# calculate difference magnitudes by type
+dif_ints <- lapply(1:length(types), function(i) {  # i <- 3
+  # print(i)
+  dif_int <- lapply(1:length(xyvars), function(x) {  # x <- 1
+    # print(x)
+    xyv <- xyvars[[x]]
+    onm <- onms[[x]]
+    ival <- ivals[[x]]
+    xl <- lims[[xyv["x"]]]
+    yl <- lims[[xyv["y"]]]
+    
+    # grab all data first (want to preserve total N obs), remove unrepl as
+    # needed and subset down to variables, dropping NAs
+    dat <- copy(kdat)
+    # setnames(dat, "study_type", "type")
+    if(x == 2) dat <- dat[t_btwn_samp != 365 * 10000, ]  # drop unreplicated
+    dat <- dat[, list("type" = type, "x" = get(xyv["x"]), "y" = get(xyv["y"]))]
+    dat <- na.omit(dat)
+
+    # subset by type
+    dfd <- dat[like(type, types[i])]
+    dfd[type == "other", type := "remote"]
+    type <- dfd$type
+    
+    # type[type == "other"] <- "remote"
+    dfd <- dfd[, lapply(.SD, log10), .SDcol = c("x", "y")]
+    dfd <- cbind(type, dfd)
+    
+    # dfd <- cbind(type, dfd)
+    dfd[x < xl[1], x := xl[1]]  # confine x to min
+    dfd[x > xl[2], x := xl[2]]  # confine x to max
+    dfd[y < yl[1], y := yl[1]]  # confine y to min
+    dfd[y > yl[2], y := yl[2]]  # confine y to max
+    # dfd <- na.omit(dfd)
+    
+    # difference and intervals - if want to plot versus actual dur/ext, switch
+    # x for y in findInterval
+    dfd[, dif := x - y]
+    dfd[, int := findInterval(x, ival, rightmost.closed = TRUE)]
+    setnames(dfd, c("x", "y"), onm)
+    
+    # plot related variables, finding percentages in each bin, 
+    # occupied intervals 
+    ints <- sort(dfd[, unique(int)])
+    nobs <- sapply(ints, function(i) dfd[int == i, .N])
+    # wgt <- nobs / sum(nobs)
+    wgt <- nobs / nrow(dat) * 100
+    intmax <- findInterval(max(wgt), pctints) + 1  # upper int
+    wgti <- pctints[1:intmax]  # select all intervals
+    # wgti <- c(0, 1, seq(5, max(round(wgt, 1)) * 100, 5))
+    cols <- findInterval(wgt, wgti)  # corresponding color index
+    return(list("db" = dfd, "wgt" = wgt, "wgti" = wgti,
+                "col" = cols, "xl" = xl, "yl" = yl, "ival" = ival, 
+                "ints" = ints))
+  })
+  names(dif_int) <- c("e", "d")
+  dif_int
 })
-names(dif_ints) <- c("e", "d")
-
+names(dif_ints) <- c("all", "field", "automated", "remote", "paleo")
 ```
 
 ## Figure 3
@@ -109,18 +139,20 @@ ayl <- c(0, 20)
 byl <- c(0, 40)
 
 colpals <- c("Blues", "Reds")
+pal_len <- c(5, 9)  # max ncolors in palette
 ylabs <- c("Extent", "Duration")
 a2mgp <- c(3, 0.5, 0)
 bwex <- c(0.9, 1.4)
+
 
 png("figures/fig3.png", width = 7, height = 4, res = 600, 
     units = "in")
 par(mfrow = c(1, 2), mar = c(4, 0, 1, 0.75), oma = c(0, 3, 0, 0))
 for(i in 1:2) {  # i <- 1
-  di <- dif_ints[[i]]  # subset list element
+  di <- dif_ints$all[[i]]  # subset list element
   bxa <- rowMeans(cbind(di$ival[-length(di$ival)], di$ival[-1]))[di$ints]
   bxw <- (di$ival[-1] - di$ival[-length(di$ival)])[di$ints]
-  cols <- brewer.pal(length(di$wgti) - 1, colpals[[i]])
+  cols <- brewer.pal(pal_len[i], colpals[[i]])
   mus <- di$db[order(int), list("mu" = mean(dif)), by = int]
 
   yls <- c(0, 14)
@@ -134,7 +166,7 @@ for(i in 1:2) {  # i <- 1
                axes = FALSE, outline = FALSE, lty = 1, add = TRUE, 
                staplewex = 0.2)
   points(bxa, mus$mu, pch = 20, col = "black")
-  text(bxa, b$stats[5, ] + 0.15, round(di$wgt * 100, 1), cex = 0.3)
+  text(bxa, b$stats[5, ] + 0.15, round(di$wgt, 1), cex = 0.3)
   
   axis(1, at = ivals[[i]], labels = list(alab2, tlab2[-c(5)])[[i]], las = 2, 
        tcl = -0.2, cex.axis = cxa, mgp = c(3, 0.5, 0))
@@ -157,7 +189,81 @@ for(i in 1:2) {  # i <- 1
   text(mean(xs), 14.25, "% of observations", col = "grey30", cex = cxa)
   mtext(c("A", "B")[i], side = 3, line = 0, cex = 1, adj = 0.02)
 }
-dev.off()
+o <- dev.off()
+
+
+```
+
+## Figure 3S
+
+Box plots by bins of extent/duration *and* by observational type, colored and labelled by the percent of observations per bin.
+
+```{r, eval = e2}
+cxa <- 1
+ayl <- c(0, 20)
+byl <- c(0, 40)
+
+xlabs <- c("Extent", "Duration")
+ylabs <- c("All", "Field", "Automated", "Remote", "Paleo")
+a2mgp <- c(3, 0.5, 0)
+bwex <- c(0.9, 1.4)
+
+png("figures/fig3s.png", width = 5, height = 10, res = 600, units = "in")
+par(mfrow = c(5, 2), mar = c(0.5, 0.75, 0.5, 0.75), oma = c(5, 5, 0, 0))
+for(i in 1:length(dif_ints)) {  # i <- 1
+  for(j in 1:2) {  # j <- 1
+    di <- dif_ints[[i]][[j]]  # subset list element
+    bxa <- rowMeans(cbind(di$ival[-length(di$ival)], di$ival[-1]))[di$ints]
+    bxw <- (di$ival[-1] - di$ival[-length(di$ival)])[di$ints]
+    cols <- brewer.pal(pal_len[j], colpals[[j]])
+    mus <- di$db[order(int), list("mu" = mean(dif)), by = int]  # means
+    
+    yls <- c(0, 14)
+    plot(di$xl, yls, pch = "", xlab = "", ylab = "", xaxt = "n", yaxt = "n",
+         mgp = c(3, 0.5, 0), tcl = -0.2, xaxs = "i")
+    polygon(c(di$xl, rev(di$xl), di$xl[1]), c(-1, -1, rep(yls[2] * 1.2, 2), -1),             col = "grey90")
+    ylines(yr = yls, by = 2, col = "grey95")
+    b <- boxplot(formula = dif ~ int, data = di$db, col = cols[di$col], 
+                 range = 0, width = bxw, at = bxa, xlim = di$xl, 
+                 boxwex = bwex[j], axes = FALSE, outline = FALSE, lty = 1, 
+                 add = TRUE, staplewex = 0.2)
+    points(bxa, mus$mu, pch = 20, col = "black")
+    text(bxa, b$stats[5, ] + 0.35, round(di$wgt, 1), cex = 0.8)
+    
+    xvals <- list(alab2, tlab2[-c(5)])[[j]]
+    if(i == length(dif_ints)) {
+      axis(1, at = ivals[[j]], labels = xvals, las = 2, tcl = -0.2, 
+           cex.axis = cxa, mgp = c(3, 0.5, 0))
+    } else {
+      axis(1, at = ivals[[j]], labels = rep("", length(xvals)), las = 2,
+           tcl = -0.2, cex.axis = cxa, mgp = c(3, 0.5, 0))
+    }
+    at <- seq(0, yls[2], 2)
+    if(j == 1) {
+      axis(2, at, las = 2, tcl = -0.2, cex.axis = cxa, mgp = a2mgp)
+    } else {
+      axis(2, at, labels = rep("", length(at)), las = 2, tcl = -0.2,
+           cex.axis = cxa, mgp = a2mgp)
+    }
+    if(i == 5) mtext(xlabs[j], side = 1, line = 4, cex = cxa)
+    if(j == 1) mtext(ylabs[i], side = 2, line = 4, cex = cxa)
+    if(i == 3 & j == 1) {
+      mtext(paste("Magnitude of difference between Extent/Duration",
+                  "and Actual Extent/Duration"), side = 2, line = 1.4, 
+            cex = 0.9)
+    }
+    if(i == 1) {
+      lrng <- c(min(di$xl) - 0.1 * min(di$xl), mean(di$xl))
+      xs <- seq(lrng[1], lrng[2], by = (diff(lrng)) / (length(cols)))
+      rect_shade(xs, y = c(12.5, 13.5), fillcol = cols, linecol = "grey30")
+      text(xs, rep(11.8, length(xs)), di$wgti, srt = 90, col = "grey30",
+           cex = cxa)
+      text(mean(xs), 14.1, "% of observations", col = "grey30", cex = cxa)
+      
+    }
+  }
+}
+o <- dev.off()
 
 ```
 
@@ -166,13 +272,13 @@ dev.off()
 To see how much different observational types contribute to each bin.
 
 ```{r, eval = e}
-dif_ints$e$db[order(int), .N, by = list(int, type)][, {
+dif_ints$all$e$db[order(int), .N, by = list(int, type)][, {
   ggplot() + aes(x = int, y = N, color = type) + geom_line() +
     scale_color_brewer(type = "div") +
     xlab("Extent interval")
 }]
 
-dif_ints$d$db[order(int), .N, by = list(int, type)][, {
+dif_ints$all$d$db[order(int), .N, by = list(int, type)][, {
   ggplot() + aes(x = int, y = N, color = type) + geom_line() + 
     scale_color_brewer(type = "div") +
     xlab("Duration interval")
