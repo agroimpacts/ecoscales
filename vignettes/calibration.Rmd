@@ -45,9 +45,6 @@ library(irr)
 # external fixes and recodes, bring back in
 calfile <- system.file("extdata", "calibration-set.xlsx", package ="ecoscales")
 cal <- data.table(read_excel(calfile))
-# cal <- data.table(read_excel(fp(p_dat, "archive/merged_calibrationffffff.xlsx")))
-# names(cal)
-
 cal[, c("notes", "V31") := NULL]
 nuvars <- c("inout", "feature", "study_year", "st", "plot_res", "n_sites",
             "act_ext", "eff_ext", "samp_dur", "t_btwn_samp", "act_dur", 
@@ -109,25 +106,14 @@ mus <- cal[inout == 1, lapply(.SD, mean, na.rm = TRUE), by = .(DOI, observer),  
 vars <- mus[, lapply(.SD, sd, na.rm = TRUE), by = DOI, .SDcols = varnms] 
 musmu <- mus[, lapply(.SD, mean, na.rm = TRUE), by = DOI, .SDcols = varnms]
 
-# par(mfrow = c(3, 3), mar = c(3, 3, 2, 2), mgp = c(1.5, 0.5, 0))
-# for(i in varnms) {
-#   mu <- musmu[, get(i)]
-#   sdev <- vars[, get(i)]
-# #   print(paste(i, ":", sdev))
-#   print(paste(i, ":", round(mu, 2), ":", round(sdev, 2), ":", 
-#               round(sdev / mu, 2)))
-#   # plot(mu, sdev / mu, xlab = "mean", ylab = "CV", main = i)
-#   plot(mu, sdev, xlab = "mean", ylab = "sd", main = i)
-# }
-
-vars[, lapply(.SD, mean, na.rm = TRUE), .SDcols = varnms]
-round(colMeans(sapply(varnms, function(i) {
+o <- round(colMeans(sapply(varnms, function(i) {
   mu <- musmu[, get(i)]
   sdev <- vars[, get(i)]
   sdev / mu
 }), na.rm = TRUE), 3)
 
 # calr[DOI == "10.1007/s00442-005-0338-3" & feature == 2]
+knitr::kable(t(o), col.names = varnms)
 ```
 
 
@@ -143,13 +129,10 @@ calr <- cal[, rnms, with = FALSE]
 #      .SDcols = rnms[4:7]]
 # calr[feature != 99, .N, by = .(DOI, feature)]
 mymu <- function(x) round(mean(x, na.rm = TRUE), 3)
-calr[feature != 99, lapply(.SD, CV), by = .(DOI, feature), 
-     .SDcols = rnms[4:10]][, lapply(.SD, mymu), 
-                          .SDcols = rnms[4:10]]
-
-# par(mfcol = c(10, 4), mar = c(2, 2, 2, 2), mgp = c(1.5, 0.5, 0))
-# mus[, plot(plot_res), by = DOI]
-
+o <- calr[feature != 99, lapply(.SD, CV), by = .(DOI, feature), 
+          .SDcols = rnms[4:10]][, lapply(.SD, mymu), 
+                                .SDcols = rnms[4:10]]
+knitr::kable(o, col.names = varnms)
 ```
 
 
