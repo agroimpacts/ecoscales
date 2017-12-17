@@ -32,3 +32,37 @@ NULL
 #' data(datf)
 NULL
 
+#' Histograms of scale dimensions
+#' @name hdatstat_bt
+#' @docType data
+#' @description A list containing mean, 2.5, and 97.5 percentile values 
+#' resulting from histograms applied to bootperturb for each of the four primary 
+#' dimensions (used in making Figure 1), divided by observation type.
+#' @author Estes, Treuer, Elsen, Chang, Choi, Ahmed, Caylor, Ellis
+#' @keywords data
+#' @examples
+#' data(hdatstat_bt)
+NULL
+
+#' Kernel density estimates for bivariate dimensions comparisons
+#' @name kderla
+#' @docType data
+#' @description A list of kernel density rasters and various plotting 
+#' parameters, calculated across all observations and by observational type, for
+#' Figure 2.
+#' @author Estes, Treuer, Elsen, Chang, Choi, Ahmed, Caylor, Ellis
+#' @keywords data
+#' @examples
+#' data(kderla)
+NULL
+
+#' Kernel density estimates for bandwidth sensitivity estimation
+#' @name kderls
+#' @docType data
+#' @description A list of kernel density rasters calculated for bandwidth 
+#' sensitivity analysis
+#' @author Estes, Treuer, Elsen, Chang, Choi, Ahmed, Caylor, Ellis
+#' @keywords data
+#' @examples
+#' data(kderls)
+NULL
