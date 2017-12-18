@@ -334,6 +334,47 @@ knitr::kable(t(o), col.names = names(o))
 
 <a href="#top">Back to top</a>
 
+## Figure S1 summary statistics 
+
+Statistics associated with distributions of observations by observational methodology. These are calculated as the cumulative percentages of the observations for each category appearing in each bin. 
+
+```{r}
+o <- sapply(1:length(vs), function(x) {  # x <- 1
+  t(sapply(names(hdatstat_bt[-1]), function(y) {
+    v <- hdatstat_bt[[y]][[vs[x]]]$mu
+    round(cumsum(v) / sum(v) * 100, 1) 
+  }))
+})
+```
+
+Resolution by observation type
+```{r, echo = FALSE}
+lab <- c("0.1 cm2", "1 cm2", "10 cm2", "0.01 m2", "0.1 m2", 
+         "1 m2", "10 m2", "100 m2", "1000 m2", "1 ha", "10 ha", 
+         "100 ha", "1000 ha", ">=10000 ha")
+knitr::kable(o[[1]], col.names = lab)
+```
+
+Extent by observation type
+```{r, echo = FALSE}
+lab <- c("0.1 m2", "1 m2", "10 m2", "100 m2", "1000 m2", "1 ha", "10 ha",
+         "100 ha", "1000 ha", "10$^4$ ha", "10$^5$ ha", "10$^6$ ha", 
+         "10$^7$ ha", "10$^8$ ha", "10$^9$ ha", "10$^{10}$ ha")
+knitr::kable(o[[2]], col.names = lab)
+```
+
+Interval by observation type
+```{r, echo = FALSE}
+knitr::kable(o[[3]], col.names = tlab1[c(-1)])
+```
+
+Duration by observation type
+```{r, echo = FALSE}
+knitr::kable(o[[4]], col.names = tlab2[-1])
+```
+
+<a href="#top">Back to top</a>
+
 ```{r, echo = FALSE, eval = FALSE}
 # data checks (run in chunk only)
 # recreate plots from datf to compare visually to plots created in fig 1s, to
