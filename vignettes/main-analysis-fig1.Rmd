@@ -339,10 +339,13 @@ knitr::kable(t(o), col.names = names(o))
 Statistics associated with distributions of observations by observational methodology. These are calculated as the cumulative percentages of the observations for each category appearing in each bin. 
 
 ```{r}
-o <- sapply(1:length(vs), function(x) {  # x <- 1
-  t(sapply(names(hdatstat_bt[-1]), function(y) {
+o <- sapply(1:length(vs), function(x) {  # x <- 3
+  t(sapply(names(hdatstat_bt[-1]), function(y) {  # y = "field"
     v <- hdatstat_bt[[y]][[vs[x]]]$mu
-    round(cumsum(v) / sum(v) * 100, 1) 
+    if(x == 3) v[length(v)] <- 0
+    vo <- round(cumsum(v) / sum(v, na.rm = TRUE) * 100, 1) 
+    if(x == 3) vo[length(vo)] <- NA
+    vo
   }))
 })
 ```
@@ -363,12 +366,12 @@ lab <- c("0.1 m2", "1 m2", "10 m2", "100 m2", "1000 m2", "1 ha", "10 ha",
 knitr::kable(o[[2]], col.names = lab)
 ```
 
-Interval by observation type
+Interval by observation type (with unreplicated values removed)
 ```{r, echo = FALSE}
 knitr::kable(o[[3]], col.names = tlab1[c(-1)])
 ```
 
-Duration by observation type
+Duration by observation type (including unreplicated values)
 ```{r, echo = FALSE}
 knitr::kable(o[[4]], col.names = tlab2[-1])
 ```
