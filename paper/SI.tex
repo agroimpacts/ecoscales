@@ -88,13 +88,7 @@
 
 \section*{Supplementary Information}% Make the title.
 
-The following text provides additional information on this study's Methods and Results.  The full manuscript, data, and code are available on an accompanying \href{https://github.com/ecohydro/ecoscales}{github repository}. \textbf{Note to editors and reviewers: this repository is currently private, but will be made public upon acceptance of manuscript. In the interim, the code and data can be downloaded from the following links}:
-\href{https://www.dropbox.com/s/4r9h8mn1wa4kjsn/calibration.html?dl=0}{Calibration analysis}; \href{https://www.dropbox.com/s/n0zq5zufu96ktfl/calibration-set.xlsx?dl=0
-}{Calibration dataset}; \href{https://www.dropbox.com/s/bzni8dhqy8un4fz/space-time.html?dl=0
-}{Main analysis}; \href{https://www.dropbox.com/s/vujjo2x4f5kwqkb/main-results.xlsx?dl=0
-}{Main dataset}
-
-
+The following text provides additional information on this study's Methods and Results.  The full manuscript, data, and code are available on an accompanying \href{https://github.com/agroimpacts/ecoscales}{github repository}. \textbf{Note to editors and reviewers: this repository is currently private, but will be made public upon acceptance of manuscript. In the interim, the entire project folder can be downloaded from the following \href{https://www.dropbox.com/sh/1l9em6p0wyabwr3/AADhCpFvqjv6y7VbL5tgB3Iqa?dl=0}{link}.}
 
 \subsection*{Methods}% Make the title.
 \vspace{-4pt}
@@ -192,7 +186,7 @@ A full definition of all dimensions and how they were recorded is contained with
 \vspace{-0.5cm} 
    \Hitem \emph{\textbf{What is interval, and how do we record it?}} Interval is the time that elapsed between repeated observations of the same point in space or individual organism. In many cases, observations will only be made one time--list a value of 0 for these.  
   \Hitem \emph{\textbf{What is sampling duration, and how do we record it?}} How long an individual observation of an individual point in space took to make. Sampling duration multiplied by the number of repeats observations is used to calculate study duration. Often this value will not be reported, so you will have to use your best judgement, based on your knowledge of ecological methods, to approximate the sampling duration. For example, for a field based method with intensive plot methods, if you can't estimate a plausible sampling duration, assign a token 1 day. For remote sensing observations you can assume one second (although the observations are effectively instantaneous).  
-   \Hitem \emph{\textbf{What is duration, and how do we estimate it?}} The duration is the total period of time over which the phenomenon of interest was observed. More specifically, in the case of repeated observations, this is the total time that elapsed between the first and last observations at a given point in space (or of the same individual organism or community). For once-off (unreplicated) observations, this time is equivalent to the sample duration. However, there may be cases where once-off observations may have a longer duration than the sample duration.  For example, consider a study that counts occurrences of pollinators over three years, using transects that are located in different locations within the broader study area during each year \cite{rollin_differences_2013-1}. The observations are therefore not strictly temporally replicated, but the authors control for year of collection in their subsequent analysis to avoid confounding effects.  In this case, we can consider the effective duration to be three years, as the temporal information is encoded in the analysis. 
+   \Hitem \emph{\textbf{What is duration, and how do we estimate it?}} The duration is the total period of time over which the phenomenon of interest was observed. More specifically, in the case of repeated observations, this is the total time that elapsed between the first and last observations at a given point in space (or of the same individual organism or community). For once-off (unreplicated) observations, this time is equivalent to the sample duration. However, there may be cases where once-off observations may have a longer duration than the sample duration.  For example, consider a study that counts occurrences of pollinators over three years, using transects that are located in different locations within the broader study area during each year \cite{rollin_differences_2013}. The observations are therefore not strictly temporally replicated, but the authors control for year of collection in their subsequent analysis to avoid confounding effects.  In this case, we can consider the effective duration to be three years, as the temporal information is encoded in the analysis. 
   \Hitem \emph{\textbf{What is \emph{actual duration}, and how do we calculate it?}} The actual duration is the integral of sampling duration, or the time spent making one observation of the phenomenon in question. To clarify, actual duration is the total time spent sampling/observing a single point in space--not the span of time between first and last sample (duration), nor the integral of time spent in observing all spatial replicates. 
   \Hitem \emph{\textbf{Should actual duration be the total time spent sampling all sites or the amount of time spent sampling per site (e.g. for 5 minute point counts of birds at 10 sites each repeated twice, should we enter 100 minutes (5 minutes X 2 repeats X 10 sites) or 10 minutes (5 minutes X 2 repeats) for duration)?}} As stated above, actual duration is the total spent observing a single point in space, so in this case that would be 10 minutes (then converted to days, so 10 / (60 * 24))).
   \Hitem \emph{\textbf{How do we record duration and actual duration when there are no repeat observations?}} In these cases, study duration is equal to sampling duration. 
@@ -305,11 +299,20 @@ Mean of record-wise CV & 58 & 41 & 72 & 105 & 64 & 126 \\
 \subsubsection*{The domains of observational methods}
 \vspace{-10pt}
 
-Fig. \ref{obshists} details the distributions of observations by method along the four primary dimensions, while Fig. \ref{obskde} reveals the densities of observations by method within the dimensional juxtapositions shown in Fig. 2 in the main text. 
+Fig. \ref{obshists} details the distributions of observations by method along the four primary dimensions, while Fig. \ref{obskde} reveals the densities of observations by method within the dimensional juxtapositions shown in Fig. 2 in the main text. Fig. \ref{obsdiff} shows the how the differences between actual extent and extent  and actual duration and duration vary by observational type.  
+
+
+\subsubsection*{Trends in observational methods and scales by year}
+\vspace{-10pt}
+Figures \ref{type_by_yr} and \ref{sc_by_yr} respectively show how the frequency of ecological observing methods and the average scale in each dimensions varies by publication year (2004-2014). 
+
+\subsubsection*{Choice of bandwidth in kernel density estimation}
+\vspace{-10pt}
+Figure \ref{ksens} indicates the effect that varying bandwidth has on the appearance of the kernel density estimates. The smallest bandwidth (0.4) tested (Fig. \ref{ksens} top) shows that the primary observational concentrations described in the main text are evident, but tend to be devolved into separate concentrations. An example is the oblong concentration of observations that in Fig. 1A (and in the lower left panel in Fig. \ref{ksens}) is bounded on the lower right at monthly to yearly intervals and 100-1000 m$^2$ resolutions and on the upper left by near-daily to monthly observations and 0.1-10 ha resolutions. With the smaller bandwidth this concentration appears as two separate patches (Fig. \ref{ksens} top left), but with 0.7 bandwidth applied becomes coherent (Fig. \ref{ksens} middle left).  This increasing separation of points into separate clusters is expected as bandwidth is reduced.  However, this assessment indicates that the choice of bandwidth does not alter the interpretation of the results, as the domains of highest and lowest concentrations remain the same.  
 
 \begin{figure}[!ht]
-%\begin{wrapfigure}{c}{1\textwidth}
-\includegraphics[width=1\textwidth]{../vignettes/figures/fig1s.png}
+\centering
+\includegraphics[width=0.9\textwidth]{../vignettes/figures/figS1.png}
 \vspace{-20 pt}
 \caption{Histograms of the resolution, extent, interval, and duration of observational scales, shown for all observational methods (top row) and for the four main observational methods (rows 2-5). Bars represent the average percentages for each bin realized after 1000 perturbed resamples, while grey bars indicate the 95\% confidence interval. Bar widths for interval and duration indicate differences in scale between x-axis labels. }
 \label{obshists}
@@ -317,20 +320,24 @@ Fig. \ref{obshists} details the distributions of observations by method along th
 
 \begin{figure}[!ht]
 %\begin{wrapfigure}{c}{1\textwidth}
-\includegraphics[width=1\textwidth]{../vignettes/figures/fig2s.png}
+\includegraphics[width=1\textwidth]{../vignettes/figures/figS2.png}
 \vspace{-20 pt}
-\caption{Kernel density estimates across all observational types (top row) and for each of the four primary observational types (rows 2-5). Density estimates for resolution (x axis) versus interval (y axis) are presented in the first column, duration (x) versus interval (y) in the second column, resolution (x) versus extent (y) in the third column, and duration (x) versus extent (y) in the fourth column. Density estimates were applied to the log-transformed values of each observational dimension, and were rescaled to represent percentages. The grey shaded areas represent physically impossible domains (e.g. intervals greater than duration).}
+\caption{Kernel density estimates across all observational methods (top row) and for each of the four primary observational methods (rows 2-5). Density estimates for resolution (x axis) versus interval (y axis) are presented in the first column, duration (x) versus interval (y) in the second column, resolution (x) versus extent (y) in the third column, and duration (x) versus extent (y) in the fourth column. Density estimates were applied to the log-transformed values of each observational dimension, and were rescaled to represent percentages. The grey shaded areas represent physically impossible domains (e.g. intervals greater than duration).}
 \label{obskde}
 \end{figure}
 
-
-\subsubsection*{Trends in observational methods and scales by year}
-\vspace{-10pt}
-Figures \ref{type_by_yr} and \ref{sc_by_yr} respectively show how the frequency of ecological observing methods and the average scale in each dimensions varies by publication year (2004-2014). 
+\begin{figure}[!ht]
+%\begin{wrapfigure}{c}{1\textwidth}
+\centering
+\includegraphics[width=0.7\textwidth]{../vignettes/figures/figS3.png}
+\vspace{-5 pt}
+\caption{The difference between extent and \emph{actual} extent and duration and \emph{actual} duration, as calculated across all observational methods (top row) and for each of the four primary observational methods. Difference values are expressed in terms of how many orders of magnitude larger (or longer) extent (duration) is than actual extent (actual duration), and are summarized (as box plots, with circle in box representing the mean and line the median) in bins representing increasing scales of actual extent/duration.  The percentages of observations falling within each bin are indicated by the color of the inter-quartile and the numeric value above the upper whisker.}
+\label{obsdiff}
+\end{figure}
 
 \begin{figure}[!ht]
 %\begin{wrapfigure}{c}{1\textwidth}
-\includegraphics[width=1\textwidth]{figures/stype_by_yr.png}
+\includegraphics[width=1\textwidth]{../vignettes/figures/figS4.png}
 \vspace{10 pt}
 \caption{Trends in percentage of observing methods by year of publication. The coefficient of a weighted (by number of studies in each year) linear regression fit to the annual percentages of observations made with remote sensing (left), field methods (center), and automated sensors (right) is presented at the top of each plot, as well as the regression coefficient of determination and p-value. }
 \label{type_by_yr}
@@ -338,20 +345,16 @@ Figures \ref{type_by_yr} and \ref{sc_by_yr} respectively show how the frequency 
 
 \begin{figure}[ht]
 %\begin{wrapfigure}{c}{1\textwidth}
-\center{\includegraphics[width=0.8\textwidth]{figures/dim_by_yr.png}}
+\center{\includegraphics[width=0.8\textwidth]{../vignettes/figures/figS5.png}}
 \vspace{5 pt}
 \caption{Trends in observational scales by year of publication. The coefficient of a weighted (by number of studies in each year) linear regression, fit to the logarithm (base 10) of the mean scale values (calculated for each publication year) for the six assessed dimensions is presented at the top of each plot, as well as the model coefficient of determination and p-value. }
 \label{sc_by_yr}
 \end{figure}
 %\clearpage
 
-\subsubsection*{Choice of bandwidth in kernel density estimation}
-\vspace{-10pt}
-Figure \ref{ksens} indicates the effect that varying bandwidth has on the appearance of the kernel density estimates. The smallest bandwidth (0.4) tested (Fig. \ref{ksens} top) shows that the primary observational concentrations described in the main text are evident, but tend to be devolved into separate concentrations. An example is the oblong concentration of observations that in Fig. 1A (and in the lower left panel in Fig. \ref{ksens}) is bounded on the lower right at monthly to yearly intervals and 100-1000 m$^2$ resolutions and on the upper left by near-daily to monthly observations and 0.1-10 ha resolutions. With the smaller bandwidth this concentration appears as two separate patches (Fig. \ref{ksens} top left), but with 0.7 bandwidth applied becomes coherent (Fig. \ref{ksens} middle left).  This increasing separation of points into separate clusters is expected as bandwidth is reduced.  However, this assessment indicates that the choice of bandwidth does not alter the interpretation of the results, as the domains of highest and lowest concentrations remain the same.  
-
 \begin{figure}[!ht]
 %\begin{wrapfigure}{c}{1\textwidth}
-\includegraphics[width=0.9\textwidth]{../vignettes/figures/res_v_extent_ksize2.png}
+\includegraphics[width=0.9\textwidth]{../vignettes/figures/figS6.png}
 \vspace{10 pt}
 \caption{Two-dimensional kernel density estimates of observational densities within the domains defined by sampling interval and spatial resolution (left column) and duration and extent (right column), applied to log-transformed values of each observational dimension. Rows indicate the effects of selecting different bandwidths: 0.4 (top row); 0.7 (middle row); 1 (bottom row). }
 \label{ksens}

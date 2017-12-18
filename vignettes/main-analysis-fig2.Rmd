@@ -215,7 +215,7 @@ o <- dev.off()
 
 ```
 
-## Figure 2S
+## Figure S2
 
 Expanded version of Figure 2, showing kernel densities of different observational categories. 
 
@@ -223,7 +223,7 @@ Expanded version of Figure 2, showing kernel densities of different observationa
 ylabs <- c("All", "Field", "Automated", "Remote", "Paleo")
 titles <- c("Res v Int", "Dur v Int", "Res v Ext", "Dur v Ext")
 
-png("figures/fig2s.png", width = 8.5, height = 9, res = 600, 
+png("figures/figS2.png", width = 8.5, height = 9, res = 600, 
     units = "in")
 par(mfrow = c(5, 4), mar = c(4.5, 4.5, 0.3, 2.5), oma = c(0, 1, 1, 0), 
     mgp = c(2, 0.25, 0))

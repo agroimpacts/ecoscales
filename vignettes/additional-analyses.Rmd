@@ -114,7 +114,7 @@ stypeyr <- stypeyr[, lapply(.SD, mean), .SDcols = c("tot", "ct", "prop"),
 obs_types <- c("remote", "field", "auto")
 obs_types2 <- c("Remote sensing", "Field", "Automatic")
 cols <- c("orange", "green4", "blue4")
-png("figures/stype_by_yr.png", width = 7, height = 2.75, res = 300, 
+png("figures/figS4.png", width = 7, height = 2.75, res = 300, 
     units = "in")
 par(mfrow = c(1, 3), oma = c(0, 3, 0, 0), mar = c(4, 1, 2, 1))
 for(i in 1:3) {  # i <- 1
@@ -214,7 +214,7 @@ knitr::kable(otab)
 vars <- c("plot_res", "eff_ext", "t_btwn_samp", "eff_dur")
 varlabs <- c("Resolution", "Extent", "Interval", "Duration")
 labcols <- c(brewer.pal(8, "Reds")[c(7, 7)], brewer.pal(8, "Blues")[c(7, 7)])
-png("figures/dim_by_yr.png", width = 7, height = 6, res = 300, 
+png("figures/figS5.png", width = 7, height = 6, res = 300, 
     units = "in")
 par(mfrow = c(2, 2), mar = c(1, 3, 1, 1), oma = c(2, 3, 0, 0))
 for(i in 1:length(varlabs)) {  # i <- 1

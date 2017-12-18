@@ -183,7 +183,7 @@ o <- dev.off()
 
 ```
 
-## Figure 3S
+## Figure S3
 
 Box plots by bins of extent/duration *and* by observational type, colored and labelled by the percent of observations per bin.
 
@@ -195,8 +195,8 @@ ylabs <- c("All", "Field", "Automated", "Remote", "Paleo")
 a2mgp <- c(3, 0.5, 0)
 bwex <- c(0.9, 1.4)
 
-png("figures/fig3s.png", width = 5, height = 10, res = 600, units = "in")
-par(mfrow = c(5, 2), mar = c(0.5, 0.75, 0.5, 0.75), oma = c(5, 5, 0, 0))
+png("figures/figS3.png", width = 5, height = 7, res = 600, units = "in")
+par(mfrow = c(5, 2), mar = c(0.5, 1.5, 0, 0.5), oma = c(5, 5, 0, 0))
 for(i in 1:length(dif_ints)) {  # i <- 1
   for(j in 1:2) {  # j <- 1
     di <- dif_ints[[i]][[j]]  # subset list element
@@ -236,7 +236,7 @@ for(i in 1:length(dif_ints)) {  # i <- 1
     if(j == 1) mtext(ylabs[i], side = 2, line = 4, cex = cxa)
     if(i == 3 & j == 1) {
       mtext(paste("Magnitude of difference between Extent/Duration",
-                  "and Actual Extent/Duration"), side = 2, line = 1.4, 
+                  "and Actual Extent/Duration"), side = 2, line = 2, 
             cex = 0.9)
     }
     if(i == 1) {

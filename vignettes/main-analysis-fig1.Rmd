@@ -187,7 +187,7 @@ o <- dev.off()
 <a href="#top">Back to top</a>
 
 
-## Figure 1s
+## Figure S1
 
 Detailed by observation type, for supplemental material.
 
@@ -210,7 +210,7 @@ yl <- c(40, 40, 6, 6, 6)
 cols <- c(reds[c(4, 6)], blues[c(4, 6)])
 
 # pdf("paper/figures/hists_bs.pdf", width = 5, height = 5)
-png("figures/fig1s.png", width = 9, height = 11, res = 600, 
+png("figures/figS1.png", width = 9, height = 11, res = 600, 
     units = "in")
 par(mfrow = c(5, 4), mar = c(1, 0.25, 0.25, 0), oma = c(6, 5, 1, 1))
 for(i in 1:length(hdatstat_bt)) {  # i <- 5

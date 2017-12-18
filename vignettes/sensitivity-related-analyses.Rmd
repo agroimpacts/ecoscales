@@ -224,7 +224,7 @@ axl <- list("A" = list("x" = alab1[-1], "y" = tlab1[-c(5)]),
 
 # As separate plots
 # pdf("vignettes/figures/res_v_extent_ksize2.pdf", width = 8, height = 10)
-png("figures/res_v_extent_ksize2.png", width = 8, height = 10, 
+png("figures/figS6.png", width = 8, height = 10, 
     units = "in", res = 600)
 par(mfrow = c(3, 2), oma = c(6, 3, 0, 0), mar = c(1, 5, 3, 4))
 for(i in 1:3) {  # i <- 1
