@@ -18,7 +18,7 @@ knitr::opts_chunk$set(echo = TRUE, fig.align = 'center', fig.height = 4,
 ```
 ```{r, echo=FALSE}
 e <- TRUE
-e2 <- FALSE
+e2 <- TRUE
 ```
 
 # Overview
@@ -114,6 +114,8 @@ dif_ints <- lapply(1:length(types), function(i) {  # i <- 3
 names(dif_ints) <- c("all", "field", "automated", "remote", "paleo")
 ```
 
+<a href="#top">Back to top</a>
+
 ## Figure 3
 
 Box plots by bins of extent/duration, colored and labelled by the percent of observations per bin.
@@ -151,8 +153,7 @@ for(i in 1:2) {  # i <- 1
           col = "grey90")
   ylines(yr = yls, by = 2, col = "grey95")
   b <- boxplot(formula = dif ~ int, data = di$db, col = cols[di$col], 
-               range = 0, width = bxw, at = bxa, xlim = di$xl, boxwex = bwex[i], 
-               axes = FALSE, outline = FALSE, lty = 1, add = TRUE, 
+               range = 0, width = bxw, at = bxa, xlim = di$xl, boxwex = bwex[i],                axes = FALSE, outline = FALSE, lty = 1, add = TRUE, 
                staplewex = 0.2)
   points(bxa, mus$mu, pch = 20, col = "black")
   text(bxa, b$stats[5, ] + 0.15, round(di$wgt, 1), cex = 0.3)
@@ -179,9 +180,43 @@ for(i in 1:2) {  # i <- 1
   mtext(c("A", "B")[i], side = 3, line = 0, cex = 1, adj = 0.02)
 }
 o <- dev.off()
-
-
 ```
+
+<a href="#top">Back to top</a>
+
+## Statistics
+
+Mean magnitude of difference per **extent** bin, overall all bins (and overall), and by observational type.
+```{r}
+o <- dif_ints$all$e$db[order(int), list("dif" = mean(dif), .N), by = int]
+o[, pct := round(N / sum(N) * 100, 1)]
+o[, cumpct := round(cumsum(N) / sum(N) * 100, 1)]
+
+nms <- c("Interval", "Mean Difference Magnitude", "N", "%", "cum%")
+knitr::kable(o, col.names = nms)
+knitr::kable(cbind(o[, round(mean(dif), 2)], 
+                   dif_ints$all$e$db[, round(mean(dif), 2)]), 
+             col.names = c("Mean of bin means", "Overall mean")) 
+knitr::kable(dif_ints$all$e$db[, round(mean(dif), 2), by = "type"], 
+             col.names = c("Type", "Mean Difference Magnitude"))
+```
+
+Mean magnitude of difference per **duration** bin, overall all bins (and overall), and by observational type.
+```{r}
+o <- dif_ints$all$d$db[order(int), list("dif" = mean(dif), .N), by = int]
+o[, pct := round(N / sum(N) * 100, 1)]
+o[, cumpct := round(cumsum(N) / sum(N) * 100, 1)]
+
+nms <- c("Interval", "Mean Difference Magnitude", "N", "%", "cum%")
+knitr::kable(o, col.names = nms)
+knitr::kable(cbind(o[, round(mean(dif), 2)], 
+                   dif_ints$all$d$db[, round(mean(dif), 2)]), 
+             col.names = c("Mean of bin means", "Overall mean"))
+knitr::kable(dif_ints$all$d$db[, round(mean(dif), 2), by = "type"], 
+             col.names = c("Type", "Mean Difference Magnitude"))
+```
+
+<a href="#top">Back to top</a>
 
 ## Figure S3
 
@@ -208,11 +243,13 @@ for(i in 1:length(dif_ints)) {  # i <- 1
     yls <- c(0, 14)
     plot(di$xl, yls, pch = "", xlab = "", ylab = "", xaxt = "n", yaxt = "n",
          mgp = c(3, 0.5, 0), tcl = -0.2, xaxs = "i")
-    polygon(c(di$xl, rev(di$xl), di$xl[1]), c(-1, -1, rep(yls[2] * 1.2, 2), -1),             col = "grey90")
+    polygon(c(di$xl, rev(di$xl), di$xl[1]), c(-1, -1, rep(yls[2] * 1.2, 2), -1),
+            col = "grey90")
     ylines(yr = yls, by = 2, col = "grey95")
+    bw <- ifelse(i == 5 & j == 2, 1, bwex[j])  # change bwex for paleo duration
     b <- boxplot(formula = dif ~ int, data = di$db, col = cols[di$col], 
                  range = 0, width = bxw, at = bxa, xlim = di$xl, 
-                 boxwex = bwex[j], axes = FALSE, outline = FALSE, lty = 1, 
+                 boxwex = bw, axes = FALSE, outline = FALSE, lty = 1, 
                  add = TRUE, staplewex = 0.2)
     points(bxa, mus$mu, pch = 20, col = "black")
     text(bxa, b$stats[5, ] + 0.35, round(di$wgt, 1), cex = 0.8)
@@ -254,6 +291,8 @@ o <- dev.off()
 
 ```
 
+<a href="#top">Back to top</a>
+
 ## Observational type by bin
 
 To see how much different observational types contribute to each bin.
@@ -270,7 +309,6 @@ dif_ints$all$d$db[order(int), .N, by = list(int, type)][, {
     scale_color_brewer(type = "div") +
     xlab("Duration interval")
 }]
-
-
 ```
 
+<a href="#top">Back to top</a>

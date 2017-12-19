@@ -135,6 +135,8 @@ knitr::kable(cbind(v, v2), col.names = c("% of total (all 1 day values)",
                                          "% of total (no automated or one-off"))
 ```
 
+<a href="#top">Back to top</a>
+
 ## Kernel Bandwidth
 
 Testing the results on images related to varying kernel sizes.
@@ -241,6 +243,7 @@ for(i in 1:3) {  # i <- 1
 o <- dev.off()
 
 ```
+
 <a href="#top">Back to top</a>
 
 
