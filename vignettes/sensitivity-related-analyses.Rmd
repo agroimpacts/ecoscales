@@ -20,7 +20,7 @@ knitr::opts_chunk$set(
 ```
 ```{r, echo = FALSE}
 e <- TRUE
-e2 <- FALSE
+e2 <- TRUE
 ```
 
 # Overview
@@ -43,8 +43,6 @@ data("datf")
 f <- system.file("extdata/main-results.xlsx", package = "ecoscales")
 dat <- data.table(read_excel(f))
 ```
-
-
 
 ## Proportion of observations estimated
 
@@ -87,13 +85,9 @@ corrtab <- cbind(c("^res", "plo_res", "plot_resolution", "plot_size",
 for(i in 1:nrow(corrtab)) {
   sens2 <- gsub(corrtab[i, 1], corrtab[i, 2], sens2)
 }
-# gsub("[a-z]( )[a-z]", "_", sens[[228]])
-# sens[[228]]
-# sens2[is.na(sens2)]
+
 sens2[is.na(sens2)] <- "none"
 sensl2 <- lapply(1:length(sens2), function(x) strsplit(sens2[x], ";")[[1]])
-# unique(unlist(sensl))
-# unique(unlist(sensl2))
 
 # create a sensitivity table, based on whether each observation has one of the 
 # variables listed as uncertain
@@ -146,7 +140,6 @@ Testing the results on images related to varying kernel sizes.
 The processing time is slow so this chunk is run separately, and results are added to package for lazy load, so that package vignettes can build more quickly (and to avoid hassles with caching chunks and vignettes).  
 
 ```{r, eval = FALSE}
-# ```{r, eval = e}
 bootp_dt <- rbindlist(bootperturb)
 kdat <- copy(bootp_dt)  # bootstrap
 
