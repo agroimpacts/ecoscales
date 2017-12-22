@@ -18,7 +18,7 @@ knitr::opts_chunk$set(echo = TRUE, fig.align = 'center', fig.height = 4,
 ```
 ```{r, echo=FALSE}
 e <- TRUE
-e2 <- TRUE
+e2 <- FALSE
 ```
 
 
