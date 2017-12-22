@@ -17,23 +17,6 @@ vignette: >
 
 Analysis of calibration dataset used to assess between observer uncertainties.
 
-```{r, eval=FALSE, echo = FALSE}
-# Read in and clean-up calibration data
-# cal <- data.table(read_excel(fp(p_dat, "merged_calibration.xlsx")))
-# cal[, DOI := gsub("DOI:|doi:|DOI: |doi: |DOI ", "", DOI)]
-# cal[, DOI := gsub("\\s", "", DOI)]  # remove DOI and whitespace
-# names(cal)
-# dropnm <-  c("V29")#, "V31", "journal", "exclusion reason", "sensitivity")
-# cal[, c(dropnm) := NULL]
-# 
-# # check data types
-# for(j in names(cal)[8:24]) set(cal, j = j, value = as.numeric(cal[[j]]))
-# 
-# # use NA in n_sites as indicator that study was excluded
-# cal[, inout := ifelse(is.na(n_sites), 0, 1)]  
-# write.csv(cal, file = fp(p_dat, "merged_calibrationf.csv"))
-```
-
 # Analyses
 ## Data and libraries
 ```{r, message=FALSE, warning = FALSE}
@@ -53,13 +36,10 @@ nuvars <- c("inout", "feature", "study_year", "st", "plot_res", "n_sites",
 for(j in nuvars) {
   set(cal, j = j, value = as.numeric(cal[[j]]))
 }
-# length(which(is.na(cal$feature)))
-
 ```
 
 ## Agreement on studies included/excluded
 ```{r}
-# ndois <- cal[, unique(DOI)]  # check on number of journals
 
 # reduce within-observer DOI duplicates 
 dois <- cal[, unique(DOI), by = .(observer, inout)]
@@ -74,9 +54,7 @@ kappam.fleiss(dois_c1[, 2:7, with = FALSE])
 ## Inter-rater reliability using number of records per paper
 ```{r}
 doisum <- dcast(cal, DOI ~ observer, value.var = "inout", fun = sum)
-# kappam.fleiss(doisum[, 2:7, with = FALSE])
 icc(ratings = doisum[, 2:7, with = FALSE], model = "twoway")
-
 ```
 
 ```{r, warning = FALSE, fig.cap="Figure 1: Number of records extracted by each rater (observer) for each of the 20 papers in the calibration set.", fig.width=6, fig.height = 4}
@@ -88,8 +66,6 @@ par(mar = c(4, 4, 0.1, 0.1))
 plot(c(1, 20), c(0, 10), pch = "", xlab = "Paper reviewed", 
      ylab = "N extractable records", mgp = c(1.45, 0.5, 0), tcl = -0.2)
 polygon(x = c(0, 21, 21, 0, 0), y = c(-1, -1, 11, 11, 0), col = "grey70")
-# plot(doimat[1, ], pch = 20, xlab = "Paper reviewed", 
-#      ylab = "N extractable records", cex = cxs[1], col = cols[1])
 for(i in 1:6) points(doimat[i, ], col = cols[i], pch = pchs[i], cex = cxs[i])
 legend(x = "topleft", pch = pchs, pt.cex = cxs, col = cols, 
        legend = paste0("Rater", 1:6), bty = "n")
@@ -112,7 +88,6 @@ o <- round(colMeans(sapply(varnms, function(i) {
   sdev / mu
 }), na.rm = TRUE), 3)
 
-# calr[DOI == "10.1007/s00442-005-0338-3" & feature == 2]
 knitr::kable(t(o), col.names = varnms)
 ```
 
@@ -124,10 +99,6 @@ rnms <- c("DOI", "feature", "observer", "plot_res", "n_sites",
           "act_ext", "eff_ext", "t_btwn_samp", "act_dur", "eff_dur")
 calr <- cal[, rnms, with = FALSE]
 
-# calr[feature != 99, ]
-# calr[feature != 99, lapply(.SD, mean), by = .(DOI, feature), 
-#      .SDcols = rnms[4:7]]
-# calr[feature != 99, .N, by = .(DOI, feature)]
 mymu <- function(x) round(mean(x, na.rm = TRUE), 3)
 o <- calr[feature != 99, lapply(.SD, CV), by = .(DOI, feature), 
           .SDcols = rnms[4:10]][, lapply(.SD, mymu), 

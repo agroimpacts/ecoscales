@@ -145,7 +145,7 @@ datf[act_dur > 1 & t_btwn_samp == 0, ]
 Defined by the per variable CV based on uncertainty between observers. Here we are just going to apply the variability to each variable for every observation (previous incarnation used uncertainty on just the variables listed as uncertain, with recalculation of dependent variables (`act_dur`, `act_ext`) made after pertubation [see commit prior to second or third commit on 4 April for code]). We use a custom function `resamp_func` to perform the resampling. It draws on another function `to_infinity_beyond` to set the interval of unreplicated samples to `r 365 * 10000` days. 
 
 ```{r, eval=FALSE}
-p <- c(0.58, 0.72, 0.50, 1.05, 1.26, 0.64)  # from calibration.Rmd
+p <- c(0.58, 0.78, 0.50, 1.05, 1.26, 0.64)  # from calibration.Rmd
 
 # Run bootstrap
 set.seed(1)
