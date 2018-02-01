@@ -88,19 +88,10 @@
 
 \section*{Supplementary Information}% Make the title.
 
-The following text provides additional information on this study's Methods and Results.  The full manuscript, data, and code for all calculations are available as part of an R package that can be installed from an accompanying \href{https://github.com/agroimpacts/ecoscales}{GitHub repository}. \textbf{Note to editors and reviewers: this repository is currently private, but will be made public upon acceptance of manuscript. In the interim, the entire project folder can be downloaded from the following \href{https://www.dropbox.com/sh/1l9em6p0wyabwr3/AADhCpFvqjv6y7VbL5tgB3Iqa?dl=0}{link}.}
+The following text provides additional information on this study's Methods and Results.  The full manuscript, data, and code for all calculations are available as part of an R package that can be installed from an accompanying \href{https://github.com/agroimpacts/ecoscales}{GitHub repository}.
 
 \subsection*{Methods}% Make the title.
-\vspace{-4pt}
-%\maketitle 
-\subsubsection*{Paper selection}
-\vspace{-10pt}
-We used the 2012 Web of Science impact factors to select the highest ranked ecology-themed journals that published studies with an observational component, excluding journals devoted to reviews, meta-analyses, laboratory, cellular, or experimental studies.  To select a representative sample of recent ecology studies, we downloaded the metadata for all papers published in the selected journals (Table \ref{tabs1}) between 2004 and 2014. Our study involved six different observers (those reviewing the papers to extract the observational scales), each of whom was given a randomly selected batch of 500 titles.  A separate set of 20 papers was also randomly selected, and was given to all observers to review independently in order to 1) calibrate the interpretations and extraction of scale-related information between observers, and 2) to estimate between-observer variance.  
 
-%\centerline{
-%%\hspace{1cm} 
-%\parbox{11cm}{\noindent Table S1. The selected journals and their 2012 impact factors.}
-%}
 \vspace{-12pt}
 %\begin{longtable}[h]
 \begin{longtable}{lr}
@@ -148,25 +139,6 @@ Ecology Letters & 17.95 \\
 \label{tabs1}
 \end{longtable}
 % Place your abstract within the special {sciabstract} environment.
-
-\subsubsection*{Estimating observational scales}
-\vspace{-10pt}
-
-Each observer first reviewed the papers in the calibration set, and then commenced reviewing papers in their individual random draws, beginning at the top of the list and then proceeding until at least 20 eligible papers describing ecological observations were reviewed. In cases where the reviewed papers used observations that were described in another publication, we reviewed those source papers in order to extract the observational dimensions. We excluded papers that were opinion or perspectives pieces (unless they presented or used existing observational data), theoretical studies based on generated data, or those which were entirely based on experimental manipulations. We left out the latter category because our intent was to evaluate the domains for observations of natural systems, and we wanted to avoid the bias that would be imposed by the relatively narrow spatial and temporal scales of experiments \cite{kareiva_spatial_1988,tilman_global_2011}.  A bibliography of the reviewed papers follows the References and Notes section below. 
-
-We recorded six primary dimensions of ecological observations, three related to space and three related to time.  The space-related dimensions were resolution, extent, and actual extent. Here extent was primarily defined as the area falling within a perimeter defined by the outermost spatial replicates, while actual extent was defined as the summed area of all spatial replicates (i.e. N * resolution, where N is the number of spatial replicates, which we also recorded), or the area that ecologists observe in practice. In assessing spatial scales, our analysis only considered the Cartesian plane. We did not calculate the z, or depth, dimension, although this dimension is of greater importance for certain sub-disciplines of ecology (e.g. depth profiles in marine ecology). In some cases (primarily paleoecological studies), values extracted from the z-dimension provided temporal information that was used to calculate both the interval and the duration of the observation.  
-
-For time dimensions, we extracted information related to interval, duration, and actual duration. Duration was defined as the time between the first and last temporal replicate, whereas actual duration quantifies the amount of time spent observing a particular location, which we calculated by multiplying sampling duration (the time spent collecting a single temporal replicate) by the number of temporal replicates.  
-
-A full definition of all dimensions and how they were recorded is contained within the answers to the list of questions below. This set of Frequently Asked Questions (FAQ) was provided to each observer for initial study and reference, and adapted as necessary during the course of the study, in order to ensure methodological consistency (see next section).  
-
-%To record the spatio-temporal dimensions of ecological observations, we considered the observational scales to be those at which a total measurement of the feature(s) of interest was made, rather than the scales that might be represented by the observations.  As an example, if a paper reported data on plant species diversity collected using 10 1 m$^2$ sub-plots randomly placed within a larger plot of 100 m$^2$, of which 10 were placed, we recorded 1 m$^2$ as the spatial resolution and 100 m$^2$ as the total extent of the observation. 
-
-%While the 10 sub-plots might be representative of diversity at larger scales (e.g. the particular plant community), that relationship depends both on sample design (number of replicates, placement, grain/resolution) and the properties of the ecosystem \cite{underwood_experiments_1997,palmer_scale_1994, cao_comparison_2002}. Most studies also did not quantify the broader scales represented by their observations, nor did they report dimensions that would allow these to be independently estimated, such as the maximum distance between sample plots, which could have been used to estimate the spatial extent represented by the sample \cite{palmer_scale_1994}.
-
-%Similarly, we did not try to quantify the extent to which values of individual observations (e.g. a single plot) of an ecological feature might be correlated with spatially or temporally adjacent values.  Autocorrelation is common to most ecological phenomena \cite{legendre_spatial_1993,collins_method_2000-1}, and it means that an observation can be representative of the properties within a broader area or time around the point at which it is taken. For example, soil properties are typically measured by analysis of soil cores collected using an augur. The two-dimensional resolution of this measurement is equal to the area of the augur, but the measured soil properties are likely to be very similar, if not identical, to those found in the soil within a radius of at least a few to several hundreds of meters around the core location. However, the distance and strength of this correlation can vary substantially according to the ecological features being observed, and such correlation lengths were reported in almost no studies. Attempting to estimate these lengths, and add them to actual observations scales, would have added further uncertainty to estimates. Moreover, this concern only applies to spatially and temporally discontinuous (or discontiguous) observations, and since many of observations are collected using techniques that permit continuous measurements (e.g. weather data over time or satellite images over space), we elected to use a consistent standard for estimating dimensions. 
-
-%Furthermore quantifying the actual domains of observation is important because highly dynamic spatial and temporal processes, such as the population ecology of riverine fish \cite{fausch_landscapes_2002} or the evolution of wildfires \cite{clements_observing_2007}, may require continuous observation to properly measure, and can vary substantially in the space or time between observations.  
 
 \subsubsection*{Scale FAQ}
 \vspace{-10pt}
@@ -216,49 +188,13 @@ For studies that record individual, mobile organisms as the units of observation
 
 \end{enumerate}
 
-\subsubsection*{Calibration and consistency}
-\vspace{-10pt}
-Most studies did not explicitly report values for all the assessed scales, and thus interpretation and judgement had to be applied to develop reasonable estimates for their values. The FAQ provided the protocol we followed, and was initially developed following consultation between observers prior to the commencement of review. We conducted an iterative process of calibration to ensure consistency and reliability of estimates. First, we used the calibration set to calculate between-observer variability with respect to paper selection/rejection and the estimation of scales.  Based on this, the lead author reviewed individual records in each observer's calibration set, flagged values where the estimation procedure departed from the protocol, and returned these to observers for re-estimation, without providing an estimate of the actual value. Instead, the relevant section of the protocol was highlighted, and further explanation and clarifying discussion undertaken as needed. Protocol language was adjusted for clarity during this process, and new items added to cover circumstances that had not been addressed by the initial version. The variability measures (see Results) were re-calculated after each iteration.  
-
-To ensure consistency within the main analysis, the lead author also reviewed each observer's results from their individual draw of papers and flagged values that appeared to deviate from the protocol for re-review by the observer. Revised values were re-inspected, and in some cases a secondary review of particular papers was undertaken to cross-check the estimated scales.   
-
-\subsubsection*{Accounting for estimation uncertainty}
-\vspace{-10pt}
-Two major and related sources of uncertainty affected our estimation of observational scales: 1) unclear documentation of observational scales in the reviewed studies, 2) variation between observers in estimating observational scales (largely in cases where scales were not explicitly reported). We estimated and accounted for these uncertainties in several ways. First, we calculated the degree of between-observer variability based on each observer's results from reviewing the 20-paper calibration set. We calculated how well observers agreed regarding paper inclusion/exclusion, how many extractable observations there were per included paper, and what the coefficient of variation was across all observers' estimates of scale. We also recorded when observations were reported in any study (calibration set or otherwise) with an unclear or missing scale value. 
-
-We used the between-observer coefficients of variation for each dimension as the basis for randomly perturbing the scale values for each of the 378 observations over 1,000 iterations. For each observation at each iteration, we perturbed its scale value in each dimension by randomly selecting (from a uniform distribution) a percentage value p that fell between 100 + y and 100 - y, where y was the between-observer coefficient of variation (expressed as a percentage) for a given observational dimension, and multiplying that observation's scale value by that proportion. In certain cases, the perturbation resulted in values that were not physically possible (e.g. interval or actual duration longer than duration; actual extent larger than extent), in which case we adjusted the perturbed values for the dimension that should be the smallest to equal that of the one that should be largest (e.g. we set interval to equal the perturbed duration value). This perturbed set of observations provided a basis for estimating uncertainty within our extracted set of observational scales. 
-
-\subsubsection*{Scale metrics}
-\vspace{-10pt}
-In presenting results (Fig. 1 and 2 in main text), we log-transformed (base 10) the observational scales within each of the 1,000 perturbed ensemble members in order to account for the large range in scale values. We calculated histograms for the four primary observational dimensions from each of the log-transformed ensemble members, calculating the mean percentage density estimate for each bin across all 1,000 histograms, as well as the upper and lower 2.5th percentile values for each bin (Fig. 1 main text).  
-
-To reveal the densities of observations within two dimensions (Fig. 2 main text), we used the splancs package \cite{rowlingson_splancs:_1993} of R \cite{r_development_core_team_r:_2011} to calculate a kernel density estimate of the log-transformed values across all ensemble members, using a bandwidth of 1 on a 0.1 resolution image to provide a smoothed result that served to more effectively highlight domains in which ecological observations were concentrated. Bandwidths of varying resolutions were tested on kernel density estimates of sampling interval versus plot resolution to test how sensitive our results were to the bandwidth value (see Supplementary Results section).  
-
-To compare the differences between actual extent and extent and actual duration and duration (Fig. 3 main text) we calculated the magnitude of difference (decade) between each pair as:
-
-\begin{equation}
-decade = log_{10}(x) - log_{10}(y) = log_{10}\left(\frac{x}{y}\right)
-\end{equation}
-
-\noindent Where x is either extent or duration and y is its actual counterpart. We then evaluated how the magnitudes of difference varied with increasing values of extent/duration, using box plots to summarize decades within the same bins used to summarize the frequency distributions of the extent and duration of observations (Fig. 1B and D main text). Decades were calculated for each pair for all bootstrap replicates. 
-
-\subsubsection*{Trends in methods and scale}
-To evaluate the potential impact that excluding studies from 2015-2017 would have on our findings, we analyzed the trends in 1) ecological observing methods, and 2) typical scales of ecological observations over the 10 year period. To undertake the former assessment, we calculated the percentage of observations made using remote sensing, general field methods, and automated \emph{in situ} methods, and fit a linear regression between these percentages and publication year, weighting the regression by the total number of observations in each year. For the second analysis, we applied the same regression approach to the four primary dimensions (resolution, extent, interval, and duration), in order to assess whether there were any trends in observational scales.  
-
-The regressions and resulting code for trend extrapolations can be found in the ``Additional Analyses" vignette in the accompanying \href{https://github.com/agroimpacts/ecoscales}{R package/code repository}.
-
-\subsubsection*{Extracting and analyzing data from earlier meta-analyses}
-To compare the results of our analysis with the observational scales of earlier ecological studies, we used graph capture software\footnote{http://arohatgi.info/WebPlotDigitizer/app/} to extract the data values from Fig. 6.1 in Tilman \cite{tilman_ecological_1989}, Fig. 1 in Kareiva and Anderson \cite{kareiva_spatial_1988}, and Fig. 2 in Porter et al \cite{porter_crop_2005}. To maintain as much comparability as possible with our inclusion criteria, we excluded experiment studies in Tilman's data, as well as the values of any studies having duration values greater than 100 years (no upper time bound was provided for these), leaving duration values for 419 (out of 623) studies. Since Tilman presented duration values as a histogram, we calculated the mean duration across all studies as the weighted (by number of observations per bin) mean of bin center-point values (i.e. the weighted mean of the bin means).  We also excluded four (of 29) observation values from Porter et al's data on observational extent and frequency, which, in contrast to the other 25, were not randomly selected. Porter et al also used irregular scales for both their X (frequency) and Y (extent) axis, therefore we had to visually estimate the scale values for each data point after graphical extraction, and converted their extent values (in km) to hectares and their frequency values to intervals. Kareiva and Anderson presented resolution as plot diameters (m), which we squared to make comparable to our resolution metric.  
-
-Calculations of scale values from these studies can be found in the ``Additional Analyses" vignette in the accompanying \href{https://github.com/agroimpacts/ecoscales}{R package/code repository}.
-
-\subsection*{Results}
+s\subsection*{Results}
 \vspace{-4pt}
 
 \subsubsection*{Variability and consistency between observers}
 \vspace{-10pt}
 
-We assessed variability and consistency between observers along multiple dimensions. First, we assessed tghe degree to which observers agreed with respect to selecting or rejecting papers for review, using R's Agreement package \cite{yu_agreement:_2012} to calculate Fleiss' kappa statistic \cite{fleiss_measuring_1971}, which was 0.72 (z = 12.5, p$<$0.000), indicating substantial and significant agreement between observers \cite{landis_measurement_1977}. 
+We assessed variability and consistency between observers along multiple dimensions. First, we assessed the degree to which observers agreed with respect to selecting or rejecting papers for review, using R's Agreement package \cite{yu_agreement:_2012} to calculate Fleiss' kappa statistic \cite{fleiss_measuring_1971}, which was 0.72 (z = 12.5, p$<$0.000), indicating substantial and significant agreement between observers \cite{landis_measurement_1977}. 
 
 Second, we calculated the intra-class correlation coefficient \cite{bartko_intraclass_1966} to assess agreement between observers regarding the number of ecological observations that could be extracted from each paper (multiple ecological observations were reported in many studies; we listed observations as separate records if they measured different features, or more rarely, varied substantially on one or more dimensions).  The coefficient, calculated using the IRR package \cite{gamer_irr:_2012} of R, was 0.71 (F = 15.4, p$<$0.0001, 95\% confidence interval = 0.54 - 0.85)  
 
