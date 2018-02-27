@@ -18,7 +18,7 @@ knitr::opts_chunk$set(echo = TRUE, fig.align = 'center', fig.height = 4,
 ```
 ```{r, echo=FALSE}
 e <- TRUE
-e2 <- FALSE
+e2 <- TRUE
 ```
 
 
@@ -177,8 +177,9 @@ labs <- list("A" = d[c(1, 3)], "B" = d[4:3], "C" = d[1:2], "D" = d[c(4, 2)])
 ptnms <- names(kderla)[-1]   # names for point plots
 ppch <- c("f", "a", "r", "p")
 
-png("figures/fig2.png", width = 7, height = 6, res = 600, units ="in")
-par(mfrow = c(2, 2), mar = c(6, 6, 0.3, 3), oma = c(0, 0, 0.5, 1), 
+pdf("figures/fig2.pdf", width = 7, height = 6)
+# png("figures/fig2.png", width = 7, height = 6, res = 600, units ="in")
+par(mfrow = c(2, 2), mar = c(6, 6, 0.3, 3), oma = c(0, 0, 0.5, 1),
     mgp = c(2, 0.25, 0))
 # resolutions
 ki <- c(1, 4, 3, 2)  # index to account for change in kde order

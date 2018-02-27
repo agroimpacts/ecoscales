@@ -18,7 +18,7 @@ knitr::opts_chunk$set(echo = TRUE, fig.align = 'center', fig.height = 4,
 ```
 ```{r, echo = FALSE}
 e <- TRUE
-e2 <- FALSE
+e2 <- TRUE
 ```
 
 
@@ -141,9 +141,9 @@ blues <- brewer.pal(9, name = "Blues")
 yl <- 35
 cols <- c(reds[c(4, 6)], blues[c(4, 6)])
 
-# pdf("paper/figures/hists_bs.pdf", width = 5, height = 5)
-png("figures/fig1.png", width = 5, height = 5, res = 600, 
-    units = "in")
+pdf("figures/fig1.pdf", width = 5, height = 5)
+# png("figures/fig1.png", width = 5, height = 5, res = 600, 
+#     units = "in")
 par(mfrow = c(2, 2), mar = c(4.5, 1, 1, 1), oma = c(2, 3, 0, 0))
 for(i in 1:length(vs)) {  # i <- 4
   hvals <- hdatstat_bt$all[[i]]

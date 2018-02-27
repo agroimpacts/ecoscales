@@ -18,7 +18,7 @@ knitr::opts_chunk$set(echo = TRUE, fig.align = 'center', fig.height = 4,
 ```
 ```{r, echo=FALSE}
 e <- TRUE
-e2 <- FALSE
+e2 <- TRUE
 ```
 
 # Overview
@@ -136,8 +136,9 @@ xlabs <- c("Extent", "Duration")
 a2mgp <- c(3, 0.5, 0)
 bwex <- c(0.9, 1.4)
 
-png("figures/fig3.png", width = 7, height = 4, res = 600, 
-    units = "in")
+pdf("figures/fig3.pdf", width = 7, height = 4)
+# png("figures/fig3.png", width = 7, height = 4, res = 600, 
+#     units = "in")
 par(mfrow = c(1, 2), mar = c(4, 0, 1, 0.75), oma = c(0, 3, 0, 0))
 for(i in 1:2) {  # i <- 1
   di <- dif_ints$all[[i]]  # subset list element
