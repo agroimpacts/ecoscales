@@ -1,7 +1,3 @@
----
-output: rmarkdown::github_document
----
-
 ## Overview
 
 This package contains the data and code for the following paper: 
@@ -14,7 +10,7 @@ The published version of the paper can be accessed [here]( http://dx.doi.org/10.
 
 The package can be installed and contents explored as follows: 
 
-```{r, eval = FALSE}
+```r
 devtools::install_github("agroimpacts/ecoscales", build_vignettes = TRUE)
 browseVignettes("ecoscales")
 ```
