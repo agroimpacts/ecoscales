@@ -1,3 +1,7 @@
+---
+output: rmarkdown::github_document
+---
+
 ## Overview
 
 This package contains the data and code for the following paper: 
